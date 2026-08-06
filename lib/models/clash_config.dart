@@ -518,7 +518,18 @@ abstract class ClashConfig with _$ClashConfig {
 
 extension GeoResourceUrlMapExt on Map<GeoResource, String> {
   Map<String, String> get raw =>
-      map((key, value) => MapEntry(key.value, value));
+      map((key, value) => MapEntry(key.coreValue, value));
+}
+
+extension on GeoResource {
+  String get coreValue {
+    return switch (this) {
+      GeoResource.MMDB => 'mmdb',
+      GeoResource.ASN => 'asn',
+      GeoResource.GEOIP => 'geoip',
+      GeoResource.GEOSITE => 'geosite',
+    };
+  }
 }
 
 Map<GeoResource, String> _geoXUrlFromJson(Map<String, Object?>? json) {
@@ -531,7 +542,7 @@ Map<GeoResource, String> _geoXUrlFromJson(Map<String, Object?>? json) {
 }
 
 Map<String, String> _geoXUrlToJson(Map<GeoResource, String> value) {
-  return value.raw;
+  return value.map((key, value) => MapEntry(key.value, value));
 }
 
 @freezed

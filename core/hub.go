@@ -54,6 +54,7 @@ func handleStartListener() bool {
 	defer runLock.Unlock()
 	isRunning = true
 	updateListeners()
+	configureGeoUpdater()
 	resolver.ResetConnection()
 	return true
 }
@@ -62,6 +63,7 @@ func handleStopListener() bool {
 	runLock.Lock()
 	defer runLock.Unlock()
 	isRunning = false
+	geoUpdater.stop()
 	listener.StopListener()
 	resolver.ResetConnection()
 	return true
@@ -80,6 +82,7 @@ func handleForceGC() {
 }
 
 func handleShutdown() bool {
+	geoUpdater.stop()
 	stopListeners()
 	executor.Shutdown()
 	handleForceGC()

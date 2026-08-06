@@ -72,12 +72,14 @@ void main() {
     test('converts geoXUrl map to raw config map', () {
       const geoXUrl = {
         GeoResource.MMDB: 'https://example.com/mmdb',
+        GeoResource.GEOIP: 'https://example.com/geoip.dat',
         GeoResource.GEOSITE: 'https://example.com/geosite.dat',
       };
 
       expect(geoXUrl.raw, {
         'mmdb': 'https://example.com/mmdb',
-        'geo-site': 'https://example.com/geosite.dat',
+        'geoip': 'https://example.com/geoip.dat',
+        'geosite': 'https://example.com/geosite.dat',
       });
     });
 
