@@ -124,6 +124,10 @@ jobs:
         if: matrix.platform == 'android'
         run: flutter build apk --debug --target-platform android-arm64
 
+      - name: Verify Android background location permission
+        if: matrix.platform == 'android'
+        run: ruby tool/verify_android_background_location_permission.rb
+
       - name: Build Linux
         if: matrix.platform == 'linux'
         run: flutter build linux --debug
