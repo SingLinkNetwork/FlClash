@@ -11,12 +11,15 @@ import 'package:tray_manager/tray_manager.dart';
 import 'app_localizations.dart';
 import 'constant.dart';
 import 'system.dart';
+import 'tray_title.dart';
 import 'window.dart';
 
 class Tray {
   static Tray? _instance;
 
   Tray._internal();
+
+  final TrayTitleCache _trayTitleCache = TrayTitleCache();
 
   factory Tray() {
     _instance ??= Tray._internal();
@@ -29,6 +32,7 @@ class Tray {
 
   Future<void> destroy() async {
     await trayManager.destroy();
+    _trayTitleCache.reset();
   }
 
   String getTryIcon({required bool isStart, required bool tunEnable}) {
@@ -207,11 +211,14 @@ class Tray {
     if (!system.isMacOS) {
       return;
     }
-    if (!showTrayTitle) {
-      await trayManager.setTitle('');
-    } else {
-      await trayManager.setTitle(traffic.trayTitle);
+    final title = _trayTitleCache.next(
+      show: showTrayTitle,
+      trafficTitle: traffic.trayTitle,
+    );
+    if (title == null) {
+      return;
     }
+    await trayManager.setTitle(title);
   }
 
   Future<void> _copyEnv(int port) async {
