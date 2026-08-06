@@ -136,6 +136,10 @@ jobs:
         if: matrix.platform == 'windows'
         run: flutter build windows --debug
 
+      - name: Verify desktop render visibility
+        if: matrix.platform == 'windows'
+        run: ruby tool/verify_desktop_render_visibility.rb
+
       - name: Build macOS
         if: matrix.platform == 'macos'
         run: flutter build macos --debug
