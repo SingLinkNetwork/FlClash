@@ -145,6 +145,12 @@ class SetupAction extends _$SetupAction {
       await coreController.startListener();
     }
     _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!shouldPollTraffic(
+        renderPaused: render?.isPaused == true,
+        showTrayTitle: ref.read(appSettingProvider).showTrayTitle,
+      )) {
+        return;
+      }
       ref.read(commonActionProvider.notifier).updateRunTime();
       ref.read(commonActionProvider.notifier).updateTraffic();
     });

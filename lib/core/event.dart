@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:fl_clash/common/render.dart';
+import 'package:fl_clash/common/traffic_polling.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter/foundation.dart';
@@ -37,6 +39,11 @@ class CoreEventManager {
             listener.onDelay(Delay.fromJson(event.data));
             break;
           case CoreEventType.request:
+            if (!shouldHandleCoreRequestEvent(
+              renderPaused: render?.isPaused == true,
+            )) {
+              break;
+            }
             listener.onRequest(TrackerInfo.fromJson(event.data));
             break;
           case CoreEventType.loaded:
