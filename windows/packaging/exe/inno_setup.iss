@@ -64,8 +64,9 @@ begin
   end;
 end;
 
-function PrepareToInstall(var NeedsRestart: String): String;
+function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
+  NeedsRestart := False;
   if InstallVCRedist then
     Result := ''
   else

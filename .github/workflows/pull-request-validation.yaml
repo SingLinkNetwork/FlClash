@@ -161,6 +161,13 @@ jobs:
             choco install innosetup --no-progress --yes
           }
           dart setup.dart windows --targets exe
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows installer build failed with exit code $LASTEXITCODE"
+          }
+          $installer = Get-ChildItem -Path dist -Filter '*-setup.exe' -File | Select-Object -First 1
+          if (-not $installer) {
+            throw 'Windows installer artifact was not generated'
+          }
 
       - name: Build macOS
         if: matrix.platform == 'macos'
