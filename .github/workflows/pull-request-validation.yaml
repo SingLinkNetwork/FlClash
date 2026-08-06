@@ -128,6 +128,10 @@ jobs:
         if: matrix.platform == 'linux'
         run: flutter build linux --debug
 
+      - name: Verify Linux QuickJS bundle
+        if: matrix.platform == 'linux'
+        run: ruby tool/verify_linux_quickjs_bundle.rb build/linux/x64/debug/bundle
+
       - name: Build Windows
         if: matrix.platform == 'windows'
         run: flutter build windows --debug
