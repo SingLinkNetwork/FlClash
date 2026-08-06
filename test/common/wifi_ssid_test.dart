@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/wifi_ssid.dart';
 import 'package:test/test.dart';
 
@@ -48,10 +49,7 @@ void main() {
     final values = <String?>[];
     final firstReader = Completer<String?>();
     final secondReader = Completer<String?>();
-    final readers = <Future<String?>>[
-      firstReader.future,
-      secondReader.future,
-    ];
+    final readers = <Future<String?>>[firstReader.future, secondReader.future];
     final coordinator = WifiSsidReadCoordinator(
       read: () => readers.removeAt(0),
       onRead: values.add,
@@ -81,5 +79,57 @@ void main() {
     await refresh;
 
     expect(values, isEmpty);
+  });
+
+  test(
+    'reads the SSID for the connectivity already active at startup',
+    () async {
+      final values = <String?>[];
+      final coordinator = WifiSsidConnectivityCoordinator(
+        checkConnectivity: () async => [ConnectivityResult.wifi],
+        read: () async => 'Office Wi-Fi',
+        onRead: values.add,
+      );
+
+      await coordinator.refreshCurrentConnectivity();
+
+      expect(values, ['Office Wi-Fi']);
+    },
+  );
+
+  test('rechecks the current SSID when an excluded list changes', () async {
+    var readCount = 0;
+    final values = <String?>[];
+    final coordinator = WifiSsidConnectivityCoordinator(
+      checkConnectivity: () async => [ConnectivityResult.wifi],
+      read: () async {
+        readCount++;
+        return 'Office Wi-Fi';
+      },
+      onRead: values.add,
+    );
+
+    coordinator.updateExcludedSsids(['Office Wi-Fi']);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(readCount, 1);
+    expect(values, ['Office Wi-Fi']);
+  });
+
+  test('does not let an old connectivity check restore a stale SSID', () async {
+    final values = <String?>[];
+    final check = Completer<List<ConnectivityResult>>();
+    final coordinator = WifiSsidConnectivityCoordinator(
+      checkConnectivity: () => check.future,
+      read: () async => 'Stale Wi-Fi',
+      onRead: values.add,
+    );
+
+    final refresh = coordinator.refreshCurrentConnectivity();
+    coordinator.handleConnectivityChanged(const [ConnectivityResult.none]);
+    check.complete(const [ConnectivityResult.wifi]);
+    await refresh;
+
+    expect(values, [null]);
   });
 }

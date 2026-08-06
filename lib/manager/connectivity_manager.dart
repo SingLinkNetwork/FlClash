@@ -4,11 +4,13 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/providers/app.dart';
+import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wifi_ssid/wifi_ssid.dart';
 
-class ConnectivityManager extends StatefulWidget {
+class ConnectivityManager extends ConsumerStatefulWidget {
   final Function(List<ConnectivityResult> results)? onConnectivityChanged;
   final Widget child;
 
@@ -19,17 +21,21 @@ class ConnectivityManager extends StatefulWidget {
   });
 
   @override
-  State<ConnectivityManager> createState() => _ConnectivityManagerState();
+  ConsumerState<ConnectivityManager> createState() =>
+      _ConnectivityManagerState();
 }
 
-class _ConnectivityManagerState extends State<ConnectivityManager> {
+class _ConnectivityManagerState extends ConsumerState<ConnectivityManager> {
+  late final Connectivity _connectivity;
   late final StreamSubscription<List<ConnectivityResult>> subscription;
-  late final WifiSsidReadCoordinator _ssidReadCoordinator;
+  late final WifiSsidConnectivityCoordinator _ssidConnectivityCoordinator;
 
   @override
   void initState() {
     super.initState();
-    _ssidReadCoordinator = WifiSsidReadCoordinator(
+    _connectivity = Connectivity();
+    _ssidConnectivityCoordinator = WifiSsidConnectivityCoordinator(
+      checkConnectivity: _connectivity.checkConnectivity,
       read: () => readWifiSsidIfAllowed(
         isAllowed: () async {
           final permission = await WifiSsidManager.instance.checkPermission();
@@ -42,22 +48,33 @@ class _ConnectivityManagerState extends State<ConnectivityManager> {
         commonPrint.log('Wi-fi SSID: $ssid ', logLevel: LogLevel.info);
       },
     );
-    subscription = Connectivity().onConnectivityChanged.listen((results) {
-      if (results.contains(ConnectivityResult.wifi)) {
-        unawaited(_ssidReadCoordinator.refresh());
-      } else {
-        _ssidReadCoordinator.invalidate();
-        globalState.container.read(currentSSIDProvider.notifier).value = null;
-      }
+    subscription = _connectivity.onConnectivityChanged.listen((results) {
+      _ssidConnectivityCoordinator.handleConnectivityChanged(results);
       if (widget.onConnectivityChanged != null) {
         widget.onConnectivityChanged!(results);
       }
     });
+    ref.listenManual(excludeSSIDsProvider, (previous, next) {
+      if (previous != next) {
+        _ssidConnectivityCoordinator.updateExcludedSsids(next);
+      }
+    });
+    ref.listenManual(locationPermissionsProvider, (previous, next) {
+      if (previous != next && next == WifiSsidPermission.granted) {
+        unawaited(_ssidConnectivityCoordinator.refreshCurrentConnectivity());
+      }
+    });
+
+    final excludedSsids = ref.read(excludeSSIDsProvider);
+    _ssidConnectivityCoordinator.updateExcludedSsids(excludedSsids);
+    if (excludedSsids.isEmpty) {
+      unawaited(_ssidConnectivityCoordinator.refreshCurrentConnectivity());
+    }
   }
 
   @override
   void dispose() {
-    _ssidReadCoordinator.dispose();
+    _ssidConnectivityCoordinator.dispose();
     unawaited(subscription.cancel());
     super.dispose();
   }
