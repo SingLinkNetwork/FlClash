@@ -63,6 +63,44 @@ void main() {
     });
   });
 
+  group('getTimeDifference', () {
+    final start = DateTime(2026, 1, 1);
+
+    test('formats elapsed time with minutes within the current hour', () {
+      expect(
+        utils.getTimeDifference(
+          start,
+          now: start.add(
+            const Duration(hours: 1, minutes: 2, seconds: 3),
+          ),
+        ),
+        '01:02:03',
+      );
+    });
+
+    test('does not render cumulative minutes as minutes', () {
+      expect(
+        utils.getTimeDifference(
+          start,
+          now: start.add(
+            const Duration(hours: 99, minutes: 59, seconds: 59),
+          ),
+        ),
+        '99:59:59',
+      );
+    });
+
+    test('caps elapsed time above 99 hours', () {
+      expect(
+        utils.getTimeDifference(
+          start,
+          now: start.add(const Duration(hours: 100)),
+        ),
+        '99:59:59',
+      );
+    });
+  });
+
   group('sortByChar', () {
     test('equal strings return 0', () {
       expect(utils.sortByChar('abc', 'abc'), 0);
