@@ -33,4 +33,28 @@ void main() {
       );
     });
   });
+
+  test('tray start item is unchecked when the proxy is stopped', () {
+    final item = buildTrayStartMenuItem(
+      isStart: false,
+      startLabel: 'Start',
+      stopLabel: 'Stop',
+      onClick: (_) {},
+    );
+
+    expect(item.label, 'Start');
+    expect(item.checked, false);
+  });
+
+  test('tray start item is checked when the proxy is running', () {
+    final item = buildTrayStartMenuItem(
+      isStart: true,
+      startLabel: 'Start',
+      stopLabel: 'Stop',
+      onClick: (_) {},
+    );
+
+    expect(item.label, 'Stop');
+    expect(item.checked, true);
+  });
 }

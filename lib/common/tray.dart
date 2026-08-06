@@ -14,6 +14,19 @@ import 'system.dart';
 import 'tray_title.dart';
 import 'window.dart';
 
+MenuItem buildTrayStartMenuItem({
+  required bool isStart,
+  required String startLabel,
+  required String stopLabel,
+  required void Function(MenuItem menuItem) onClick,
+}) {
+  return MenuItem.checkbox(
+    label: isStart ? stopLabel : startLabel,
+    onClick: onClick,
+    checked: isStart,
+  );
+}
+
 class Tray {
   static Tray? _instance;
 
@@ -87,12 +100,13 @@ class Tray {
       },
     );
     menuItems.add(showMenuItem);
-    final startMenuItem = MenuItem.checkbox(
-      label: trayState.isStart ? appLocalizations.stop : appLocalizations.start,
-      onClick: (_) async {
+    final startMenuItem = buildTrayStartMenuItem(
+      isStart: trayState.isStart,
+      startLabel: appLocalizations.start,
+      stopLabel: appLocalizations.stop,
+      onClick: (_) {
         commonAction.updateStart();
       },
-      checked: false,
     );
     menuItems.add(startMenuItem);
     if (system.isMacOS) {
