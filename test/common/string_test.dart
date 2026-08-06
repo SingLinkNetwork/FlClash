@@ -115,6 +115,20 @@ void main() {
     });
   });
 
+  group('StringExtension.yamlFileName', () {
+    test('adds the yaml extension when it is missing', () {
+      expect('profile'.yamlFileName, 'profile.yaml');
+    });
+
+    test('does not duplicate an existing yaml extension', () {
+      expect('profile.yaml'.yamlFileName, 'profile.yaml');
+    });
+
+    test('recognizes an uppercase yaml extension', () {
+      expect('profile.YAML'.yamlFileName, 'profile.YAML');
+    });
+  });
+
   group('StringExtension.isRegex', () {
     test('valid regex', () {
       expect(r'\d+'.isRegex, isTrue);

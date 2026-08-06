@@ -64,6 +64,10 @@ extension StringExtension on String {
     return endsWith('.svg');
   }
 
+  String get yamlFileName {
+    return toLowerCase().endsWith('.yaml') ? this : '$this.yaml';
+  }
+
   bool get isRegex {
     try {
       RegExp(this);
