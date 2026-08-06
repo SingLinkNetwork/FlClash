@@ -124,6 +124,10 @@ jobs:
         if: matrix.platform == 'macos'
         run: flutter build macos --debug
 
+      - name: Verify macOS Wi-Fi SSID safety
+        if: matrix.platform == 'macos'
+        run: ruby tool/verify_macos_wifi_ssid_plugin.rb
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:

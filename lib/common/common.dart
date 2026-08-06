@@ -46,4 +46,5 @@ export 'traffic_polling.dart';
 export 'tray.dart';
 export 'utils.dart';
 export 'window.dart';
+export 'wifi_ssid.dart';
 export 'yaml.dart';

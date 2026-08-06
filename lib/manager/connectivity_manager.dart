@@ -23,18 +23,30 @@ class ConnectivityManager extends StatefulWidget {
 }
 
 class _ConnectivityManagerState extends State<ConnectivityManager> {
-  late StreamSubscription subscription;
+  late final StreamSubscription<List<ConnectivityResult>> subscription;
+  late final WifiSsidReadCoordinator _ssidReadCoordinator;
 
   @override
   void initState() {
     super.initState();
+    _ssidReadCoordinator = WifiSsidReadCoordinator(
+      read: () => readWifiSsidIfAllowed(
+        isAllowed: () async {
+          final permission = await WifiSsidManager.instance.checkPermission();
+          return permission == WifiSsidPermission.granted;
+        },
+        read: WifiSsidManager.instance.getSsid,
+      ),
+      onRead: (ssid) {
+        globalState.container.read(currentSSIDProvider.notifier).value = ssid;
+        commonPrint.log('Wi-fi SSID: $ssid ', logLevel: LogLevel.info);
+      },
+    );
     subscription = Connectivity().onConnectivityChanged.listen((results) {
       if (results.contains(ConnectivityResult.wifi)) {
-        WifiSsidManager.instance.getSsid().then((ssid) {
-          globalState.container.read(currentSSIDProvider.notifier).value = ssid;
-          commonPrint.log('Wi-fi SSID: $ssid ', logLevel: LogLevel.info);
-        });
+        unawaited(_ssidReadCoordinator.refresh());
       } else {
+        _ssidReadCoordinator.invalidate();
         globalState.container.read(currentSSIDProvider.notifier).value = null;
       }
       if (widget.onConnectivityChanged != null) {
@@ -45,7 +57,8 @@ class _ConnectivityManagerState extends State<ConnectivityManager> {
 
   @override
   void dispose() {
-    subscription.cancel();
+    _ssidReadCoordinator.dispose();
+    unawaited(subscription.cancel());
     super.dispose();
   }
 

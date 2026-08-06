@@ -84,14 +84,17 @@ public class WifiSsidPlugin: NSObject, FlutterPlugin, CLLocationManagerDelegate 
     // MARK: - SSID
 
     private func getSsid(result: @escaping FlutterResult) {
-        if #available(macOS 10.10, *) {
-            if let interface = CWWiFiClient.shared().interface() {
-                result(interface.ssid())
-            } else {
-                result(nil)
-            }
-        } else {
+        guard #available(macOS 10.10, *),
+              locationManager.authorizationStatus == .authorizedAlways else {
             result(nil)
+            return
+        }
+
+        DispatchQueue.global(qos: .utility).async {
+            let ssid = CWWiFiClient.shared().interface()?.ssid()
+            DispatchQueue.main.async {
+                result(ssid)
+            }
         }
     }
 }
