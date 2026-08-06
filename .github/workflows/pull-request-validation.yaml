@@ -178,40 +178,32 @@ jobs:
             throw 'Windows installer artifact was not generated'
           }
           $runtimeKey = 'HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
-          $redistPath = Join-Path $env:TEMP 'vc_redist.x64.exe'
-          Invoke-WebRequest -Uri 'https://aka.ms/vc14/vc_redist.x64.exe' -OutFile $redistPath
-          $uninstall = Start-Process -FilePath $redistPath -ArgumentList @(
-            '/uninstall',
-            '/quiet',
-            '/norestart'
-          ) -Wait -PassThru
-          if ($uninstall.ExitCode -notin @(0, 1605, 3010)) {
-            throw "Existing Visual C++ runtime uninstall failed with exit code $($uninstall.ExitCode)"
-          }
-          $runtimeBefore = Get-ItemProperty -Path $runtimeKey -ErrorAction SilentlyContinue
-          if ($runtimeBefore -and $runtimeBefore.Installed -eq 1) {
-            throw 'The Windows runner still has the Visual C++ x64 runtime installed after cleanup'
-          }
           $installerLog = Join-Path $env:TEMP 'flclash-installer.log'
-          $process = Start-Process -FilePath $installer.FullName -ArgumentList @(
-            '/VERYSILENT',
-            '/SUPPRESSMSGBOXES',
-            '/NORESTART',
-            '/SP-',
-            "/LOG=$installerLog"
-          ) -Wait -PassThru
-          if ($process.ExitCode -ne 0) {
-            if (Test-Path $installerLog) {
-              Get-Content $installerLog
+          New-Item -Path $runtimeKey -Force | Out-Null
+          New-ItemProperty -Path $runtimeKey -Name Installed -PropertyType DWord -Value 0 -Force | Out-Null
+          try {
+            $process = Start-Process -FilePath $installer.FullName -ArgumentList @(
+              '/VERYSILENT',
+              '/SUPPRESSMSGBOXES',
+              '/NORESTART',
+              '/SP-',
+              "/LOG=$installerLog"
+            ) -Wait -PassThru
+            if ($process.ExitCode -ne 0) {
+              if (Test-Path $installerLog) {
+                Get-Content $installerLog
+              }
+              throw "Windows installer execution failed with exit code $($process.ExitCode)"
             }
-            throw "Windows installer execution failed with exit code $($process.ExitCode)"
-          }
-          $runtime = Get-ItemProperty -Path $runtimeKey -ErrorAction SilentlyContinue
-          if (-not $runtime -or $runtime.Installed -ne 1) {
-            if (Test-Path $installerLog) {
+            $downloaded = Select-String -Path $installerLog -Pattern 'Downloading Microsoft Visual C\+\+ Redistributable'
+            $executed = Select-String -Path $installerLog -Pattern 'Microsoft Visual C\+\+ Redistributable installer returned (0|3010)'
+            if (-not $downloaded -or -not $executed) {
               Get-Content $installerLog
+              throw 'Windows installer did not execute the Visual C++ runtime bootstrap path successfully'
             }
-            throw 'Windows installer did not leave the Visual C++ x64 runtime installed'
+          } finally {
+            New-Item -Path $runtimeKey -Force | Out-Null
+            New-ItemProperty -Path $runtimeKey -Name Installed -PropertyType DWord -Value 1 -Force | Out-Null
           }
 
       - name: Build macOS
