@@ -1,0 +1,23 @@
+{
+  "project_info": {
+    "project_number": "0",
+    "project_id": "flclash-ci",
+    "storage_bucket": "flclash-ci.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:0:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "com.follow.clash"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "ci-placeholder"
+        }
+      ]
+    }
+  ],
+  "configuration_version": "1"
+}

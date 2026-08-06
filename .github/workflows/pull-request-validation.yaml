@@ -1,0 +1,133 @@
+name: pull-request-validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.44.8'
+
+jobs:
+  test:
+    name: Dart tests and analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test --reporter expanded
+
+  build:
+    name: Build ${{ matrix.platform }} on ${{ matrix.os }}
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            os: ubuntu-latest
+            artifact_path: build/app/outputs/flutter-apk/app-debug.apk
+          - platform: linux
+            os: ubuntu-24.04
+            artifact_path: build/linux/x64/debug/bundle
+          - platform: windows
+            os: windows-2022
+            artifact_path: build/windows/x64/runner/Debug
+          - platform: macos
+            os: macos-15-intel
+            artifact_path: build/macos/Build/Products/Debug/FlClash.app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Enable git long paths
+        if: startsWith(matrix.os, 'windows')
+        run: git config --global core.longpaths true
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            libkeybinder-3.0-dev \
+            ninja-build
+
+      - name: Setup Android CI configuration
+        if: matrix.platform == 'android'
+        run: cp android/app/google-services.ci.json android/app/google-services.json
+
+      - name: Setup Android NDK
+        if: matrix.platform == 'android'
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r28c
+          add-to-path: true
+          link-to-sdk: true
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Android
+        if: matrix.platform == 'android'
+        run: flutter build apk --debug --target-platform android-arm64
+
+      - name: Build Linux
+        if: matrix.platform == 'linux'
+        run: flutter build linux --debug
+
+      - name: Build Windows
+        if: matrix.platform == 'windows'
+        run: flutter build windows --debug
+
+      - name: Build macOS
+        if: matrix.platform == 'macos'
+        run: flutter build macos --debug
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-${{ matrix.platform }}-build
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          retention-days: 7
