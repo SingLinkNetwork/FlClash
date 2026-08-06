@@ -169,6 +169,31 @@ jobs:
             throw 'Windows installer artifact was not generated'
           }
 
+      - name: Verify Windows installer installs Visual C++ runtime
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -Path dist -Filter '*-setup.exe' -File | Select-Object -First 1
+          if (-not $installer) {
+            throw 'Windows installer artifact was not generated'
+          }
+          $runtimeKey = 'HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
+          New-Item -Path $runtimeKey -Force | Out-Null
+          New-ItemProperty -Path $runtimeKey -Name Installed -PropertyType DWord -Value 0 -Force | Out-Null
+          $process = Start-Process -FilePath $installer.FullName -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART',
+            '/SP-'
+          ) -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Windows installer execution failed with exit code $($process.ExitCode)"
+          }
+          $runtime = Get-ItemProperty -Path $runtimeKey -ErrorAction SilentlyContinue
+          if (-not $runtime -or $runtime.Installed -ne 1) {
+            throw 'Windows installer did not leave the Visual C++ x64 runtime installed'
+          }
+
       - name: Build macOS
         if: matrix.platform == 'macos'
         run: flutter build macos --debug

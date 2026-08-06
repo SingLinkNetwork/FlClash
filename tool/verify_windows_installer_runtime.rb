@@ -34,6 +34,13 @@ unless workflow.include?('Build Windows installer') &&
   errors << 'Pull Request CI must compile the Windows installer'
 end
 
+unless workflow.include?('Verify Windows installer installs Visual C++ runtime') &&
+       workflow.include?('Start-Process -FilePath $installer.FullName') &&
+       workflow.include?('HKLM:\\SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64') &&
+       workflow.include?('/VERYSILENT')
+  errors << 'Pull Request CI must execute the Windows installer and verify the Visual C++ runtime'
+end
+
 if errors.empty?
   puts 'Windows installer runtime verifier passed.'
   exit 0
