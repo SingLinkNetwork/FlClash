@@ -148,6 +148,20 @@ jobs:
         if: matrix.platform == 'windows'
         run: ruby tool/verify_windows_wifi_ssid_plugin.rb
 
+      - name: Verify Windows installer runtime
+        if: matrix.platform == 'windows'
+        run: ruby tool/verify_windows_installer_runtime.rb
+
+      - name: Build Windows installer
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $innoSetup = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $innoSetup)) {
+            choco install innosetup --no-progress --yes
+          }
+          dart setup.dart windows --targets exe
+
       - name: Build macOS
         if: matrix.platform == 'macos'
         run: flutter build macos --debug

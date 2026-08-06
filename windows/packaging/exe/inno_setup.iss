@@ -19,6 +19,59 @@ ArchitecturesAllowed={{ARCH}}
 ArchitecturesInstallIn64BitMode={{ARCH}}
 
 [Code]
+const
+  VCRedistUrl = '{% if ARCH == 'arm64' %}https://aka.ms/vc14/vc_redist.arm64.exe{% else %}https://aka.ms/vc14/vc_redist.x64.exe{% endif %}';
+  VCRedistFileName = '{% if ARCH == 'arm64' %}vc_redist.arm64.exe{% else %}vc_redist.x64.exe{% endif %}';
+  VCRedistRegistryArch = '{% if ARCH == 'arm64' %}arm64{% else %}x64{% endif %}';
+
+function IsVCRedistInstalled: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := RegQueryDWordValue(
+    HKLM64,
+    'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\' + VCRedistRegistryArch,
+    'Installed',
+    Installed) and (Installed = 1);
+end;
+
+function InstallVCRedist: Boolean;
+var
+  RedistPath: String;
+  ResultCode: Integer;
+begin
+  if IsVCRedistInstalled then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  RedistPath := ExpandConstant('{tmp}\' + VCRedistFileName);
+  try
+    DownloadTemporaryFile(VCRedistUrl, VCRedistFileName, '', nil);
+    Result := Exec(
+      RedistPath,
+      '/install /quiet /norestart',
+      '',
+      SW_HIDE,
+      ewWaitUntilTerminated,
+      ResultCode) and ((ResultCode = 0) or (ResultCode = 3010));
+    if not Result then
+      Log('Microsoft Visual C++ Redistributable installer returned ' + IntToStr(ResultCode));
+  except
+    Log(GetExceptionMessage);
+    Result := False;
+  end;
+end;
+
+function PrepareToInstall(var NeedsRestart: String): String;
+begin
+  if InstallVCRedist then
+    Result := ''
+  else
+    Result := 'Microsoft Visual C++ Redistributable could not be installed.';
+end;
+
 procedure KillProcesses;
 var
   Processes: TArrayOfString;
