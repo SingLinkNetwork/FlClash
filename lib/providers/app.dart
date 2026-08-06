@@ -13,7 +13,7 @@ import 'package:wifi_ssid/wifi_ssid.dart';
 
 part 'generated/app.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class RealTunEnable extends _$RealTunEnable with AutoDisposeNotifierMixin {
   @override
   bool build() {

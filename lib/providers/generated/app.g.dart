@@ -20,7 +20,7 @@ final class RealTunEnableProvider
         argument: null,
         retry: null,
         name: r'realTunEnableProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -41,7 +41,7 @@ final class RealTunEnableProvider
   }
 }
 
-String _$realTunEnableHash() => r'f2c88f5031d1f97665c10f70121082c4f6d6c99d';
+String _$realTunEnableHash() => r'26ba5bc8e202658b14c382419f5b9b8ea946479b';
 
 abstract class _$RealTunEnable extends $Notifier<bool> {
   bool build();

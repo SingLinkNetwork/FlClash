@@ -31,6 +31,14 @@ void main() {
       container.read(realTunEnableProvider.notifier).update((_) => true);
       expect(container.read(realTunEnableProvider), true);
     });
+
+    test('keeps the real TUN state between setup calls', () async {
+      container.read(realTunEnableProvider.notifier).update((_) => true);
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(realTunEnableProvider), true);
+    });
   });
 
   group('Packages provider', () {
