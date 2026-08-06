@@ -210,6 +210,10 @@ jobs:
         if: matrix.platform == 'macos'
         run: flutter build macos --debug
 
+      - name: Verify macOS SQLite bundle and loader
+        if: matrix.platform == 'macos'
+        run: ruby tool/verify_macos_sqlite_bundle.rb build/macos/Build/Products/Debug/FlClash.app
+
       - name: Verify macOS Wi-Fi SSID safety
         if: matrix.platform == 'macos'
         run: ruby tool/verify_macos_wifi_ssid_plugin.rb

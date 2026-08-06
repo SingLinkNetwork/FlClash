@@ -38,6 +38,7 @@ export 'render.dart';
 export 'request.dart';
 export 'scroll.dart';
 export 'snowflake.dart';
+export 'sqlite.dart';
 export 'string.dart';
 export 'startup.dart';
 export 'system.dart';

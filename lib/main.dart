@@ -13,6 +13,7 @@ import 'common/common.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    configureMacOSSqlite();
     if (system.isDesktop) {
       await RustLib.init();
     }

@@ -3,6 +3,7 @@
 require 'open3'
 
 app_path = ARGV.fetch(0, 'build/macos/Build/Products/Release/FlClash.app')
+source_path = ARGV.fetch(1, 'lib/common/sqlite.dart')
 sqlite_binary = File.join(
   app_path,
   'Contents',
@@ -15,6 +16,18 @@ sqlite_binary = File.join(
 
 abort "Release app not found: #{app_path}" unless Dir.exist?(app_path)
 abort "Bundled CSQLite framework not found: #{sqlite_binary}" unless File.file?(sqlite_binary)
+abort "SQLite loader source not found: #{source_path}" unless File.file?(source_path)
+
+source = File.read(source_path)
+%w[
+  macOSSqliteLibraryPath
+  Platform.resolvedExecutable
+  CSQLite.framework
+  open.overrideFor
+  DynamicLibrary.open
+].each do |required_fragment|
+  abort "SQLite loader is missing #{required_fragment}" unless source.include?(required_fragment)
+end
 
 def run!(*command)
   stdout, stderr, status = Open3.capture3(*command)
@@ -35,4 +48,4 @@ end
 
 version = run!('strings', sqlite_binary).lines.grep(/^#?3\./).first&.strip
 version_suffix = version ? ", #{version}" : ''
-puts "CSQLite bundle verified: x86_64 + arm64, sqlite3_stmt_isexplain present#{version_suffix}"
+puts "CSQLite bundle and explicit macOS loader verified: x86_64 + arm64, sqlite3_stmt_isexplain present#{version_suffix}"
