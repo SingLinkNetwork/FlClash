@@ -37,7 +37,9 @@ end
 unless workflow.include?('Verify Windows installer installs Visual C++ runtime') &&
        workflow.include?('Start-Process -FilePath $installer.FullName') &&
        workflow.include?('HKLM:\\SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64') &&
-       workflow.include?('/VERYSILENT')
+       workflow.include?('/VERYSILENT') &&
+       workflow.include?('Invoke-WebRequest') &&
+       workflow.include?('/uninstall')
   errors << 'Pull Request CI must execute the Windows installer and verify the Visual C++ runtime'
 end
 

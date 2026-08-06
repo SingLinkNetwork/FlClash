@@ -42,12 +42,14 @@ var
 begin
   if IsVCRedistInstalled then
   begin
+    Log('Microsoft Visual C++ Redistributable is already installed.');
     Result := True;
     Exit;
   end;
 
   RedistPath := ExpandConstant('{tmp}\' + VCRedistFileName);
   try
+    Log('Downloading Microsoft Visual C++ Redistributable from ' + VCRedistUrl + '.');
     DownloadTemporaryFile(VCRedistUrl, VCRedistFileName, '', nil);
     Result := Exec(
       RedistPath,
@@ -56,6 +58,7 @@ begin
       SW_HIDE,
       ewWaitUntilTerminated,
       ResultCode) and ((ResultCode = 0) or (ResultCode = 3010));
+    Log('Microsoft Visual C++ Redistributable installer returned ' + IntToStr(ResultCode));
     if not Result then
       Log('Microsoft Visual C++ Redistributable installer returned ' + IntToStr(ResultCode));
   except
