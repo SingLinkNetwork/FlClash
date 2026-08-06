@@ -4,6 +4,8 @@ require 'open3'
 
 app_path = ARGV.fetch(0, 'build/macos/Build/Products/Release/FlClash.app')
 source_path = ARGV.fetch(1, 'lib/common/sqlite.dart')
+required_architectures = ARGV.drop(2)
+required_architectures = %w[x86_64 arm64] if required_architectures.empty?
 sqlite_binary = File.join(
   app_path,
   'Contents',
@@ -14,7 +16,7 @@ sqlite_binary = File.join(
   'CSQLite',
 )
 
-abort "Release app not found: #{app_path}" unless Dir.exist?(app_path)
+abort "macOS app not found: #{app_path}" unless Dir.exist?(app_path)
 abort "Bundled CSQLite framework not found: #{sqlite_binary}" unless File.file?(sqlite_binary)
 abort "SQLite loader source not found: #{source_path}" unless File.file?(source_path)
 
@@ -37,7 +39,7 @@ def run!(*command)
 end
 
 lipo_info = run!('lipo', '-info', sqlite_binary)
-%w[x86_64 arm64].each do |architecture|
+required_architectures.each do |architecture|
   abort "CSQLite framework is missing #{architecture}: #{lipo_info.strip}" unless lipo_info.include?(architecture)
 
   symbols = run!('nm', '-arch', architecture, '-gU', sqlite_binary)
@@ -48,4 +50,5 @@ end
 
 version = run!('strings', sqlite_binary).lines.grep(/^#?3\./).first&.strip
 version_suffix = version ? ", #{version}" : ''
-puts "CSQLite bundle and explicit macOS loader verified: x86_64 + arm64, sqlite3_stmt_isexplain present#{version_suffix}"
+architectures = required_architectures.join(' + ')
+puts "CSQLite bundle and explicit macOS loader verified: #{architectures}, sqlite3_stmt_isexplain present#{version_suffix}"

@@ -212,7 +212,7 @@ jobs:
 
       - name: Verify macOS SQLite bundle and loader
         if: matrix.platform == 'macos'
-        run: ruby tool/verify_macos_sqlite_bundle.rb build/macos/Build/Products/Debug/FlClash.app
+        run: ruby tool/verify_macos_sqlite_bundle.rb build/macos/Build/Products/Debug/FlClash.app lib/common/sqlite.dart x86_64
 
       - name: Verify macOS Wi-Fi SSID safety
         if: matrix.platform == 'macos'
