@@ -37,6 +37,17 @@ Future<String> _encodeYaml<T>(T content) async {
   return yaml.encode(content);
 }
 
+Map<String, dynamic> applyCorePatchConfig({
+  required Map<String, dynamic> rawConfig,
+  required PatchClashConfig patchConfig,
+}) {
+  final patchedConfig = Map<String, dynamic>.from(rawConfig);
+  if (!patchedConfig.containsKey('ipv6')) {
+    patchedConfig['ipv6'] = patchConfig.ipv6;
+  }
+  return patchedConfig;
+}
+
 Future<String> encodeMD5Task(String data) async {
   return compute<String, String>(_encodeMD5, data);
 }
@@ -94,7 +105,10 @@ Future<VM2<String, String>> makeRealProfileTask(
 Future<VM2<String, String>> _makeRealProfileTask(
   MakeRealProfileState data,
 ) async {
-  final rawConfig = Map.from(data.rawConfig);
+  final rawConfig = applyCorePatchConfig(
+    rawConfig: Map<String, dynamic>.from(data.rawConfig),
+    patchConfig: data.realPatchConfig,
+  );
   final realPatchConfig = data.realPatchConfig;
   final profilesPath = data.profilesPath;
   final profileId = data.profileId;
@@ -118,7 +132,6 @@ Future<VM2<String, String>> _makeRealProfileTask(
   rawConfig['external-ui-url'] = '';
   rawConfig['tcp-concurrent'] = realPatchConfig.tcpConcurrent;
   rawConfig['unified-delay'] = realPatchConfig.unifiedDelay;
-  rawConfig['ipv6'] = realPatchConfig.ipv6;
   rawConfig['log-level'] = realPatchConfig.logLevel.name;
   rawConfig['port'] = 0;
   rawConfig['socks-port'] = 0;
