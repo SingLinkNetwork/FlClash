@@ -144,6 +144,10 @@ jobs:
         if: matrix.platform == 'windows'
         run: ruby tool/verify_desktop_render_visibility.rb
 
+      - name: Verify Windows Wi-Fi SSID optional dependency
+        if: matrix.platform == 'windows'
+        run: ruby tool/verify_windows_wifi_ssid_plugin.rb
+
       - name: Build macOS
         if: matrix.platform == 'macos'
         run: flutter build macos --debug
