@@ -763,7 +763,10 @@ class ProxiesAction extends _$ProxiesAction {
   Future<void> updateGroups() async {
     try {
       commonPrint.log('updateGroups');
-      ref.read(groupsProvider.notifier).value = await retry(
+      final selectedMap = ref.read(
+        currentProfileProvider.select((state) => state?.selectedMap ?? {}),
+      );
+      final nextGroups = await retry(
         task: () async {
           final sortType = ref.read(
             proxiesStyleSettingProvider.select((state) => state.sortType),
@@ -771,9 +774,6 @@ class ProxiesAction extends _$ProxiesAction {
           final delayMap = ref.read(delayDataSourceProvider);
           final testUrl = ref.read(
             appSettingProvider.select((state) => state.testUrl),
-          );
-          final selectedMap = ref.read(
-            currentProfileProvider.select((state) => state?.selectedMap ?? {}),
           );
           return coreController.getProxiesGroups(
             selectedMap: selectedMap,
@@ -784,6 +784,16 @@ class ProxiesAction extends _$ProxiesAction {
         },
         retryIf: (res) => res.isEmpty,
       );
+      final previousGroups = ref.read(groupsProvider);
+      if (previousGroups.isNotEmpty &&
+          hasComputedProxyChanged(
+            previousGroups: previousGroups,
+            nextGroups: nextGroups,
+            selectedMap: selectedMap,
+          )) {
+        ref.read(checkIpNumProvider.notifier).add();
+      }
+      ref.read(groupsProvider.notifier).value = nextGroups;
     } catch (e) {
       commonPrint.log('updateGroups error: $e');
       ref.read(groupsProvider.notifier).value = [];

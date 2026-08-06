@@ -2,6 +2,31 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 
+Map<String, String> _computedProxySnapshot(
+  List<Group> groups,
+  Map<String, String> selectedMap,
+) {
+  return {
+    for (final group in groups.where((group) => group.type.isComputedSelected))
+      group.name: computeRealSelectedProxyState(
+        group.name,
+        groups: groups,
+        selectedMap: selectedMap,
+      ).proxyName,
+  };
+}
+
+bool hasComputedProxyChanged({
+  required List<Group> previousGroups,
+  required List<Group> nextGroups,
+  required Map<String, String> selectedMap,
+}) {
+  final previous = _computedProxySnapshot(previousGroups, selectedMap);
+  final next = _computedProxySnapshot(nextGroups, selectedMap);
+  if (previous.length != next.length) return true;
+  return previous.entries.any((entry) => next[entry.key] != entry.value);
+}
+
 List<Group> computeSort({
   required List<Group> groups,
   required ProxiesSortType sortType,
