@@ -140,6 +140,10 @@ jobs:
         if: matrix.platform == 'windows'
         run: flutter build windows --debug
 
+      - name: Verify Windows proxy shutdown cleanup
+        if: matrix.platform == 'windows'
+        run: ruby tool/verify_windows_proxy_shutdown.rb
+
       - name: Verify desktop render visibility
         if: matrix.platform == 'windows'
         run: ruby tool/verify_desktop_render_visibility.rb

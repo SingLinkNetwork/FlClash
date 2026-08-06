@@ -8,6 +8,9 @@
 
 namespace proxy {
 
+// Clears FlClash's system proxy when Windows ends the user session.
+void stopProxyForSessionEnd();
+
 class ProxyPlugin : public flutter::Plugin {
  public:
   static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);

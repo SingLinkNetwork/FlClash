@@ -129,6 +129,10 @@ jobs:
       - name: Setup
         run: dart setup.dart ${{ matrix.platform }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} -v
 
+      - name: Verify Windows proxy shutdown cleanup
+        if: startsWith(matrix.platform, 'windows')
+        run: ruby tool/verify_windows_proxy_shutdown.rb
+
       - name: Verify macOS SQLite bundle and loader
         if: startsWith(matrix.platform, 'macos')
         run: ruby tool/verify_macos_sqlite_bundle.rb build/macos/Build/Products/Release/FlClash.app lib/common/sqlite.dart ${{ matrix.sqlite_arch }}

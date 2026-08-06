@@ -156,6 +156,11 @@ bool stopProxy()
 namespace proxy
 {
 
+void stopProxyForSessionEnd()
+{
+  stopProxy();
+}
+
   // static
   void ProxyPlugin::RegisterWithRegistrar(
       flutter::PluginRegistrarWindows *registrar)

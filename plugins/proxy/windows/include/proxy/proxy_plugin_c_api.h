@@ -16,6 +16,8 @@ extern "C" {
 FLUTTER_PLUGIN_EXPORT void ProxyPluginCApiRegisterWithRegistrar(
     FlutterDesktopPluginRegistrarRef registrar);
 
+FLUTTER_PLUGIN_EXPORT void ProxyPluginStopForSessionEnd();
+
 #if defined(__cplusplus)
 }  // extern "C"
 #endif
