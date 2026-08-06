@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:fl_clash/common/startup.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/action.dart';
@@ -8,6 +11,47 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
+  group('Startup sequencing', () {
+    test(
+      'waits for the core listener before publishing running state',
+      () async {
+        final listenerCompleter = Completer<bool>();
+        final events = <String>[];
+
+        final startFuture = startListenerBeforePublishingStatus(
+          startListener: () {
+            events.add('listener-called');
+            return listenerCompleter.future;
+          },
+          updateRunTime: () => events.add('run-time'),
+          updateTraffic: () async => events.add('traffic'),
+        );
+
+        expect(events, ['listener-called']);
+
+        listenerCompleter.complete(true);
+        expect(await startFuture, true);
+        expect(events, ['listener-called', 'run-time', 'traffic']);
+      },
+    );
+
+    test('does not publish running state when the listener fails', () async {
+      final events = <String>[];
+
+      final started = await startListenerBeforePublishingStatus(
+        startListener: () async {
+          events.add('listener-called');
+          return false;
+        },
+        updateRunTime: () => events.add('run-time'),
+        updateTraffic: () async => events.add('traffic'),
+      );
+
+      expect(started, false);
+      expect(events, ['listener-called']);
+    });
+  });
+
   group('ProfilesAction', () {
     test('keeps edited profile data when remote update fails', () async {
       final original = Profile.normal(label: 'old label', url: 'bad-url');

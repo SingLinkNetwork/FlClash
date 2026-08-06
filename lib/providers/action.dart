@@ -138,11 +138,28 @@ class SetupAction extends _$SetupAction {
 
   Future<void> _handleStart() async {
     startTime ??= DateTime.now();
-    //The local status must be updated when performing the run task
-    ref.read(commonActionProvider.notifier).updateRunTime();
-    ref.read(commonActionProvider.notifier).updateTraffic();
-    if (!ref.read(suspendProvider)) {
-      await coreController.startListener();
+    try {
+      final started = await startListenerBeforePublishingStatus(
+        startListener: () async {
+          if (ref.read(suspendProvider)) return true;
+          return coreController.startListener();
+        },
+        updateRunTime: () {
+          ref.read(commonActionProvider.notifier).updateRunTime();
+        },
+        updateTraffic: () {
+          return ref.read(commonActionProvider.notifier).updateTraffic();
+        },
+      );
+      if (!started) {
+        startTime = null;
+        ref.read(commonActionProvider.notifier).updateRunTime();
+        return;
+      }
+    } catch (_) {
+      startTime = null;
+      ref.read(commonActionProvider.notifier).updateRunTime();
+      rethrow;
     }
     _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!shouldPollTraffic(
@@ -198,7 +215,6 @@ class SetupAction extends _$SetupAction {
         applyProfileDebounce(force: true, silence: true);
       } else {
         globalState.needInitStatus = false;
-        ref.read(runTimeProvider.notifier).value = 0;
         try {
           await applyProfile(
             force: true,
