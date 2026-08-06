@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 class AppPath {
   static AppPath? _instance;
   Completer<Directory> dataDir = Completer();
-  Completer<Directory> downloadDir = Completer();
+  Completer<Directory?> downloadDir = Completer();
   Completer<Directory> tempDir = Completer();
   Completer<Directory> cacheDir = Completer();
   late String appDirPath;
@@ -21,12 +21,20 @@ class AppPath {
     getTemporaryDirectory().then((value) {
       tempDir.complete(value);
     });
-    getDownloadsDirectory().then((value) {
-      downloadDir.complete(value);
-    });
+    _loadDownloadDir();
     getApplicationCacheDirectory().then((value) {
       cacheDir.complete(value);
     });
+  }
+
+  Future<void> _loadDownloadDir() async {
+    try {
+      downloadDir.complete(await getDownloadsDirectory());
+    } catch (_) {
+      // A downloads directory is optional on desktop. File pickers can use
+      // their platform default when the known folder cannot be resolved.
+      downloadDir.complete(null);
+    }
   }
 
   factory AppPath() {
@@ -51,9 +59,8 @@ class AppPath {
     return join(executableDirPath, '$appHelperService$executableExtension');
   }
 
-  Future<String> get downloadDirPath async {
-    final directory = await downloadDir.future;
-    return directory.path;
+  Future<String?> get downloadDirPath {
+    return resolveExistingDirectoryPath(downloadDir.future);
   }
 
   Future<String> get homeDirPath async {
@@ -147,6 +154,26 @@ class AppPath {
   Future<String> get tempPath async {
     final directory = await tempDir.future;
     return directory.path;
+  }
+}
+
+Future<String?> resolveExistingDirectoryPath(
+  Future<Directory?> directoryFuture, {
+  Duration timeout = const Duration(seconds: 2),
+}) async {
+  try {
+    final directory = await directoryFuture.timeout(
+      timeout,
+      onTimeout: () {
+        return null;
+      },
+    );
+    if (directory == null || !await directory.exists()) {
+      return null;
+    }
+    return directory.path;
+  } catch (_) {
+    return null;
   }
 }
 
