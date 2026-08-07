@@ -34,6 +34,9 @@ jobs:
       - name: Run tests
         run: flutter test --reporter expanded
 
+      - name: Verify delay test concurrency alignment
+        run: ruby tool/verify_delay_test_concurrency.rb
+
   build:
     needs: [ test ]
     runs-on: ${{ matrix.os }}

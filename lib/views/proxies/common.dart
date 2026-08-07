@@ -6,6 +6,13 @@ import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Must stay aligned with core's asyncTestDelay concurrency limit.
+const delayTestBatchSize = 50;
+
+List<List<T>> splitDelayTestBatches<T>(List<T> items) {
+  return items.batch(delayTestBatchSize);
+}
+
 double get listHeaderHeight {
   final measure = globalState.measure;
   return 20 + measure.titleMediumHeight + 4 + measure.bodyMediumHeight + 2;
@@ -78,7 +85,7 @@ Future<void> delayTest(List<Proxy> proxies, [String? testUrl]) async {
     await proxyDelayTest(proxy, testUrl);
   }).toList();
 
-  final batchesDelayProxies = delayProxies.batch(100);
+  final batchesDelayProxies = splitDelayTestBatches(delayProxies);
   for (final batchDelayProxies in batchesDelayProxies) {
     await Future.wait(batchDelayProxies);
   }

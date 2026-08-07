@@ -48,6 +48,9 @@ jobs:
           CGO_ENABLED: '0'
         run: go test .
 
+      - name: Verify delay test concurrency alignment
+        run: ruby tool/verify_delay_test_concurrency.rb
+
   build:
     name: Build ${{ matrix.platform }} on ${{ matrix.os }}
     needs: test
