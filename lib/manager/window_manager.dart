@@ -71,15 +71,27 @@ class _WindowContainerState extends ConsumerState<WindowManager>
     });
   }
 
+  void _persistWindowSize() {
+    windowManager.getSize().then((size) {
+      if (!mounted) return;
+      ref
+          .read(windowSettingProvider.notifier)
+          .update(
+            (state) => state.copyWith(width: size.width, height: size.height),
+          );
+    });
+  }
+
   @override
-  Future<void> onWindowResized() async {
+  void onWindowResize() {
+    super.onWindowResize();
+    _persistWindowSize();
+  }
+
+  @override
+  void onWindowResized() {
     super.onWindowResized();
-    final size = await windowManager.getSize();
-    ref
-        .read(windowSettingProvider.notifier)
-        .update(
-          (state) => state.copyWith(width: size.width, height: size.height),
-        );
+    _persistWindowSize();
   }
 
   @override
