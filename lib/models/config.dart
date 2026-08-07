@@ -85,6 +85,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(false) bool developerMode,
     @Default(RestoreStrategy.compatible) RestoreStrategy restoreStrategy,
     @Default(true) bool showTrayTitle,
+    @Default(TrayClickAction.showMainWindow) TrayClickAction trayClickAction,
     @Default('') String customUserAgent,
     @Default(false) bool macOSIpForwarding,
   }) = _AppSettingProps;

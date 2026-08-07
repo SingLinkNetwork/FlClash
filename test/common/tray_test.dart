@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fl_clash/common/tray.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -66,5 +67,52 @@ void main() {
 
     expect(item.label, 'Stop');
     expect(item.checked, true);
+  });
+
+  group('handleTrayIconMouseDown', () {
+    test('shows the main window by default on macOS', () async {
+      var showWindowCalls = 0;
+      var showMenuCalls = 0;
+
+      await handleTrayIconMouseDown(
+        isMacOS: true,
+        action: TrayClickAction.showMainWindow,
+        showWindow: () async => showWindowCalls++,
+        showMenu: () async => showMenuCalls++,
+      );
+
+      expect(showWindowCalls, 1);
+      expect(showMenuCalls, 0);
+    });
+
+    test('shows the tray menu when configured on macOS', () async {
+      var showWindowCalls = 0;
+      var showMenuCalls = 0;
+
+      await handleTrayIconMouseDown(
+        isMacOS: true,
+        action: TrayClickAction.showTrayMenu,
+        showWindow: () async => showWindowCalls++,
+        showMenu: () async => showMenuCalls++,
+      );
+
+      expect(showWindowCalls, 0);
+      expect(showMenuCalls, 1);
+    });
+
+    test('keeps showing the main window on non-macOS platforms', () async {
+      var showWindowCalls = 0;
+      var showMenuCalls = 0;
+
+      await handleTrayIconMouseDown(
+        isMacOS: false,
+        action: TrayClickAction.showTrayMenu,
+        showWindow: () async => showWindowCalls++,
+        showMenu: () async => showMenuCalls++,
+      );
+
+      expect(showWindowCalls, 1);
+      expect(showMenuCalls, 0);
+    });
   });
 }

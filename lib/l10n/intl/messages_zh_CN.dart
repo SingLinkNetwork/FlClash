@@ -717,6 +717,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "tools": MessageLookupByLibrary.simpleMessage("工具"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxy端口"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("流量统计"),
+    "trayClickAction": MessageLookupByLibrary.simpleMessage("菜单栏图标点击行为"),
+    "trayClickActionDesc": MessageLookupByLibrary.simpleMessage(
+      "选择左键点击菜单栏图标时执行的操作",
+    ),
+    "trayClickAction_showMainWindow": MessageLookupByLibrary.simpleMessage(
+      "显示主窗口",
+    ),
+    "trayClickAction_showTrayMenu": MessageLookupByLibrary.simpleMessage(
+      "显示托盘菜单",
+    ),
     "tun": MessageLookupByLibrary.simpleMessage("虚拟网卡"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("仅在管理员模式生效"),
     "tunRecvMsgX": MessageLookupByLibrary.simpleMessage("TUN recvmsgx"),

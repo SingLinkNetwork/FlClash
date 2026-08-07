@@ -309,6 +309,46 @@ class AppLocalizations {
     );
   }
 
+  /// `Menu bar icon click`
+  String get trayClickAction {
+    return Intl.message(
+      'Menu bar icon click',
+      name: 'trayClickAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose what a left click on the menu bar icon does`
+  String get trayClickActionDesc {
+    return Intl.message(
+      'Choose what a left click on the menu bar icon does',
+      name: 'trayClickActionDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show main window`
+  String get trayClickAction_showMainWindow {
+    return Intl.message(
+      'Show main window',
+      name: 'trayClickAction_showMainWindow',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show tray menu`
+  String get trayClickAction_showTrayMenu {
+    return Intl.message(
+      'Show tray menu',
+      name: 'trayClickAction_showTrayMenu',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `TUN recvmsgx`
   String get tunRecvMsgX {
     return Intl.message(

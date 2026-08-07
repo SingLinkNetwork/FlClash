@@ -28,6 +28,18 @@ MenuItem buildTrayStartMenuItem({
   );
 }
 
+Future<void> handleTrayIconMouseDown({
+  required bool isMacOS,
+  required TrayClickAction action,
+  required Future<void> Function() showWindow,
+  required Future<void> Function() showMenu,
+}) {
+  if (!isMacOS || action == TrayClickAction.showMainWindow) {
+    return showWindow();
+  }
+  return showMenu();
+}
+
 bool shouldDestroyTrayOnExit({required bool isMacOS}) => !isMacOS;
 
 class Tray {

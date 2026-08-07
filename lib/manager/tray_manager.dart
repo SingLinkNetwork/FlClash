@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/providers/action.dart';
+import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,7 +58,17 @@ class _TrayContainerState extends ConsumerState<TrayManager> with TrayListener {
 
   @override
   void onTrayIconMouseDown() {
-    window?.show();
+    unawaited(
+      handleTrayIconMouseDown(
+        isMacOS: system.isMacOS,
+        action: ref.read(appSettingProvider).trayClickAction,
+        showWindow: () => window?.show() ?? Future.value(),
+        showMenu: () {
+          // ignore: deprecated_member_use
+          return trayManager.popUpContextMenu(bringAppToFront: true);
+        },
+      ),
+    );
   }
 
   @override

@@ -1086,6 +1086,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficUsage": MessageLookupByLibrary.simpleMessage(
       "Использование трафика",
     ),
+    "trayClickAction": MessageLookupByLibrary.simpleMessage(
+      "Действие при нажатии на значок в строке меню",
+    ),
+    "trayClickActionDesc": MessageLookupByLibrary.simpleMessage(
+      "Выберите действие для нажатия левой кнопкой по значку в строке меню",
+    ),
+    "trayClickAction_showMainWindow": MessageLookupByLibrary.simpleMessage(
+      "Показать главное окно",
+    ),
+    "trayClickAction_showTrayMenu": MessageLookupByLibrary.simpleMessage(
+      "Показать меню трея",
+    ),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunDesc": MessageLookupByLibrary.simpleMessage(
       "действительно только в режиме администратора",

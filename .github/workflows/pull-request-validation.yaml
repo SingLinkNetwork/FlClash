@@ -353,6 +353,8 @@ jobs:
             script: tool/verify_hotkey_scope.rb
           - id: macos-ip-forwarding
             script: tool/verify_macos_ip_forwarding.rb
+          - id: macos-tray-click-action
+            script: tool/verify_macos_tray_click_action.rb
           - id: custom-test-urls
             script: tool/verify_custom_test_urls.rb
           - id: core-callback-cleanup

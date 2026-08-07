@@ -1,8 +1,10 @@
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class CloseConnectionsItem extends ConsumerWidget {
   const CloseConnectionsItem({super.key});
@@ -118,6 +120,34 @@ class SilentLaunchItem extends ConsumerWidget {
           ref
               .read(appSettingProvider.notifier)
               .update((state) => state.copyWith(silentLaunch: value));
+        },
+      ),
+    );
+  }
+}
+
+class TrayClickActionItem extends ConsumerWidget {
+  const TrayClickActionItem({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appLocalizations = context.appLocalizations;
+    final trayClickAction = ref.watch(
+      appSettingProvider.select((state) => state.trayClickAction),
+    );
+    return ListItem<TrayClickAction>.options(
+      title: Text(appLocalizations.trayClickAction),
+      subtitle: Text(Intl.message('trayClickAction_${trayClickAction.name}')),
+      delegate: OptionsDelegate<TrayClickAction>(
+        title: appLocalizations.trayClickAction,
+        options: TrayClickAction.values,
+        textBuilder: (value) => Intl.message('trayClickAction_${value.name}'),
+        value: trayClickAction,
+        onChanged: (value) {
+          if (value == null) return;
+          ref
+              .read(appSettingProvider.notifier)
+              .update((state) => state.copyWith(trayClickAction: value));
         },
       ),
     );
@@ -279,6 +309,7 @@ class ApplicationSettingView extends StatelessWidget {
         const AutoLaunchItem(),
         const SilentLaunchItem(),
       ],
+      if (system.isMacOS) const TrayClickActionItem(),
       const AutoRunItem(),
       if (system.isAndroid) ...[const HiddenItem()],
       const AnimateTabItem(),

@@ -207,6 +207,8 @@ enum HotAction { start, view, mode, proxy, tun }
 
 enum HotKeyTriggerScope { global, inApp }
 
+enum TrayClickAction { showMainWindow, showTrayMenu }
+
 extension HotKeyTriggerScopeExt on HotKeyTriggerScope {
   HotKeyScope get hotKeyScope {
     return switch (this) {

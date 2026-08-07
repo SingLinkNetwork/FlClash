@@ -114,6 +114,7 @@ void main() {
       expect(restored.testUrl, defaultTestUrl);
       expect(restored.customTestUrls, isEmpty);
       expect(restored.allTestUrls, [defaultTestUrl]);
+      expect(restored.trayClickAction, TrayClickAction.showMainWindow);
     });
 
     test('custom values survive round-trip', () {
@@ -149,6 +150,25 @@ void main() {
         'https://github.com',
       ]);
       expect(restored.customUserAgent, 'CustomUA/1.0');
+    });
+
+    test('persists the macOS tray click action', () {
+      const props = AppSettingProps(
+        trayClickAction: TrayClickAction.showTrayMenu,
+      );
+
+      final restored = roundTrip(
+        () => props.toJson(),
+        AppSettingProps.fromJson,
+      );
+
+      expect(restored.trayClickAction, TrayClickAction.showTrayMenu);
+    });
+
+    test('legacy settings without tray click action keep the main window', () {
+      final props = AppSettingProps.fromJson(const {});
+
+      expect(props.trayClickAction, TrayClickAction.showMainWindow);
     });
 
     test('legacy JSON without custom URLs keeps the configured default', () {
