@@ -133,11 +133,7 @@ class CommonScaffoldState extends State<CommonScaffold> {
   }
 
   void _handleClear() {
-    if (_textController.text.isNotEmpty) {
-      _handleClearInput();
-      return;
-    }
-    _updateSearchState((state) => state?.copyWith(query: null));
+    handleExitSearching();
   }
 
   void handleExitSearching() {
