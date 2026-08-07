@@ -62,6 +62,9 @@ abort 'proxy plugin does not restore automatic interface metrics' unless
 abort 'proxy plugin does not scope cleanup to the FlClash adapter' unless
   plugin.include?('FlClash') && plugin.include?('FriendlyName')
 
+abort 'proxy plugin does not include Winsock before Windows networking APIs' unless
+  plugin.include?('#include <winsock2.h>')
+
 abort 'proxy plugin does not expose the method-channel cleanup method' unless
   plugin.include?('ResetTunInterface')
 
@@ -75,6 +78,9 @@ abort 'proxy C API does not forward TUN metric cleanup to the plugin' unless
 
 abort 'Windows proxy plugin is not linked with iphlpapi' unless
   plugin_cmake.include?('wininet rasapi32 iphlpapi')
+
+abort 'Windows proxy plugin is not linked with Winsock' unless
+  plugin_cmake.include?('ws2_32')
 
 abort 'Dart proxy platform does not expose TUN metric cleanup' unless
   platform_interface.include?('Future<bool?> resetTunInterface()')

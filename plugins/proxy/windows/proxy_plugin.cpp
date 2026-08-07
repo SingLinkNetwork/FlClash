@@ -1,7 +1,14 @@
-#include "proxy_plugin.h"
-
-// This must be included before many other Windows headers.
+// These APIs require Vista-era networking definitions and Winsock types.
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+#ifndef NTDDI_VERSION
+#define NTDDI_VERSION 0x06000000
+#endif
+#include <winsock2.h>
 #include <windows.h>
+
+#include "proxy_plugin.h"
 
 #include <WinInet.h>
 #include <Ras.h>
