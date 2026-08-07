@@ -57,6 +57,9 @@ jobs:
       - name: Verify Android resolve_process JNI guard
         run: ruby tool/verify_android_jni_resolve_guard.rb
 
+      - name: Verify window visibility queue
+        run: ruby tool/verify_window_visibility_queue.rb
+
   build:
     name: Build ${{ matrix.platform }} on ${{ matrix.os }}
     needs: test

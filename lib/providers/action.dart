@@ -632,9 +632,9 @@ class SystemAction extends _$SystemAction {
   Future<void> updateVisible() async {
     final visible = await window?.isVisible;
     if (visible != null && !visible) {
-      window?.show();
+      await window?.show();
     } else {
-      window?.hide();
+      await window?.hide();
     }
   }
 

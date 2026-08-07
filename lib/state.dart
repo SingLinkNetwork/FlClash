@@ -317,9 +317,9 @@ class GlobalState {
     container.read(commonActionProvider.notifier).autoCheckUpdate();
     autoLaunch?.updateStatus(container.read(appSettingProvider).autoLaunch);
     if (!container.read(appSettingProvider).silentLaunch) {
-      window?.show();
+      await window?.show();
     } else {
-      window?.hide();
+      await window?.hide();
     }
     await _handleFailedPreference();
     await _handlerDisclaimer();

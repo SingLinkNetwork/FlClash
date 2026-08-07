@@ -55,6 +55,9 @@ jobs:
       - name: Verify LAN proxy runtime update
         run: ruby tool/verify_lan_proxy_toggle.rb
 
+      - name: Verify window visibility queue
+        run: ruby tool/verify_window_visibility_queue.rb
+
   build:
     needs: [ test ]
     runs-on: ${{ matrix.os }}
