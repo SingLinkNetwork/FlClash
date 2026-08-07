@@ -28,11 +28,23 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
       - name: Run tests
         run: flutter test --reporter expanded
+
+      - name: Test Go core scheduler
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go test .
 
       - name: Verify delay test concurrency alignment
         run: ruby tool/verify_delay_test_concurrency.rb

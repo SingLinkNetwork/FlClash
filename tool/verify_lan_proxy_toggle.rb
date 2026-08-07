@@ -3,6 +3,9 @@
 common_source = File.read(File.expand_path('../core/common.go', __dir__))
 constant_source = File.read(File.expand_path('../core/constant.go', __dir__))
 state_source = File.read(File.expand_path('../lib/providers/state.dart', __dir__))
+listener_test_source = File.read(
+  File.expand_path('../core/update_config_listener_test.go', __dir__),
+)
 
 abort 'UpdateParams must expose the allow-lan update' unless
   constant_source.include?('AllowLan           *bool              `json:"allow-lan"`')
@@ -18,5 +21,10 @@ abort 'The core must apply allow-lan before recreating listeners' unless
 
 abort 'The allow-lan update helper must write the active general config' unless
   common_source.include?('general.AllowLan = *allowLan')
+
+abort 'The runtime LAN regression test must exercise listener recreation' unless
+  listener_test_source.include?('TestUpdateConfigRecreatesMixedListenerForAllowLan') &&
+  listener_test_source.include?('updateConfig(&UpdateParams{AllowLan: &allowLan})') &&
+  listener_test_source.include?('canConnectToAnyHost')
 
 puts 'LAN proxy runtime update verified'
