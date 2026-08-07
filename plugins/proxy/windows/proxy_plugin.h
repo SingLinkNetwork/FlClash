@@ -8,6 +8,9 @@
 
 namespace proxy {
 
+// Removes FlClash TUN routes and restores Windows automatic interface metric.
+bool resetTunInterface();
+
 // Clears FlClash's system proxy when Windows ends the user session.
 void stopProxyForSessionEnd();
 

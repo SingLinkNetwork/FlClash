@@ -53,6 +53,7 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
   if (message == WM_ENDSESSION && wparam != 0) {
+    ProxyPluginResetTunInterface();
     ProxyPluginStopForSessionEnd();
   }
 

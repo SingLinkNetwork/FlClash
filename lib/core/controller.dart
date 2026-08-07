@@ -77,7 +77,11 @@ class CoreController {
   }
 
   Future<void> shutdown(bool isUser) async {
-    await _interface.shutdown(isUser);
+    try {
+      await _interface.shutdown(isUser);
+    } finally {
+      await _resetWindowsTunInterface();
+    }
   }
 
   FutureOr<bool> get isInit => _interface.isInit;
@@ -200,7 +204,31 @@ class CoreController {
   }
 
   Future<bool> stopListener() async {
-    return _interface.stopListener();
+    try {
+      return await _interface.stopListener();
+    } finally {
+      await _resetWindowsTunInterface();
+    }
+  }
+
+  Future<void> _resetWindowsTunInterface() async {
+    if (!system.isWindows) {
+      return;
+    }
+    try {
+      final result = await proxy?.resetTunInterface();
+      if (result == false) {
+        commonPrint.log(
+          'Failed to reset Windows TUN interface metric',
+          logLevel: LogLevel.warning,
+        );
+      }
+    } catch (error) {
+      commonPrint.log(
+        'Failed to reset Windows TUN interface metric: $error',
+        logLevel: LogLevel.warning,
+      );
+    }
   }
 
   Future<Delay> getDelay(String url, String proxyName) async {

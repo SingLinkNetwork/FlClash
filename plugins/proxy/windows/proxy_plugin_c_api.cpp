@@ -14,3 +14,7 @@ void ProxyPluginCApiRegisterWithRegistrar(
 void ProxyPluginStopForSessionEnd() {
   proxy::stopProxyForSessionEnd();
 }
+
+void ProxyPluginResetTunInterface() {
+  proxy::resetTunInterface();
+}

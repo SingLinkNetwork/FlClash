@@ -18,6 +18,8 @@ FLUTTER_PLUGIN_EXPORT void ProxyPluginCApiRegisterWithRegistrar(
 
 FLUTTER_PLUGIN_EXPORT void ProxyPluginStopForSessionEnd();
 
+FLUTTER_PLUGIN_EXPORT void ProxyPluginResetTunInterface();
+
 #if defined(__cplusplus)
 }  // extern "C"
 #endif

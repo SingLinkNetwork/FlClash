@@ -199,6 +199,10 @@ jobs:
         if: matrix.platform == 'windows'
         run: ruby tool/verify_windows_proxy_shutdown.rb
 
+      - name: Verify Windows TUN route and metric cleanup
+        if: matrix.platform == 'windows'
+        run: ruby tool/verify_windows_tun_metric_cleanup.rb
+
       - name: Verify desktop render visibility
         if: matrix.platform == 'windows'
         run: ruby tool/verify_desktop_render_visibility.rb
