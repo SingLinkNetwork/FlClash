@@ -58,6 +58,57 @@ func TestUpdateConfigRecreatesMixedListenerForAllowLan(t *testing.T) {
 	}
 }
 
+func TestUpdateConfigRejectsMissingConfigWithoutPanicking(t *testing.T) {
+	previousConfig := currentConfig
+	previousRunning := isRunning
+	currentConfig = nil
+	isRunning = false
+	t.Cleanup(func() {
+		currentConfig = previousConfig
+		isRunning = previousRunning
+	})
+
+	err := updateConfig(&UpdateParams{})
+	if err == nil {
+		t.Fatal("expected an error when the core config is not loaded")
+	}
+}
+
+func TestHandleUpdateConfigReturnsMissingConfigError(t *testing.T) {
+	previousConfig := currentConfig
+	currentConfig = nil
+	t.Cleanup(func() {
+		currentConfig = previousConfig
+	})
+
+	if got := handleUpdateConfig([]byte(`{}`)); got != "core config is not loaded" {
+		t.Fatalf("unexpected update config error: %q", got)
+	}
+}
+
+func TestUpdateConfigAcceptsPartialTunParams(t *testing.T) {
+	previousConfig := currentConfig
+	previousRunning := isRunning
+	currentConfig = &config.Config{
+		General: &config.General{},
+	}
+	isRunning = false
+	t.Cleanup(func() {
+		currentConfig = previousConfig
+		isRunning = previousRunning
+	})
+
+	err := updateConfig(&UpdateParams{
+		Tun: &tunSchema{Enable: true},
+	})
+	if err != nil {
+		t.Fatalf("partial TUN update returned an error: %v", err)
+	}
+	if !currentConfig.General.Tun.Enable {
+		t.Fatal("partial TUN update did not apply the enable flag")
+	}
+}
+
 func reserveTCPPort(t *testing.T) int {
 	t.Helper()
 
