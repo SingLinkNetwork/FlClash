@@ -7,6 +7,11 @@ workflow_path = File.join(root, '.github', 'workflows', 'pull-request-validation
 workflow = YAML.safe_load(File.read(workflow_path), aliases: true)
 jobs = workflow.fetch('jobs')
 
+macos_ip_forwarding_steps = jobs.fetch('macos-ip-forwarding').fetch('steps')
+unless macos_ip_forwarding_steps.any? { |step| step['uses'] == 'actions/setup-go@v5' }
+  abort 'macos-ip-forwarding job must install Go before running core tests'
+end
+
 required_jobs = %w[
   dart-format
   dart-analyze
