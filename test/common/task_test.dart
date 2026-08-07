@@ -55,9 +55,7 @@ void main() {
         profilesPath: '/tmp/flclash-recvmsgx-test',
         profileId: 11,
         rawConfig: {},
-        realPatchConfig: PatchClashConfig(
-          tun: Tun(recvMsgX: false),
-        ),
+        realPatchConfig: PatchClashConfig(tun: Tun(recvMsgX: false)),
         overrideDns: false,
         appendSystemDns: false,
         proxyGroups: [],
