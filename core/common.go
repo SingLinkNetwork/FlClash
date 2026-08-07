@@ -181,10 +181,19 @@ func readFile(path string) ([]byte, error) {
 	return data, err
 }
 
+func applyAllowLanUpdate(general *config.General, allowLan *bool) {
+	if general == nil || allowLan == nil {
+		return
+	}
+
+	general.AllowLan = *allowLan
+}
+
 func updateConfig(params *UpdateParams) {
 	runLock.Lock()
 	defer runLock.Unlock()
 	general := currentConfig.General
+	applyAllowLanUpdate(general, params.AllowLan)
 	if params.MixedPort != nil {
 		general.MixedPort = *params.MixedPort
 	}

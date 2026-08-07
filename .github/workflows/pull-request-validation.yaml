@@ -48,6 +48,9 @@ jobs:
           CGO_ENABLED: '0'
         run: go test .
 
+      - name: Verify LAN proxy runtime update
+        run: ruby tool/verify_lan_proxy_toggle.rb
+
       - name: Verify delay test concurrency alignment
         run: ruby tool/verify_delay_test_concurrency.rb
 

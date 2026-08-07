@@ -40,6 +40,9 @@ jobs:
       - name: Verify Android resolve_process JNI guard
         run: ruby tool/verify_android_jni_resolve_guard.rb
 
+      - name: Verify LAN proxy runtime update
+        run: ruby tool/verify_lan_proxy_toggle.rb
+
   build:
     needs: [ test ]
     runs-on: ${{ matrix.os }}
