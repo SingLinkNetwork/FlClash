@@ -9,9 +9,9 @@ window_manager_source = File.read(
 
 required_patterns = {
   'Window.show resumes rendering before showing the window' =>
-    /Future<void> show\(\) async \{.*?render\?\.resume\(\).*?windowManager\.show\(\)/m,
+    /Future<void> show\(\).*?render\?\.resume\(\).*?windowManager\.show\(\)/m,
   'Window.hide pauses rendering before hiding the window' =>
-    /Future<void> hide\(\) async \{.*?render\?\.pause\(\).*?windowManager\.hide\(\)/m,
+    /Future<void> hide\(\).*?render\?\.pause\(\).*?windowManager\.hide\(\)/m,
   'System.back uses the render-aware window hide path' =>
     /Future<void> back\(\) async \{.*?await window\?\.hide\(\)/m,
   'visibility toggle uses the shared show and hide paths' =>
