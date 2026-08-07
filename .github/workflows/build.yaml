@@ -157,6 +157,10 @@ jobs:
         if: startsWith(matrix.platform, 'linux')
         run: ruby tool/verify_linux_x11_thread_init.rb
 
+      - name: Verify Linux tray clipboard fallback
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_tray_clipboard.rb
+
       - name: Verify Windows proxy shutdown cleanup
         if: startsWith(matrix.platform, 'windows')
         run: ruby tool/verify_windows_proxy_shutdown.rb

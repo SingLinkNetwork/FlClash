@@ -60,6 +60,9 @@ jobs:
       - name: Verify window visibility queue
         run: ruby tool/verify_window_visibility_queue.rb
 
+      - name: Verify Linux tray clipboard fallback
+        run: ruby tool/verify_linux_tray_clipboard.rb
+
   build:
     name: Build ${{ matrix.platform }} on ${{ matrix.os }}
     needs: test

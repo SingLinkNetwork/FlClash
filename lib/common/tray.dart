@@ -10,6 +10,7 @@ import 'package:tray_manager/tray_manager.dart';
 
 import 'app_localizations.dart';
 import 'constant.dart';
+import 'linux_clipboard.dart';
 import 'system.dart';
 import 'tray_title.dart';
 import 'window.dart';
@@ -241,14 +242,18 @@ class Tray {
   }
 
   Future<void> _copyEnv(int port) async {
-    final url = 'http://127.0.0.1:$port';
+    final cmdline = buildProxyEnvironmentCommand(
+      isWindows: system.isWindows,
+      port: port,
+    );
 
-    final cmdline = system.isWindows
-        ? 'set \$env:all_proxy=$url'
-        : 'export all_proxy=$url';
+    if (system.isLinux && await (linuxClipboard?.copy(cmdline) ?? false)) {
+      return;
+    }
 
     await Clipboard.setData(ClipboardData(text: cmdline));
   }
 }
 
+final linuxClipboard = system.isLinux ? LinuxClipboard() : null;
 final tray = system.isDesktop ? Tray() : null;
