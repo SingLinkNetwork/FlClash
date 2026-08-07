@@ -43,10 +43,16 @@ else
   end
 
   steps = msix_job.fetch('steps', [])
-  unless steps.any? { |step| step['run'].to_s.include?('dart setup.dart windows --targets msix') }
+  unless steps.any? { |step| step['run'].to_s.strip == 'dart setup.dart windows --targets msix -v' }
     errors << 'windows-msix must invoke the repository MSIX setup target'
   end
-  unless steps.any? { |step| step['run'].to_s.include?('verify_msix.ps1') }
+  unless steps.any? do |step|
+    run = step['run'].to_s
+    step['shell'] == 'pwsh' &&
+      run.match?(/pwsh\s+-NoProfile\s+-File\s+tool\/verify_msix\.ps1/) &&
+      run.include?('-PackagePath $packages[0].FullName') &&
+      run.include?('-ExpectedArchitecture $env:EXPECTED_ARCHITECTURE')
+  end
     errors << 'windows-msix must verify each native MSIX package'
   end
   upload_names = steps.each_with_object([]) do |step, names|
@@ -56,6 +62,14 @@ else
   end
   unless upload_names.include?('windows-msix-${{ matrix.architecture }}')
     errors << 'windows-msix must upload one artifact per architecture'
+  end
+  upload_paths = steps.each_with_object([]) do |step, paths|
+    next unless step['uses'] == 'actions/upload-artifact@v4'
+
+    paths << step.dig('with', 'path').to_s
+  end
+  unless upload_paths.include?('dist/FlClash-${{ matrix.architecture }}.msix')
+    errors << 'windows-msix must upload the verified architecture-specific MSIX'
   end
 end
 
@@ -82,10 +96,22 @@ else
       errors << "windows-msixbundle must download #{name}"
     end
   end
-  unless steps.any? { |step| step['run'].to_s.include?('bundle_msix.ps1') }
+  unless steps.any? do |step|
+    run = step['run'].to_s
+    step['shell'] == 'pwsh' &&
+      run.match?(/pwsh\s+-NoProfile\s+-File\s+tool\/bundle_msix\.ps1/) &&
+      run.include?('-X64Package $x64') &&
+      run.include?('-Arm64Package $arm64') &&
+      run.include?('-OutputPath') &&
+      run.include?('dist\\FlClash.msixbundle')
+  end
     errors << 'windows-msixbundle must invoke bundle_msix.ps1'
   end
-  unless steps.any? { |step| step['run'].to_s.include?('verify_msixbundle.ps1') }
+  unless steps.any? do |step|
+    run = step['run'].to_s
+    step['shell'] == 'pwsh' &&
+      run.strip == 'pwsh -NoProfile -File tool/verify_msixbundle.ps1 -BundlePath dist/FlClash.msixbundle'
+  end
     errors << 'windows-msixbundle must invoke verify_msixbundle.ps1'
   end
   upload_names = steps.each_with_object([]) do |step, names|
@@ -96,12 +122,20 @@ else
   unless upload_names.include?('windows-msixbundle')
     errors << 'windows-msixbundle must upload the final bundle'
   end
+  upload_paths = steps.each_with_object([]) do |step, paths|
+    next unless step['uses'] == 'actions/upload-artifact@v4'
+
+    paths << step.dig('with', 'path').to_s
+  end
+  unless upload_paths.include?('dist/FlClash.msixbundle')
+    errors << 'windows-msixbundle must upload the verified final bundle'
+  end
 end
 
 bundler_path = File.join(root, 'tool', 'bundle_msix.ps1')
 if File.file?(bundler_path)
   bundler = File.read(bundler_path)
-  unless bundler.include?('makeappx.exe') && bundler.include?('bundle /v')
+  unless bundler.match?(/&\s*\$makeAppx\s+bundle\s+\/v\s+\/d\s+\$stageDirectory\s+\/p\s+\$resolvedOutput/)
     errors << 'bundle_msix.ps1 must invoke MakeAppx bundle'
   end
 end
@@ -114,6 +148,25 @@ end
 build_needs = Array(jobs.dig('build', 'needs'))
 unless build_needs.include?('windows-msixbundle')
   errors << 'build must wait for windows-msixbundle'
+end
+
+gate_job = jobs['ci-complete']
+if gate_job.nil?
+  errors << 'workflow is missing ci-complete required-check gate'
+else
+  unless gate_job['if'].to_s.strip == '${{ always() }}'
+    errors << 'ci-complete must run even when an upstream job fails'
+  end
+  unless Array(gate_job['needs']) == ['build']
+    errors << 'ci-complete must depend on the complete build matrix'
+  end
+  gate_steps = gate_job.fetch('steps', [])
+  unless gate_steps.any? do |step|
+    step['if'].to_s.include?('needs.build.result != \'success\'') &&
+      step['run'].to_s.strip == 'exit 1'
+  end
+    errors << 'ci-complete must fail when the build matrix is not successful'
+  end
 end
 
 if errors.empty?

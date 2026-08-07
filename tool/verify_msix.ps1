@@ -11,6 +11,9 @@ param(
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+$expectedIdentityName = 'com.singlinknetwork.flclash'
+$expectedPublisher = 'CN=SingLinkNetwork'
+
 $resolvedPackage = [IO.Path]::GetFullPath($PackagePath)
 if (-not (Test-Path -LiteralPath $resolvedPackage -PathType Leaf)) {
   throw "MSIX package not found: $resolvedPackage"
@@ -55,6 +58,12 @@ try {
     if ([string]::IsNullOrWhiteSpace($identity.GetAttribute($attribute))) {
       throw "MSIX Identity.$attribute is empty"
     }
+  }
+  if ($identity.GetAttribute('Name') -ne $expectedIdentityName) {
+    throw "MSIX identity mismatch: expected $expectedIdentityName, found $($identity.GetAttribute('Name'))"
+  }
+  if ($identity.GetAttribute('Publisher') -ne $expectedPublisher) {
+    throw "MSIX publisher mismatch: expected $expectedPublisher, found $($identity.GetAttribute('Publisher'))"
   }
 
   Write-Host "MSIX package verified: architecture=$actualArchitecture, identity=$($identity.GetAttribute('Name')), version=$($identity.GetAttribute('Version'))"

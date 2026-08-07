@@ -20,7 +20,8 @@ on a filename-only check.
 - Each architecture-specific `.msix` is independently inspected before
   bundling, including its manifest architecture and required package files.
 - A package verifier extracts the bundle and checks the nested package count,
-  processor architectures, and shared identity/version/publisher fields.
+  processor architectures, shared identity/version/publisher fields, and the
+  bundle manifest's `Architecture`, `FileName`, and version references.
 - The CI artifact is intentionally unsigned because a production certificate
   must not be stored in a public repository or exposed in Pull Request logs.
   The verifier must state this boundary; it must not claim that the CI artifact
@@ -86,7 +87,9 @@ Each job uploads exactly one architecture-specific `.msix`. A third
 `windows-msixbundle` job downloads both artifacts, places only those packages
 in a clean directory, calls `MakeAppx.exe bundle`, and runs the PowerShell
 bundle verifier. The final `.msixbundle` is uploaded as a short-retention PR
-artifact and is a prerequisite of the existing platform build rollup.
+artifact and is a prerequisite of the existing platform build rollup. A final
+`ci-complete` job runs even when an upstream job fails and becomes the single
+stable status check that can be required by branch protection.
 
 ### Verification layer
 
@@ -96,14 +99,16 @@ artifact and is a prerequisite of the existing platform build rollup.
   jobs, the bundle job, the expected artifact handoff, and the structural
   verifier command.
 - The Windows PowerShell verifier opens the generated bundle as a ZIP package,
-  reads the nested `AppxManifest.xml` files, and fails unless it finds exactly
-  one `x64` and one `arm64` package with matching identity, version, and
-  publisher values.
+  reads `AppxBundleManifest.xml` plus the nested `AppxManifest.xml` files, and
+  fails unless it finds exactly one `x64` and one `arm64` application package,
+  with matching identity, version, publisher, architecture, and file
+  references.
 - The same Windows job verifies each individual `.msix` before it is uploaded,
   including `AppxManifest.xml`, `AppxBlockMap.xml`, `resources.pri`, and an
   application executable.
 - The CI layout verifier requires the new job dependencies and static verifier
-  entry, preventing the checks from disappearing during later workflow edits.
+  entry plus the final `ci-complete` gate, preventing the checks from
+  disappearing during later workflow edits.
 
 ## Failure handling
 

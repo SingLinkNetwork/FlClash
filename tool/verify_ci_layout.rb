@@ -31,6 +31,7 @@ required_jobs = %w[
   static-source
   linux-packaging
   build
+  ci-complete
 ]
 missing_jobs = required_jobs.reject { |job| jobs.key?(job) }
 abort "CI workflow is missing jobs: #{missing_jobs.join(', ')}" unless missing_jobs.empty?
@@ -107,6 +108,16 @@ expected_build_needs = %w[
 build_needs = Array(jobs.fetch('build').fetch('needs'))
 missing_build_needs = expected_build_needs.reject { |job| build_needs.include?(job) }
 abort "CI build job is missing prerequisites: #{missing_build_needs.join(', ')}" unless missing_build_needs.empty?
+
+gate = jobs.fetch('ci-complete')
+abort 'CI complete gate must run with always()' unless gate['if'].to_s.strip == '${{ always() }}'
+abort 'CI complete gate must depend on the build matrix' unless Array(gate['needs']) == ['build']
+gate_steps = gate.fetch('steps')
+unless gate_steps.any? do |step|
+  step['if'].to_s.include?("needs.build.result != 'success'") && step['run'].to_s.strip == 'exit 1'
+end
+  abort 'CI complete gate must fail when the build matrix is not successful'
+end
 
 expected_scripts.each do |script|
   abort "CI verifier does not exist: #{script}" unless File.file?(File.join(root, script))

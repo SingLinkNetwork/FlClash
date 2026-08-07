@@ -154,7 +154,7 @@ git commit -m "feat: add Windows MSIX setup target"
 **Interfaces:**
 - `bundle_msix.ps1 -X64Package <path> -Arm64Package <path> -OutputPath <path>` creates a clean staging directory and invokes the newest Windows SDK `MakeAppx.exe bundle` command.
 - `verify_msix.ps1 -PackagePath <path> -ExpectedArchitecture <x64|arm64>` checks one native package before it enters the bundle.
-- `verify_msixbundle.ps1 -BundlePath <path>` fails unless the bundle contains exactly two MSIX files, one x64 and one arm64, with matching `Name`, `Version`, and `Publisher` values and an `AppxBundleManifest.xml`.
+- `verify_msixbundle.ps1 -BundlePath <path>` fails unless the bundle contains exactly two MSIX files, one x64 and one arm64, with matching FlClash identity metadata and matching `AppxBundleManifest.xml` architecture, version, and file references.
 - `verify_msixbundle_pipeline.rb` checks workflow wiring and the presence of both scripts.
 
 - [ ] **Step 1: Write the failing static pipeline test**
@@ -183,7 +183,7 @@ Open the `.msixbundle` as a ZIP, locate the bundle manifest and exactly two nest
 
 - [ ] **Step 5: Implement the Ruby workflow verifier and its regression test**
 
-Require the `windows-msix` architecture matrix, `windows-msixbundle` dependency, `MakeAppx` command, PowerShell verifier, artifact downloads/uploads, `msix` dependency, and static matrix entry. Add a test that uses fake workflow text to ensure a missing required element fails rather than passing silently.
+Require the `windows-msix` architecture matrix, `windows-msixbundle` dependency, `MakeAppx` command, PowerShell verifier, artifact downloads/uploads, `msix` dependency, static matrix entry, and the final `ci-complete` gate. Add tests that use fake workflow text to ensure missing or fake required elements fail rather than passing silently.
 
 - [ ] **Step 6: Run the Ruby regression test**
 
@@ -213,6 +213,7 @@ git commit -m "feat: add MSIXBundle bundler and verifier"
 - `windows-msix` has two visible matrix checks: x64 on `windows-2022`, ARM64 on `windows-11-arm`.
 - `windows-msixbundle` depends on both architecture artifacts, runs on `windows-2022`, bundles them, verifies the real output, and uploads `windows-msixbundle`.
 - The existing `build` job depends on `windows-msixbundle`.
+- `ci-complete` always runs after the build matrix and fails unless that complete rollup succeeds.
 
 - [ ] **Step 1: Add the architecture build matrix**
 
@@ -224,7 +225,7 @@ Download both artifacts into separate folders, call `tool/bundle_msix.ps1`, run 
 
 - [ ] **Step 3: Make CI layout verification enforce the new jobs**
 
-Require the new job names, static verifier script, and `windows-msixbundle` in the existing build prerequisites. Keep the minimum independent static check count at or above its current threshold.
+Require the new job names, static verifier script, `windows-msixbundle` in the existing build prerequisites, and `ci-complete` as the final required-check gate. Keep the minimum independent static check count at or above its current threshold.
 
 - [ ] **Step 4: Run the static verifier suite locally**
 

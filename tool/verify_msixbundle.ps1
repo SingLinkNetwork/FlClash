@@ -7,6 +7,9 @@ param(
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+$expectedIdentityName = 'com.singlinknetwork.flclash'
+$expectedPublisher = 'CN=SingLinkNetwork'
+
 function Read-ZipEntryText {
   param(
     [Parameter(Mandatory = $true)]
@@ -105,18 +108,36 @@ try {
   if ($null -eq $bundleManifest) {
     throw 'MSIXBundle has no AppxBundleManifest.xml'
   }
+  $bundleXml = New-Object System.Xml.XmlDocument
+  $bundleXml.LoadXml((Read-ZipEntryText $bundleManifest))
+  $bundleIdentity = $bundleXml.SelectSingleNode("/*[local-name()='Bundle']/*[local-name()='Identity']")
+  if ($null -eq $bundleIdentity) {
+    throw 'AppxBundleManifest.xml has no Identity element'
+  }
+  foreach ($attribute in @('Name', 'Version', 'Publisher')) {
+    if ([string]::IsNullOrWhiteSpace($bundleIdentity.GetAttribute($attribute))) {
+      throw "AppxBundle Identity.$attribute is empty"
+    }
+  }
+  if ($bundleIdentity.GetAttribute('Name') -ne $expectedIdentityName) {
+    throw "MSIXBundle identity mismatch: expected $expectedIdentityName, found $($bundleIdentity.GetAttribute('Name'))"
+  }
+  if ($bundleIdentity.GetAttribute('Publisher') -ne $expectedPublisher) {
+    throw "MSIXBundle publisher mismatch: expected $expectedPublisher, found $($bundleIdentity.GetAttribute('Publisher'))"
+  }
 
   $packages = @($archive.Entries | Where-Object { $_.FullName -match '\.msix$' })
   if ($packages.Count -ne 2) {
     throw "MSIXBundle must contain exactly two nested .msix packages; found $($packages.Count)"
   }
 
-  $identities = @()
+  $identityByEntry = @{}
   foreach ($packageEntry in $packages) {
     $nested = Open-NestedZip -Entry $packageEntry -Streams $memoryStreams
     $nestedArchives.Add($nested)
-    $identities += Read-PackageIdentity -Package $nested -PackageName $packageEntry.FullName
+    $identityByEntry[$packageEntry.FullName] = Read-PackageIdentity -Package $nested -PackageName $packageEntry.FullName
   }
+  $identities = @($identityByEntry.GetEnumerator() | ForEach-Object { $_.Value })
 
   $architectures = @($identities | ForEach-Object { $_.ProcessorArchitecture })
   if (@($architectures | Where-Object { $_ -eq 'x64' }).Count -ne 1) {
@@ -133,6 +154,52 @@ try {
         throw "MSIX package $field does not match across architectures"
       }
     }
+  }
+  foreach ($field in @('Name', 'Version', 'Publisher')) {
+    if ($reference.$field -ne $bundleIdentity.GetAttribute($field)) {
+      throw "MSIXBundle $field does not match its nested packages"
+    }
+  }
+
+  $bundlePackages = @(
+    $bundleXml.SelectNodes("/*[local-name()='Bundle']/*[local-name()='Packages']/*[local-name()='Package']")
+  )
+  if ($bundlePackages.Count -ne 2) {
+    throw "AppxBundleManifest.xml must describe exactly two packages; found $($bundlePackages.Count)"
+  }
+  $bundleArchitectures = @()
+  foreach ($bundlePackage in $bundlePackages) {
+    foreach ($attribute in @('Type', 'Version', 'Architecture', 'FileName', 'Offset', 'Size')) {
+      if ([string]::IsNullOrWhiteSpace($bundlePackage.GetAttribute($attribute))) {
+        throw "AppxBundle Package.$attribute is empty"
+      }
+    }
+    if ($bundlePackage.GetAttribute('Type') -ne 'application') {
+      throw "AppxBundle Package.Type must be application, found $($bundlePackage.GetAttribute('Type'))"
+    }
+
+    $bundleArchitecture = $bundlePackage.GetAttribute('Architecture')
+    $bundleFileName = $bundlePackage.GetAttribute('FileName')
+    $nestedEntry = $packages |
+      Where-Object { $_.FullName -eq $bundleFileName -or $_.Name -eq $bundleFileName } |
+      Select-Object -First 1
+    if ($null -eq $nestedEntry) {
+      throw "AppxBundle Package.FileName does not reference a nested MSIX: $bundleFileName"
+    }
+    $nestedIdentity = $identityByEntry[$nestedEntry.FullName]
+    if ($bundlePackage.GetAttribute('Version') -ne $nestedIdentity.Version) {
+      throw "AppxBundle package version does not match its nested package: $bundleFileName"
+    }
+    if ($bundleArchitecture -ne $nestedIdentity.ProcessorArchitecture) {
+      throw "AppxBundle package architecture does not match its nested package: $bundleFileName"
+    }
+    $bundleArchitectures += $bundleArchitecture
+  }
+  if (@($bundleArchitectures | Where-Object { $_ -eq 'x64' }).Count -ne 1) {
+    throw 'AppxBundleManifest.xml must describe exactly one x64 package'
+  }
+  if (@($bundleArchitectures | Where-Object { $_ -eq 'arm64' }).Count -ne 1) {
+    throw 'AppxBundleManifest.xml must describe exactly one arm64 package'
   }
 
   Write-Host "MSIXBundle structure verified: x64 + arm64, identity=$($reference.Name), version=$($reference.Version)"
