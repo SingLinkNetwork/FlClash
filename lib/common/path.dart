@@ -5,6 +5,17 @@ import 'package:fl_clash/common/common.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
+String? resolvePortableDataRoot({
+  required bool isWindows,
+  required String executableDirectory,
+  required bool appDirectoryWritable,
+}) {
+  if (!isWindows || !appDirectoryWritable) {
+    return null;
+  }
+  return join(executableDirectory, 'data');
+}
+
 class AppPath {
   static AppPath? _instance;
   Completer<Directory> dataDir = Completer();
@@ -15,16 +26,48 @@ class AppPath {
 
   AppPath._internal() {
     appDirPath = join(dirname(Platform.resolvedExecutable));
-    getApplicationSupportDirectory().then((value) {
-      dataDir.complete(value);
-    });
+    _loadDataDirectories();
     getTemporaryDirectory().then((value) {
       tempDir.complete(value);
     });
     _loadDownloadDir();
-    getApplicationCacheDirectory().then((value) {
-      cacheDir.complete(value);
-    });
+  }
+
+  Future<void> _loadDataDirectories() async {
+    final portableDataRoot = resolvePortableDataRoot(
+      isWindows: Platform.isWindows,
+      executableDirectory: appDirPath,
+      appDirectoryWritable:
+          Platform.isWindows && await _isDirectoryWritable(appDirPath),
+    );
+    if (portableDataRoot != null) {
+      dataDir.complete(Directory(portableDataRoot));
+      cacheDir.complete(Directory(join(appDirPath, 'cache')));
+      return;
+    }
+
+    dataDir.complete(await getApplicationSupportDirectory());
+    cacheDir.complete(await getApplicationCacheDirectory());
+  }
+
+  Future<bool> _isDirectoryWritable(String directoryPath) async {
+    final probePath = join(
+      directoryPath,
+      '.flclash-write-test-$pid-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    final probe = File(probePath);
+    try {
+      await probe.writeAsString('', flush: true);
+      await probe.delete();
+      return true;
+    } catch (_) {
+      try {
+        if (await probe.exists()) {
+          await probe.delete();
+        }
+      } catch (_) {}
+      return false;
+    }
   }
 
   Future<void> _loadDownloadDir() async {

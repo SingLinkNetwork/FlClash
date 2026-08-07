@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fl_clash/common/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -51,6 +52,41 @@ void main() {
         await resolveExistingDirectoryPath(
           directory.future,
           timeout: const Duration(milliseconds: 1),
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('portable Windows data path', () {
+    test('uses executable directory when Windows directory is writable', () {
+      expect(
+        resolvePortableDataRoot(
+          isWindows: true,
+          executableDirectory: p.join('USB', 'FlClash'),
+          appDirectoryWritable: true,
+        ),
+        p.join('USB', 'FlClash', 'data'),
+      );
+    });
+
+    test('falls back when the executable directory is not writable', () {
+      expect(
+        resolvePortableDataRoot(
+          isWindows: true,
+          executableDirectory: p.join('Program Files', 'FlClash'),
+          appDirectoryWritable: false,
+        ),
+        isNull,
+      );
+    });
+
+    test('does not change non-Windows data locations', () {
+      expect(
+        resolvePortableDataRoot(
+          isWindows: false,
+          executableDirectory: p.join('Applications', 'FlClash.app'),
+          appDirectoryWritable: true,
         ),
         isNull,
       );

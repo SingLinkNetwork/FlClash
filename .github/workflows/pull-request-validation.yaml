@@ -294,6 +294,26 @@ jobs:
       - name: Test core callback cleanup
         run: flutter test test/core/service_test.dart --reporter expanded
 
+  windows-portable-data:
+    name: Windows portable data paths
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test portable data path policy
+        run: flutter test test/common/path_test.dart --reporter expanded
+
   static-source:
     name: Static ${{ matrix.id }}
     runs-on: ubuntu-latest
@@ -313,6 +333,8 @@ jobs:
             script: tool/verify_linux_tray_clipboard.rb
           - id: windows-paste-workaround
             script: tool/verify_windows_paste_fix.rb
+          - id: windows-portable-data
+            script: tool/verify_windows_portable_data.rb
           - id: windows-search-close
             script: tool/verify_windows_search_close.rb
           - id: linux-renderer-fallback
