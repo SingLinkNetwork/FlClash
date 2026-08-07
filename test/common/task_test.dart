@@ -3,6 +3,21 @@ import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('legacy backup identifiers', () {
+    test('normalizes string and numeric identifiers', () {
+      expect(normalizeLegacyId('123'), '123');
+      expect(normalizeLegacyId(123), '123');
+      expect(normalizeLegacyId(123.0), '123');
+    });
+
+    test('rejects identifiers that cannot be used as file names', () {
+      expect(normalizeLegacyId(null), isNull);
+      expect(normalizeLegacyId(''), isNull);
+      expect(normalizeLegacyId(1.5), isNull);
+      expect(normalizeLegacyId(true), isNull);
+    });
+  });
+
   test('profile ipv6 value wins over the client fallback', () {
     final result = applyCorePatchConfig(
       rawConfig: {'ipv6': true, 'ip-version': 'ipv6-prefer'},
