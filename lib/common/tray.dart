@@ -147,13 +147,14 @@ class Tray {
               label: proxy.name,
               checked:
                   ref.read(selectedProxyNameProvider(group.name)) == proxy.name,
-              onClick: (_) {
+              onClick: (_) async {
+                final changed = await ref
+                    .read(proxiesActionProvider.notifier)
+                    .changeProxy(groupName: group.name, proxyName: proxy.name);
+                if (!changed) return;
                 ref
                     .read(profilesActionProvider.notifier)
                     .updateCurrentSelectedMap(group.name, proxy.name);
-                ref
-                    .read(proxiesActionProvider.notifier)
-                    .changeProxy(groupName: group.name, proxyName: proxy.name);
               },
             ),
           );

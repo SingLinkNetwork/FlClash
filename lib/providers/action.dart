@@ -269,13 +269,45 @@ class SetupAction extends _$SetupAction {
   }
 
   void changeMode(Mode mode) {
+    final currentGroupName = ref.read(
+      currentProfileProvider.select((state) => state?.currentGroupName),
+    );
     ref
         .read(patchClashConfigProvider.notifier)
         .update((state) => state.copyWith(mode: mode));
-    if (mode == Mode.global) {
+
+    final groups = ref.read(currentGroupsStateProvider).value;
+    if (mode == Mode.direct) return;
+    if (groups.isEmpty) {
+      if (mode == Mode.global) {
+        ref
+            .read(proxiesActionProvider.notifier)
+            .updateCurrentGroupName(GroupName.GLOBAL.name);
+      }
+      return;
+    }
+
+    final nextGroupName = switch (mode) {
+      Mode.global =>
+        groups
+            .firstWhere(
+              (group) => group.name == GroupName.GLOBAL.name,
+              orElse: () => groups.first,
+            )
+            .name,
+      Mode.rule =>
+        groups
+            .firstWhere(
+              (group) => group.name == currentGroupName,
+              orElse: () => groups.first,
+            )
+            .name,
+      Mode.direct => null,
+    };
+    if (nextGroupName != null) {
       ref
           .read(proxiesActionProvider.notifier)
-          .updateCurrentGroupName(GroupName.GLOBAL.name);
+          .updateCurrentGroupName(nextGroupName);
     }
   }
 
@@ -743,6 +775,8 @@ class ThemeAction extends _$ThemeAction {
 
 @Riverpod(keepAlive: true)
 class ProxiesAction extends _$ProxiesAction {
+  int _changeProxyRequestId = 0;
+
   @override
   void build() {}
 
@@ -750,12 +784,33 @@ class ProxiesAction extends _$ProxiesAction {
     debouncer.call(FunctionTag.updateGroups, updateGroups, duration: duration);
   }
 
-  void changeProxyDebounce(String groupName, String proxyName) {
+  void changeProxyDebounce(
+    String groupName,
+    String proxyName, {
+    required String previousProxyName,
+  }) {
+    final requestId = ++_changeProxyRequestId;
+    final profileId = ref.read(currentProfileIdProvider);
     debouncer.call(FunctionTag.changeProxy, (
       String groupName,
       String proxyName,
     ) async {
-      await changeProxy(groupName: groupName, proxyName: proxyName);
+      final changed = await changeProxy(
+        groupName: groupName,
+        proxyName: proxyName,
+      );
+      if (requestId != _changeProxyRequestId) return;
+      if (!changed) {
+        ref
+            .read(profilesActionProvider.notifier)
+            .restoreCurrentSelectedMap(
+              groupName: groupName,
+              expectedProxyName: proxyName,
+              previousProxyName: previousProxyName,
+              profileId: profileId,
+            );
+        return;
+      }
       updateGroupsDebounce();
     }, args: [groupName, proxyName]);
   }
@@ -820,19 +875,24 @@ class ProxiesAction extends _$ProxiesAction {
     ref.read(delayDataSourceProvider.notifier).setDelay(delay);
   }
 
-  Future<void> changeProxy({
+  Future<bool> changeProxy({
     required String groupName,
     required String proxyName,
   }) async {
-    await coreController.changeProxy(
+    final message = await coreController.changeProxy(
       ChangeProxyParams(groupName: groupName, proxyName: proxyName),
     );
+    if (message.isNotEmpty) {
+      commonPrint.log('changeProxy error: $message');
+      return false;
+    }
     if (ref.read(appSettingProvider).closeConnections) {
       await coreController.closeConnections();
     } else {
       await coreController.resetConnections();
     }
     ref.read(checkIpNumProvider.notifier).add();
+    return true;
   }
 
   Future<String> updateProvider(
@@ -873,6 +933,21 @@ class ProfilesAction extends _$ProfilesAction {
           .read(profilesProvider.notifier)
           .put(currentProfile.copyWith(selectedMap: selectedMap));
     }
+  }
+
+  void restoreCurrentSelectedMap({
+    required String groupName,
+    required String expectedProxyName,
+    required String previousProxyName,
+    int? profileId,
+  }) {
+    final currentProfile = ref.read(currentProfileProvider);
+    if (currentProfile == null ||
+        (profileId != null && currentProfile.id != profileId) ||
+        currentProfile.selectedMap[groupName] != expectedProxyName) {
+      return;
+    }
+    updateCurrentSelectedMap(groupName, previousProxyName);
   }
 
   Future<void> deleteProfile(int id) async {

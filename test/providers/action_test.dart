@@ -7,6 +7,7 @@ import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/database.dart';
+import 'package:fl_clash/providers/state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -80,6 +81,97 @@ void main() {
       final profile = container.read(profilesProvider).getProfile(original.id);
       expect(profile?.label, edited.label);
       expect(profile?.url, edited.url);
+    });
+
+    test(
+      'restores a failed proxy selection without clobbering a newer choice',
+      () {
+        final profile = Profile.normal(
+          label: 'test',
+        ).copyWith(selectedMap: {'Proxy': 'node-a'});
+        final container = ProviderContainer(
+          overrides: [
+            currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
+            profilesProvider.overrideWith(() => _TestProfiles([profile])),
+          ],
+        );
+        addTearDown(container.dispose);
+        final action = container.read(profilesActionProvider.notifier);
+
+        action.updateCurrentSelectedMap('Proxy', 'node-b');
+        action.restoreCurrentSelectedMap(
+          groupName: 'Proxy',
+          expectedProxyName: 'node-b',
+          previousProxyName: 'node-a',
+          profileId: profile.id,
+        );
+        expect(
+          container.read(currentProfileProvider)?.selectedMap['Proxy'],
+          'node-a',
+        );
+
+        action.updateCurrentSelectedMap('Proxy', 'node-c');
+        action.restoreCurrentSelectedMap(
+          groupName: 'Proxy',
+          expectedProxyName: 'node-b',
+          previousProxyName: 'node-a',
+          profileId: profile.id,
+        );
+        expect(
+          container.read(currentProfileProvider)?.selectedMap['Proxy'],
+          'node-c',
+        );
+      },
+    );
+  });
+
+  group('SetupAction mode switching', () {
+    test('restores the selected proxy group after leaving global mode', () {
+      final profile = Profile.normal(
+        label: 'test',
+      ).copyWith(currentGroupName: 'Proxy', selectedMap: {'Proxy': 'node-b'});
+      final groups = [
+        const Group(
+          name: 'GLOBAL',
+          type: GroupType.Selector,
+          hidden: false,
+          all: [Proxy(name: 'node-a', type: 'ss')],
+        ),
+        const Group(
+          name: 'Proxy',
+          type: GroupType.Selector,
+          hidden: false,
+          all: [
+            Proxy(name: 'node-a', type: 'ss'),
+            Proxy(name: 'node-b', type: 'ss'),
+          ],
+        ),
+      ];
+      final container = ProviderContainer(
+        overrides: [
+          currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
+          profilesProvider.overrideWith(() => _TestProfiles([profile])),
+          groupsProvider.overrideWithBuild((_, _) => groups),
+          patchClashConfigProvider.overrideWithBuild(
+            (_, _) => const PatchClashConfig(mode: Mode.rule),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final action = container.read(setupActionProvider.notifier);
+      action.changeMode(Mode.global);
+      expect(
+        container.read(currentProfileProvider)?.currentGroupName,
+        'GLOBAL',
+      );
+
+      action.changeMode(Mode.rule);
+
+      expect(container.read(currentProfileProvider)?.currentGroupName, 'Proxy');
+      expect(container.read(currentProfileProvider)?.selectedMap, {
+        'Proxy': 'node-b',
+      });
     });
   });
 

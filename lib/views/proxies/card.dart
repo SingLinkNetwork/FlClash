@@ -110,7 +110,11 @@ class ProxyCard extends StatelessWidget {
           .updateCurrentSelectedMap(groupName, nextProxyName);
       ref
           .read(proxiesActionProvider.notifier)
-          .changeProxyDebounce(groupName, nextProxyName);
+          .changeProxyDebounce(
+            groupName,
+            nextProxyName,
+            previousProxyName: currentProxyName ?? '',
+          );
       return;
     }
     globalState.showNotifier(currentAppLocalizations.notSelectedTip);
