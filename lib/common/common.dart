@@ -50,5 +50,6 @@ export 'tray.dart';
 export 'utils.dart';
 export 'window.dart';
 export 'wifi_ssid.dart';
+export 'windows_paste.dart';
 export 'yaml.dart';
 export 'window_visibility.dart';

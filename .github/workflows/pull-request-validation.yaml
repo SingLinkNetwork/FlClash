@@ -63,6 +63,9 @@ jobs:
       - name: Verify Linux tray clipboard fallback
         run: ruby tool/verify_linux_tray_clipboard.rb
 
+      - name: Verify Windows Win+V paste workaround
+        run: ruby tool/verify_windows_paste_fix.rb
+
   build:
     name: Build ${{ matrix.platform }} on ${{ matrix.os }}
     needs: test
@@ -162,6 +165,10 @@ jobs:
       - name: Build Windows
         if: matrix.platform == 'windows'
         run: flutter build windows --debug
+
+      - name: Verify Windows Win+V paste workaround
+        if: matrix.platform == 'windows'
+        run: ruby tool/verify_windows_paste_fix.rb
 
       - name: Verify Windows maximize work area
         if: matrix.platform == 'windows'

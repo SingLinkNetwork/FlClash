@@ -12,6 +12,9 @@ import 'common/common.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows) {
+    WindowsPasteFix.instance.install();
+  }
   try {
     configureMacOSSqlite();
     if (system.isDesktop) {
