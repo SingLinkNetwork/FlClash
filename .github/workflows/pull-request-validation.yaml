@@ -69,6 +69,9 @@ jobs:
       - name: Verify Windows search close handling
         run: ruby tool/verify_windows_search_close.rb
 
+      - name: Verify Linux renderer fallback
+        run: ruby tool/verify_linux_renderer_fallback.rb
+
   build:
     name: Build ${{ matrix.platform }} on ${{ matrix.os }}
     needs: test
@@ -160,6 +163,10 @@ jobs:
       - name: Verify Linux X11 thread initialization
         if: matrix.platform == 'linux'
         run: ruby tool/verify_linux_x11_thread_init.rb
+
+      - name: Verify Linux renderer fallback
+        if: matrix.platform == 'linux'
+        run: ruby tool/verify_linux_renderer_fallback.rb
 
       - name: Verify Linux QuickJS bundle
         if: matrix.platform == 'linux'

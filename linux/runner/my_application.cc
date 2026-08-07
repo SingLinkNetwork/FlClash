@@ -14,6 +14,55 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
+// Flutter's Linux OpenGL embedder cannot create a usable view when the
+// machine has no working GL implementation (for example, a missing or broken
+// GPU driver). Probe the same GTK context path used by FlView before creating
+// the Flutter engine so that we can choose the software renderer in time.
+static gboolean linux_opengl_context_available() {
+  if (gdk_display_get_default() == nullptr) {
+    return TRUE;
+  }
+
+  GtkWidget* probe_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  GtkWidget* probe_area = gtk_drawing_area_new();
+  gtk_widget_show(probe_area);
+  gtk_container_add(GTK_CONTAINER(probe_window), probe_area);
+  gtk_widget_realize(probe_window);
+
+  g_autoptr(GError) error = nullptr;
+  GdkWindow* window = gtk_widget_get_window(probe_area);
+  GdkGLContext* context = window != nullptr
+                              ? gdk_window_create_gl_context(window, &error)
+                              : nullptr;
+  gboolean available = context != nullptr;
+  if (available && !gdk_gl_context_realize(context, &error)) {
+    available = FALSE;
+  }
+
+  if (!available) {
+    g_warning(
+        "Linux OpenGL context is unavailable%s%s; using the software "
+        "renderer",
+        error != nullptr ? ": " : "", error != nullptr ? error->message : "");
+  }
+
+  g_clear_object(&context);
+  gtk_widget_destroy(probe_window);
+  g_object_unref(probe_window);
+  return available;
+}
+
+static void configure_linux_renderer() {
+  const gchar* renderer = g_getenv("FLUTTER_LINUX_RENDERER");
+  if (renderer != nullptr && renderer[0] != '\0') {
+    return;
+  }
+
+  if (!linux_opengl_context_available()) {
+    g_setenv("FLUTTER_LINUX_RENDERER", "software", TRUE);
+  }
+}
+
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
@@ -52,6 +101,7 @@ static void my_application_activate(GApplication* application) {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);
 
+  configure_linux_renderer();
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;
   // Background defaults to black, override it here if necessary, e.g. #00000000 for transparent.
