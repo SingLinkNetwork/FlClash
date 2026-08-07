@@ -73,7 +73,7 @@ func (th *TunHandler) handleProtect(fd int) {
 	_ = th.limit.Acquire(context.Background(), 1)
 	defer th.limit.Release(1)
 
-	if th.listener == nil {
+	if !tunCallbackAvailable(th.listener != nil, th.callback) {
 		return
 	}
 
@@ -84,7 +84,7 @@ func (th *TunHandler) handleResolveProcess(source, target net.Addr) string {
 	_ = th.limit.Acquire(context.Background(), 1)
 	defer th.limit.Release(1)
 
-	if th.listener == nil {
+	if !tunCallbackAvailable(th.listener != nil, th.callback) {
 		return ""
 	}
 	var protocol int

@@ -37,6 +37,9 @@ jobs:
       - name: Verify delay test concurrency alignment
         run: ruby tool/verify_delay_test_concurrency.rb
 
+      - name: Verify Android resolve_process JNI guard
+        run: ruby tool/verify_android_jni_resolve_guard.rb
+
   build:
     needs: [ test ]
     runs-on: ${{ matrix.os }}

@@ -2,6 +2,8 @@
 
 #ifdef LIBCLASH
 
+#include <cstring>
+
 #include "jni_helper.h"
 #include "libclash.h"
 #include "bride.h"
@@ -105,13 +107,18 @@ call_tun_interface_resolve_process_impl(void *tun_interface, const int protocol,
                                         const char *source,
                                         const char *target,
                                         const int uid) {
+    if (tun_interface == nullptr) {
+        return strdup("");
+    }
     ATTACH_JNI();
+    const auto source_string = new_string(source);
+    const auto target_string = new_string(target);
     const auto packageName = reinterpret_cast<jstring>(env->CallObjectMethod(
             static_cast<jobject>(tun_interface),
             m_tun_interface_resolve_process,
             protocol,
-            new_string(source),
-            new_string(target),
+            source_string,
+            target_string,
             uid));
     return get_string(packageName);
 }
