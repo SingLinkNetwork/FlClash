@@ -15,6 +15,19 @@ import 'database.dart';
 
 part 'generated/state.g.dart';
 
+final selectedTestUrlProvider = NotifierProvider<SelectedTestUrl, String?>(
+  SelectedTestUrl.new,
+);
+
+class SelectedTestUrl extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void set(String? value) {
+    state = value;
+  }
+}
+
 @riverpod
 GroupsState currentGroupsState(Ref ref) {
   final mode = ref.watch(
@@ -417,7 +430,9 @@ String realTestUrl(Ref ref, [String? testUrl]) {
 int? delay(Ref ref, {required String proxyName, String? testUrl}) {
   final currentTestUrl = ref.watch(realTestUrlProvider(testUrl));
   final proxyState = ref.watch(realSelectedProxyStateProvider(proxyName));
-  final effectiveTestUrl = proxyState.testUrl.takeFirstValid([currentTestUrl]);
+  final effectiveTestUrl = testUrl?.trim().isNotEmpty == true
+      ? testUrl!.trim()
+      : proxyState.testUrl.takeFirstValid([currentTestUrl]);
   final effectiveProxyName = proxyState.proxyName;
   return ref.watch(
     delayDataSourceProvider.select(

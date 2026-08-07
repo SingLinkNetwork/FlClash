@@ -155,6 +155,7 @@
   "copy": "复制",
   "paste": "粘贴",
   "testUrl": "测速链接",
+  "customTestUrls": "自定义检测网站",
   "sync": "同步",
   "exclude": "从最近任务中隐藏",
   "excludeDesc": "应用在后台时,从最近任务中隐藏应用",

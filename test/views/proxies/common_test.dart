@@ -7,4 +7,23 @@ void main() {
 
     expect(batches.map((batch) => batch.length).toList(), [50, 50, 1]);
   });
+
+  test('runs website delay tests one URL at a time', () async {
+    final events = <String>[];
+
+    await runTestUrlsSequentially(['https://one.test', 'https://two.test'], (
+      url,
+    ) async {
+      events.add('start:$url');
+      await Future<void>.delayed(Duration.zero);
+      events.add('end:$url');
+    });
+
+    expect(events, [
+      'start:https://one.test',
+      'end:https://one.test',
+      'start:https://two.test',
+      'end:https://two.test',
+    ]);
+  });
 }

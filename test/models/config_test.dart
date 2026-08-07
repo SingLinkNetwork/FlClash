@@ -112,6 +112,8 @@ void main() {
       expect(restored.restoreStrategy, RestoreStrategy.compatible);
       expect(restored.customUserAgent, '');
       expect(restored.testUrl, defaultTestUrl);
+      expect(restored.customTestUrls, isEmpty);
+      expect(restored.allTestUrls, [defaultTestUrl]);
     });
 
     test('custom values survive round-trip', () {
@@ -121,6 +123,11 @@ void main() {
         autoLaunch: true,
         closeConnections: false,
         testUrl: 'https://custom.test',
+        customTestUrls: [
+          'https://github.com',
+          ' https://custom.test ',
+          'not-a-url',
+        ],
         customUserAgent: 'CustomUA/1.0',
       );
       final restored = roundTrip(
@@ -132,7 +139,25 @@ void main() {
       expect(restored.autoLaunch, true);
       expect(restored.closeConnections, false);
       expect(restored.testUrl, 'https://custom.test');
+      expect(restored.customTestUrls, [
+        'https://github.com',
+        ' https://custom.test ',
+        'not-a-url',
+      ]);
+      expect(restored.allTestUrls, [
+        'https://custom.test',
+        'https://github.com',
+      ]);
       expect(restored.customUserAgent, 'CustomUA/1.0');
+    });
+
+    test('legacy JSON without custom URLs keeps the configured default', () {
+      final props = AppSettingProps.fromJson({
+        'testUrl': 'https://legacy.example',
+      });
+
+      expect(props.customTestUrls, isEmpty);
+      expect(props.allTestUrls, ['https://legacy.example']);
     });
 
     test('safeFromJson returns default on null', () {

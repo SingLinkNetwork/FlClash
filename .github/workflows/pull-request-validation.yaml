@@ -206,6 +206,32 @@ jobs:
       - name: Test hotkey scope mapping
         run: flutter test test/enum/enum_test.dart --name 'HotKeyTriggerScopeExt' --reporter expanded
 
+  custom-test-urls:
+    name: Custom test URL tests
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test custom website configuration and proxy selection
+        run: >-
+          flutter test
+          test/common/test_url_test.dart
+          test/models/config_test.dart
+          test/views/proxies/common_test.dart
+          test/views/proxies/test_url_selector_test.dart
+          --reporter expanded
+
   static-source:
     name: Static ${{ matrix.id }}
     runs-on: ubuntu-latest
@@ -263,6 +289,8 @@ jobs:
             script: tool/verify_macos_tun_recvmsgx.rb
           - id: hotkey-trigger-scope
             script: tool/verify_hotkey_scope.rb
+          - id: custom-test-urls
+            script: tool/verify_custom_test_urls.rb
           - id: ci-layout
             script: tool/verify_ci_layout.rb
 
@@ -285,6 +313,7 @@ jobs:
       - linux-cli-start
       - macos-tun-recvmsgx
       - macos-hotkey-scope
+      - custom-test-urls
       - static-source
     runs-on: ${{ matrix.os }}
     strategy:

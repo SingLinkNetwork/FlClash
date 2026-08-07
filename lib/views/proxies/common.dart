@@ -13,6 +13,15 @@ List<List<T>> splitDelayTestBatches<T>(List<T> items) {
   return items.batch(delayTestBatchSize);
 }
 
+Future<void> runTestUrlsSequentially(
+  Iterable<String> testUrls,
+  Future<void> Function(String testUrl) test,
+) async {
+  for (final testUrl in testUrls) {
+    await test(testUrl);
+  }
+}
+
 double get listHeaderHeight {
   final measure = globalState.measure;
   return 20 + measure.titleMediumHeight + 4 + measure.bodyMediumHeight + 2;
@@ -66,9 +75,9 @@ Future<void> proxyDelayTest(Proxy proxy, [String? testUrl]) async {
     groups: groups,
     selectedMap: selectedMap,
   );
-  final currentTestUrl = state.testUrl.takeFirstValid([
-    ref.read(realTestUrlProvider(testUrl)),
-  ]);
+  final currentTestUrl = testUrl?.trim().isNotEmpty == true
+      ? testUrl!.trim()
+      : state.testUrl.takeFirstValid([ref.read(realTestUrlProvider())]);
   if (state.proxyName.isEmpty) {
     return;
   }
@@ -90,6 +99,12 @@ Future<void> delayTest(List<Proxy> proxies, [String? testUrl]) async {
     await Future.wait(batchDelayProxies);
   }
   globalState.container.read(sortNumProvider.notifier).add();
+}
+
+Future<void> delayTestUrls(List<Proxy> proxies, Iterable<String> testUrls) {
+  return runTestUrlsSequentially(testUrls, (testUrl) {
+    return delayTest(proxies, testUrl);
+  });
 }
 
 double getScrollToSelectedOffset({
