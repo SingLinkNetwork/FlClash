@@ -8,10 +8,10 @@ import (
 )
 
 func main() {
-	args := os.Args
-	if len(args) <= 1 {
-		fmt.Println("Arguments error")
-		os.Exit(1)
+	socketPath, err := socketPathFromArgs(os.Args)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
 	}
-	startServer(args[1])
+	startServer(socketPath)
 }

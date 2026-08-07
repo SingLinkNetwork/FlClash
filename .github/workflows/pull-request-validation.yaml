@@ -119,6 +119,27 @@ jobs:
           CGO_ENABLED: '0'
         run: go vet .
 
+  core-cli-arguments:
+    name: Core CLI arguments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Verify invalid CLI arguments do not panic
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go test . -run '^TestSocketPathFromArgs$' -count=1
+
   static-source:
     name: Static ${{ matrix.id }}
     runs-on: ubuntu-latest
@@ -188,6 +209,7 @@ jobs:
       - flutter-tests
       - go-tests
       - go-vet
+      - core-cli-arguments
       - static-source
     runs-on: ${{ matrix.os }}
     strategy:

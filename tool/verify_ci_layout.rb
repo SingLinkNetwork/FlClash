@@ -13,6 +13,7 @@ required_jobs = %w[
   flutter-tests
   go-tests
   go-vet
+  core-cli-arguments
   static-source
   build
 ]
@@ -51,7 +52,15 @@ actual_scripts = static_entries.map { |entry| entry.fetch('script') }
 missing_scripts = expected_scripts.reject { |script| actual_scripts.include?(script) }
 abort "CI static-source matrix is missing verifiers: #{missing_scripts.join(', ')}" unless missing_scripts.empty?
 
-expected_build_needs = %w[dart-format dart-analyze flutter-tests go-tests go-vet static-source]
+expected_build_needs = %w[
+  dart-format
+  dart-analyze
+  flutter-tests
+  go-tests
+  go-vet
+  core-cli-arguments
+  static-source
+]
 build_needs = Array(jobs.fetch('build').fetch('needs'))
 missing_build_needs = expected_build_needs.reject { |job| build_needs.include?(job) }
 abort "CI build job is missing prerequisites: #{missing_build_needs.join(', ')}" unless missing_build_needs.empty?
