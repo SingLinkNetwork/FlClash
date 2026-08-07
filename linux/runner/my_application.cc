@@ -14,6 +14,32 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
+// Nouveau can create an OpenGL context successfully and still crash later
+// while Flutter is submitting GPU commands. Prefer Flutter's software
+// renderer for this driver unless the user explicitly selected a renderer.
+static gboolean linux_nouveau_driver_present() {
+  GDir* drm_directory = g_dir_open("/sys/class/drm", 0, nullptr);
+  if (drm_directory == nullptr) {
+    return FALSE;
+  }
+
+  gboolean present = FALSE;
+  const gchar* entry = nullptr;
+  while (!present && (entry = g_dir_read_name(drm_directory)) != nullptr) {
+    if (!g_str_has_prefix(entry, "card") || g_strrstr(entry, "-") != nullptr) {
+      continue;
+    }
+
+    g_autofree gchar* driver_link =
+        g_build_filename("/sys/class/drm", entry, "device", "driver", nullptr);
+    g_autofree gchar* driver_path = g_file_read_link(driver_link, nullptr);
+    present = driver_path != nullptr && g_strrstr(driver_path, "nouveau") != nullptr;
+  }
+
+  g_dir_close(drm_directory);
+  return present;
+}
+
 // Flutter's Linux OpenGL embedder cannot create a usable view when the
 // machine has no working GL implementation (for example, a missing or broken
 // GPU driver). Probe the same GTK context path used by FlView before creating
@@ -55,6 +81,14 @@ static gboolean linux_opengl_context_available() {
 static void configure_linux_renderer() {
   const gchar* renderer = g_getenv("FLUTTER_LINUX_RENDERER");
   if (renderer != nullptr && renderer[0] != '\0') {
+    return;
+  }
+
+  if (linux_nouveau_driver_present()) {
+    g_warning(
+        "Nouveau GPU driver detected; using the software renderer to avoid "
+        "known Flutter GPU stability issues");
+    g_setenv("FLUTTER_LINUX_RENDERER", "software", TRUE);
     return;
   }
 
