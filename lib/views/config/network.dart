@@ -272,6 +272,7 @@ class BypassDomainItem extends ConsumerWidget {
           items: bypassDomain,
           itemMaxLength: TextInputLimits.domain,
           titleBuilder: (item) => Text(item),
+          allowBatchAdd: true,
         ),
         onChanged: (items) {
           ref

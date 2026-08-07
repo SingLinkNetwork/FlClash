@@ -198,6 +198,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "basicInfo": MessageLookupByLibrary.simpleMessage("Basic info"),
     "basicStrategy": MessageLookupByLibrary.simpleMessage("Basic strategy"),
+    "batchAdd": MessageLookupByLibrary.simpleMessage("Batch add"),
+    "batchAddHint": MessageLookupByLibrary.simpleMessage(
+      "Paste one domain per line, or separate domains with commas or semicolons.",
+    ),
     "batteryOptimizationDesc": MessageLookupByLibrary.simpleMessage(
       "To ensure background operation, please disable battery optimization for this app. Tap to go to settings.",
     ),

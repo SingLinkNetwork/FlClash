@@ -244,6 +244,7 @@ class ListInputPage extends ConsumerStatefulWidget {
   final Widget Function(String item)? leadingBuilder;
   final String? valueLabel;
   final int? itemMaxLength;
+  final bool allowBatchAdd;
 
   const ListInputPage({
     super.key,
@@ -254,6 +255,7 @@ class ListInputPage extends ConsumerStatefulWidget {
     this.valueLabel,
     this.subtitleBuilder,
     this.itemMaxLength,
+    this.allowBatchAdd = false,
   });
 
   @override
@@ -328,6 +330,29 @@ class _ListInputPageState extends ConsumerState<ListInputPage> {
     }
     _items = nextItems;
     setState(() {});
+  }
+
+  Future<void> _handleBatchAdd() async {
+    final appLocalizations = context.appLocalizations;
+    final value = await globalState.showCommonDialog<String>(
+      child: InputDialog(
+        title: appLocalizations.batchAdd,
+        value: '',
+        hintText: appLocalizations.batchAddHint,
+        keyboardType: TextInputType.multiline,
+      ),
+    );
+
+    if (value == null) return;
+    final existing = _items.map((item) => item.toLowerCase()).toSet();
+    final newItems = value.splitByBatchSeparators
+        .where((item) => existing.add(item.toLowerCase()))
+        .toList();
+    if (newItems.isEmpty) return;
+
+    setState(() {
+      _items = [..._items, ...newItems];
+    });
   }
 
   void _handleDelete() {
@@ -414,6 +439,16 @@ class _ListInputPageState extends ConsumerState<ListInputPage> {
               child: IconButton.filledTonal(
                 onPressed: _handleReset,
                 icon: const Icon(Icons.replay),
+              ),
+            ),
+            const SizedBox(width: 2),
+          ],
+          if (widget.allowBatchAdd && selectedItems.isEmpty) ...[
+            CommonMinIconButtonTheme(
+              child: IconButton.filledTonal(
+                tooltip: appLocalizations.batchAdd,
+                onPressed: _handleBatchAdd,
+                icon: const Icon(Icons.playlist_add),
               ),
             ),
             const SizedBox(width: 2),

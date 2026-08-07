@@ -142,6 +142,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage("全局修改基本配置"),
     "basicInfo": MessageLookupByLibrary.simpleMessage("基础信息"),
     "basicStrategy": MessageLookupByLibrary.simpleMessage("基础策略"),
+    "batchAdd": MessageLookupByLibrary.simpleMessage("批量添加"),
+    "batchAddHint": MessageLookupByLibrary.simpleMessage(
+      "每行输入一个域名，也可以用逗号或分号分隔。",
+    ),
     "batteryOptimizationDesc": MessageLookupByLibrary.simpleMessage(
       "为保证后台运行，请关闭本应用的电池优化。点击前往设置。",
     ),

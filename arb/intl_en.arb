@@ -64,6 +64,8 @@
   "confirm": "Confirm",
   "update": "Update",
   "add": "Add",
+  "batchAdd": "Batch add",
+  "batchAddHint": "Paste one domain per line, or separate domains with commas or semicolons.",
   "save": "Save",
   "delete": "Delete",
   "seconds": "Seconds",

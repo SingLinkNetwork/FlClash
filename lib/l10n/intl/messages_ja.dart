@@ -150,6 +150,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage("基本設定をグローバルに変更"),
     "basicInfo": MessageLookupByLibrary.simpleMessage("基本情報"),
     "basicStrategy": MessageLookupByLibrary.simpleMessage("基本戦略"),
+    "batchAdd": MessageLookupByLibrary.simpleMessage("一括追加"),
+    "batchAddHint": MessageLookupByLibrary.simpleMessage(
+      "1行に1ドメイン、またはカンマ・セミコロンで区切ってください。",
+    ),
     "batteryOptimizationDesc": MessageLookupByLibrary.simpleMessage(
       "To ensure background operation, please disable battery optimization for this app. Tap to go to settings.",
     ),

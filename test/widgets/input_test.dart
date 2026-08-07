@@ -160,6 +160,45 @@ void main() {
     expect(_top(tester, 'b'), lessThan(_top(tester, 'c')));
     expect(_top(tester, 'c'), lessThan(_top(tester, 'a')));
   });
+
+  testWidgets('ListInputPage batch adds normalized unique items', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          viewSizeProvider.overrideWithBuild((_, _) => const Size(1200, 1000)),
+        ],
+        child: const _TestApp(
+          child: ListInputPage(
+            title: 'Bypass domain',
+            items: ['existing.example'],
+            allowBatchAdd: true,
+            titleBuilder: _textBuilder,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Batch add'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextFormField),
+      'existing.example, New.example;\nnew.example second.example',
+    );
+    await tester.tap(find.text('Submit'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('existing.example'), findsOneWidget);
+    expect(find.text('New.example'), findsOneWidget);
+    expect(find.text('second.example'), findsOneWidget);
+    expect(find.text('new.example'), findsNothing);
+  });
 }
 
 Widget _textBuilder(String value) {

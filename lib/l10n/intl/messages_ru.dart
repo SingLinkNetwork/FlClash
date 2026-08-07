@@ -199,6 +199,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "basicInfo": MessageLookupByLibrary.simpleMessage("Основная информация"),
     "basicStrategy": MessageLookupByLibrary.simpleMessage("Базовая стратегия"),
+    "batchAdd": MessageLookupByLibrary.simpleMessage("Массовое добавление"),
+    "batchAddHint": MessageLookupByLibrary.simpleMessage(
+      "Введите по одному домену в строке или разделяйте домены запятыми или точками с запятой.",
+    ),
     "batteryOptimizationDesc": MessageLookupByLibrary.simpleMessage(
       "To ensure background operation, please disable battery optimization for this app. Tap to go to settings.",
     ),

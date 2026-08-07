@@ -539,6 +539,21 @@ class AppLocalizations {
     return Intl.message('Add', name: 'add', desc: '', args: []);
   }
 
+  /// `Batch add`
+  String get batchAdd {
+    return Intl.message('Batch add', name: 'batchAdd', desc: '', args: []);
+  }
+
+  /// `Paste one domain per line, or separate domains with commas or semicolons.`
+  String get batchAddHint {
+    return Intl.message(
+      'Paste one domain per line, or separate domains with commas or semicolons.',
+      name: 'batchAddHint',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Save`
   String get save {
     return Intl.message('Save', name: 'save', desc: '', args: []);

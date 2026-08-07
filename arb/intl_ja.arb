@@ -64,6 +64,8 @@
   "confirm": "確認",
   "update": "更新",
   "add": "追加",
+  "batchAdd": "一括追加",
+  "batchAddHint": "1行に1ドメイン、またはカンマ・セミコロンで区切ってください。",
   "save": "保存",
   "delete": "削除",
   "seconds": "秒",
