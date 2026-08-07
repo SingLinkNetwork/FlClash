@@ -221,11 +221,7 @@ Future<int> _package(
   if (depExit != 0) return depExit;
 
   if (platform == 'windows' && _isMsixOnlyTarget(targets)) {
-    return _packageWindowsMsix(
-      rootDir: rootDir,
-      arch: arch,
-      verbose: verbose,
-    );
+    return _packageWindowsMsix(rootDir: rootDir, arch: arch, verbose: verbose);
   }
 
   final activateExit = await _activateFlutterDistributor(
