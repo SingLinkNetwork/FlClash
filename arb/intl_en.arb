@@ -35,6 +35,8 @@
   "allowLanDesc": "Allow access proxy through the LAN",
   "tun": "TUN",
   "tunDesc": "only effective in administrator mode",
+  "tunRecvMsgX": "TUN recvmsgx",
+  "tunRecvMsgXDesc": "Use macOS recvmsgx for better TUN receive performance; turn it off if it causes instability",
   "minimizeOnExit": "Minimize on exit",
   "minimizeOnExitDesc": "Modify the default system exit event",
   "autoLaunch": "Auto launch",

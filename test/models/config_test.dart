@@ -183,6 +183,27 @@ void main() {
     });
   });
 
+  group('Tun recvmsgx JSON', () {
+    test('defaults to enabled for the existing core behavior', () {
+      const tun = Tun();
+
+      expect(tun.recvMsgX, isTrue);
+      expect(tun.toJson()['recvmsgx'], isTrue);
+    });
+
+    test('persists an explicitly disabled value', () {
+      const tun = Tun(recvMsgX: false);
+      final restored = Tun.fromJson(tun.toJson());
+
+      expect(restored.recvMsgX, isFalse);
+      expect(restored.toJson()['recvmsgx'], isFalse);
+    });
+
+    test('reads the core recvmsgx key from imported config', () {
+      expect(Tun.fromJson({'recvmsgx': false}).recvMsgX, isFalse);
+    });
+  });
+
   group('VpnProps JSON round-trip', () {
     test('default values', () {
       const props = VpnProps();

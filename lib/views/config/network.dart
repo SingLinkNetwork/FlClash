@@ -204,6 +204,31 @@ class TunStackItem extends ConsumerWidget {
   }
 }
 
+class TunRecvMsgXItem extends ConsumerWidget {
+  const TunRecvMsgXItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final appLocalizations = context.appLocalizations;
+    final recvMsgX = ref.watch(
+      patchClashConfigProvider.select((state) => state.tun.recvMsgX),
+    );
+
+    return ListItem.switchItem(
+      title: Text(appLocalizations.tunRecvMsgX),
+      subtitle: Text(appLocalizations.tunRecvMsgXDesc),
+      delegate: SwitchDelegate(
+        value: recvMsgX,
+        onChanged: (value) {
+          ref
+              .read(patchClashConfigProvider.notifier)
+              .update((state) => state.copyWith.tun(recvMsgX: value));
+        },
+      ),
+    );
+  }
+}
+
 class BypassDomainItem extends ConsumerWidget {
   const BypassDomainItem({super.key});
 
@@ -360,6 +385,7 @@ class NetworkListView extends StatelessWidget {
           if (system.isDesktop) const TUNItem(),
           if (system.isMacOS) const AutoSetSystemDnsItem(),
           const TunStackItem(),
+          if (system.isMacOS) const TunRecvMsgXItem(),
           if (!system.isDesktop) ...[
             const RouteModeItem(),
             const RouteAddressItem(),

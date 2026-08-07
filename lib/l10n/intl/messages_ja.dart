@@ -821,6 +821,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficUsage": MessageLookupByLibrary.simpleMessage("トラフィック使用量"),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("管理者モードでのみ有効"),
+    "tunRecvMsgX": MessageLookupByLibrary.simpleMessage("TUN recvmsgx"),
+    "tunRecvMsgXDesc": MessageLookupByLibrary.simpleMessage(
+      "macOS の TUN 受信性能を高めます。不安定な場合はオフにしてください",
+    ),
     "turnOff": MessageLookupByLibrary.simpleMessage("オフ"),
     "turnOn": MessageLookupByLibrary.simpleMessage("オン"),
     "undo": MessageLookupByLibrary.simpleMessage("元に戻す"),

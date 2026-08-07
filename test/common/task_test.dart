@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fl_clash/common/task.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -45,5 +47,30 @@ void main() {
     );
 
     expect(result['ipv6'], false);
+  });
+
+  test('profile output writes recvmsgx only for macOS', () async {
+    final profile = await makeRealProfileTask(
+      const MakeRealProfileState(
+        profilesPath: '/tmp/flclash-recvmsgx-test',
+        profileId: 11,
+        rawConfig: {},
+        realPatchConfig: PatchClashConfig(
+          tun: Tun(recvMsgX: false),
+        ),
+        overrideDns: false,
+        appendSystemDns: false,
+        proxyGroups: [],
+        rules: [],
+        addedRules: [],
+        defaultUA: 'FlClash-Test',
+      ),
+    );
+
+    if (Platform.isMacOS) {
+      expect(profile.a, contains('recvmsgx: false'));
+    } else {
+      expect(profile.a, isNot(contains('recvmsgx: false')));
+    }
   });
 }

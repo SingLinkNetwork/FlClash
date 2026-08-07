@@ -160,6 +160,29 @@ jobs:
       - name: Test Linux CLI startup arguments
         run: flutter test test/common/startup_test.dart --reporter expanded
 
+  macos-tun-recvmsgx:
+    name: macOS TUN recvmsgx
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test recvmsgx model persistence
+        run: flutter test test/models/config_test.dart --name 'Tun recvmsgx JSON' --reporter expanded
+
+      - name: Test recvmsgx profile output
+        run: flutter test test/common/task_test.dart --name 'profile output writes recvmsgx only for macOS' --reporter expanded
+
   static-source:
     name: Static ${{ matrix.id }}
     runs-on: ubuntu-latest
@@ -213,6 +236,8 @@ jobs:
             script: tool/verify_macos_wifi_ssid_plugin.rb
           - id: linux-cli-start
             script: tool/verify_linux_cli_start.rb
+          - id: macos-tun-recvmsgx
+            script: tool/verify_macos_tun_recvmsgx.rb
           - id: ci-layout
             script: tool/verify_ci_layout.rb
 
@@ -233,6 +258,7 @@ jobs:
       - go-vet
       - core-cli-arguments
       - linux-cli-start
+      - macos-tun-recvmsgx
       - static-source
     runs-on: ${{ matrix.os }}
     strategy:

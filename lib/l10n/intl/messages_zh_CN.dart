@@ -711,6 +711,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficUsage": MessageLookupByLibrary.simpleMessage("流量统计"),
     "tun": MessageLookupByLibrary.simpleMessage("虚拟网卡"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("仅在管理员模式生效"),
+    "tunRecvMsgX": MessageLookupByLibrary.simpleMessage("TUN recvmsgx"),
+    "tunRecvMsgXDesc": MessageLookupByLibrary.simpleMessage(
+      "使用 macOS recvmsgx 提升 TUN 接收性能；如果不稳定可以关闭",
+    ),
     "turnOff": MessageLookupByLibrary.simpleMessage("关闭"),
     "turnOn": MessageLookupByLibrary.simpleMessage("开启"),
     "undo": MessageLookupByLibrary.simpleMessage("撤销"),

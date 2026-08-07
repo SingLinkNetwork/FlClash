@@ -262,6 +262,9 @@ func updateConfig(params *UpdateParams) error {
 		if params.Tun.Stack != nil {
 			general.Tun.Stack = *params.Tun.Stack
 		}
+		if params.Tun.RecvMsgX != nil {
+			general.Tun.RecvMsgX = *params.Tun.RecvMsgX
+		}
 	}
 
 	if params.GeoAutoUpdate != nil {

@@ -109,6 +109,31 @@ func TestUpdateConfigAcceptsPartialTunParams(t *testing.T) {
 	}
 }
 
+func TestUpdateConfigAppliesRecvMsgX(t *testing.T) {
+	previousConfig := currentConfig
+	previousRunning := isRunning
+	currentConfig = &config.Config{
+		General: &config.General{},
+	}
+	currentConfig.General.Tun.RecvMsgX = true
+	isRunning = false
+	t.Cleanup(func() {
+		currentConfig = previousConfig
+		isRunning = previousRunning
+	})
+
+	recvMsgX := false
+	err := updateConfig(&UpdateParams{
+		Tun: &tunSchema{RecvMsgX: &recvMsgX},
+	})
+	if err != nil {
+		t.Fatalf("recvmsgx update returned an error: %v", err)
+	}
+	if currentConfig.General.Tun.RecvMsgX {
+		t.Fatal("recvmsgx update did not apply the disabled value")
+	}
+}
+
 func reserveTCPPort(t *testing.T) int {
 	t.Helper()
 

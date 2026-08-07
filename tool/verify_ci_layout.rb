@@ -15,6 +15,7 @@ required_jobs = %w[
   go-vet
   core-cli-arguments
   linux-cli-start
+  macos-tun-recvmsgx
   static-source
   build
 ]
@@ -48,6 +49,7 @@ expected_scripts = %w[
   tool/verify_macos_tray_destroy.rb
   tool/verify_macos_wifi_ssid_plugin.rb
   tool/verify_linux_cli_start.rb
+  tool/verify_macos_tun_recvmsgx.rb
   tool/verify_ci_layout.rb
 ]
 actual_scripts = static_entries.map { |entry| entry.fetch('script') }
@@ -62,6 +64,7 @@ expected_build_needs = %w[
   go-vet
   core-cli-arguments
   linux-cli-start
+  macos-tun-recvmsgx
   static-source
 ]
 build_needs = Array(jobs.fetch('build').fetch('needs'))

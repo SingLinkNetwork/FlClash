@@ -1013,6 +1013,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunDesc": MessageLookupByLibrary.simpleMessage(
       "only effective in administrator mode",
     ),
+    "tunRecvMsgX": MessageLookupByLibrary.simpleMessage("TUN recvmsgx"),
+    "tunRecvMsgXDesc": MessageLookupByLibrary.simpleMessage(
+      "Use macOS recvmsgx for better TUN receive performance; turn it off if it causes instability",
+    ),
     "turnOff": MessageLookupByLibrary.simpleMessage("Turn Off"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Turn On"),
     "undo": MessageLookupByLibrary.simpleMessage("undo"),

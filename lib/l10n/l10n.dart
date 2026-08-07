@@ -289,6 +289,26 @@ class AppLocalizations {
     );
   }
 
+  /// `TUN recvmsgx`
+  String get tunRecvMsgX {
+    return Intl.message(
+      'TUN recvmsgx',
+      name: 'tunRecvMsgX',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use macOS recvmsgx for better TUN receive performance; turn it off if it causes instability`
+  String get tunRecvMsgXDesc {
+    return Intl.message(
+      'Use macOS recvmsgx for better TUN receive performance; turn it off if it causes instability',
+      name: 'tunRecvMsgXDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Minimize on exit`
   String get minimizeOnExit {
     return Intl.message(
