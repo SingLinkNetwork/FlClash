@@ -314,6 +314,26 @@ jobs:
       - name: Test portable data path policy
         run: flutter test test/common/path_test.dart --reporter expanded
 
+  proxy-environment:
+    name: Proxy environment menu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test proxy environment commands and tray menu
+        run: flutter test test/common/proxy_environment_test.dart test/common/tray_test.dart --reporter expanded
+
   static-source:
     name: Static ${{ matrix.id }}
     runs-on: ubuntu-latest
@@ -335,6 +355,8 @@ jobs:
             script: tool/verify_windows_paste_fix.rb
           - id: windows-portable-data
             script: tool/verify_windows_portable_data.rb
+          - id: proxy-environment-menu
+            script: tool/verify_proxy_environment_menu.rb
           - id: windows-search-close
             script: tool/verify_windows_search_close.rb
           - id: linux-renderer-fallback
@@ -465,6 +487,7 @@ jobs:
       - macos-ip-forwarding
       - custom-test-urls
       - windows-core-callback
+      - proxy-environment
       - static-source
       - linux-packaging
     runs-on: ${{ matrix.os }}
