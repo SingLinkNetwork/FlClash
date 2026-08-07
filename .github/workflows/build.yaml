@@ -143,6 +143,10 @@ jobs:
         if: startsWith(matrix.platform, 'windows')
         run: ruby tool/verify_windows_proxy_shutdown.rb
 
+      - name: Verify Windows maximize work area
+        if: startsWith(matrix.platform, 'windows')
+        run: ruby tool/verify_windows_maximize_work_area.rb
+
       - name: Verify macOS window lifecycle
         if: startsWith(matrix.platform, 'macos')
         run: ruby tool/verify_macos_window_lifecycle.rb

@@ -150,6 +150,10 @@ jobs:
         if: matrix.platform == 'windows'
         run: flutter build windows --debug
 
+      - name: Verify Windows maximize work area
+        if: matrix.platform == 'windows'
+        run: ruby tool/verify_windows_maximize_work_area.rb
+
       - name: Verify Windows proxy shutdown cleanup
         if: matrix.platform == 'windows'
         run: ruby tool/verify_windows_proxy_shutdown.rb
