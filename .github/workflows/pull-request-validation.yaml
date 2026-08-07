@@ -380,6 +380,8 @@ jobs:
             throw "Flutter action did not provide a valid SDK root beneath CACHE-PATH: $flutterCachePath"
           }
           Remove-Item -Force "$flutterRoot\bin\cache\engine-dart-sdk.stamp" -ErrorAction SilentlyContinue
+          Remove-Item -Force "$flutterRoot\bin\cache\flutter_tools.snapshot" -ErrorAction SilentlyContinue
+          Remove-Item -Force "$flutterRoot\bin\cache\flutter_tools.stamp" -ErrorAction SilentlyContinue
           & "$flutterRoot\bin\internal\update_dart_sdk.ps1"
           $dartVersion = & "$flutterRoot\bin\dart.bat" --version 2>&1 | Out-String
           Write-Host $dartVersion

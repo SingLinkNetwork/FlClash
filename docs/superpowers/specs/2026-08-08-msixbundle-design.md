@@ -41,7 +41,8 @@ signed before distribution.
 
 The hosted Flutter action currently provides the Windows SDK as x64. The
 ARM64 job therefore installs that SDK as a bootstrap tool, removes its cached
-x64 Dart stamp, downloads the native ARM64 Dart SDK, precaches the ARM64
+x64 Dart stamp and x64 Flutter tool snapshot, downloads the native ARM64 Dart
+SDK, lets Flutter rebuild its tool snapshot for that VM, precaches the ARM64
 Windows engine, and fails before building if either native component is absent.
 
 ## Approaches considered

@@ -60,6 +60,8 @@ else
   unless arm64_bootstrap && arm64_bootstrap['if'].to_s.include?("matrix.architecture == 'arm64'") &&
          arm64_bootstrap['shell'] == 'pwsh' &&
          arm64_bootstrap['run'].to_s.include?('engine-dart-sdk.stamp') &&
+         arm64_bootstrap['run'].to_s.include?('flutter_tools.snapshot') &&
+         arm64_bootstrap['run'].to_s.include?('flutter_tools.stamp') &&
          arm64_bootstrap['run'].to_s.include?('update_dart_sdk.ps1') &&
          arm64_bootstrap['run'].to_s.include?('windows_arm64') &&
          arm64_bootstrap['run'].to_s.include?('windows-arm64-release')

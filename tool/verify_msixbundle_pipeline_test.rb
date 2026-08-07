@@ -35,6 +35,8 @@ class VerifyMsixbundlePipelineTest < Minitest::Test
               shell: pwsh
               run: |
                 Remove-Item engine-dart-sdk.stamp
+                Remove-Item flutter_tools.snapshot
+                Remove-Item flutter_tools.stamp
                 update_dart_sdk.ps1
                 windows_arm64
                 windows-arm64-release
@@ -148,6 +150,8 @@ class VerifyMsixbundlePipelineTest < Minitest::Test
               shell: pwsh
               run: |
                 Remove-Item engine-dart-sdk.stamp
+                Remove-Item flutter_tools.snapshot
+                Remove-Item flutter_tools.stamp
                 update_dart_sdk.ps1
                 windows_arm64
                 windows-arm64-release
