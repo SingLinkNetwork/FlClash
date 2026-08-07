@@ -19,15 +19,30 @@ class VerifyMsixbundlePipelineTest < Minitest::Test
             strategy:
               matrix:
                 include:
-                  - architecture: x64
-                    os: windows-2022
-                  - architecture: arm64
-                    os: windows-11-arm
+                - architecture: x64
+                  os: windows-2022
+                  flutter_architecture: x64
+                - architecture: arm64
+                  os: windows-11-arm
+                  flutter_architecture: x64
             steps:
-              - run: dart setup.dart windows --targets msix
-              - uses: actions/upload-artifact@v4
-                with:
-                  name: windows-msix-${{ matrix.architecture }}
+            - id: flutter
+              uses: subosito/flutter-action@v2
+              with:
+                architecture: ${{ matrix.flutter_architecture }}
+            - name: Bootstrap native ARM64 Flutter SDK
+              if: ${{ matrix.architecture == 'arm64' }}
+              shell: pwsh
+              run: |
+                Remove-Item engine-dart-sdk.stamp
+                update_dart_sdk.ps1
+                windows_arm64
+                windows-arm64-release
+            - run: dart setup.dart windows --targets msix -v
+            - uses: actions/upload-artifact@v4
+              with:
+                name: windows-msix-${{ matrix.architecture }}
+                path: dist/FlClash-${{ matrix.architecture }}.msix
           static-source:
             strategy:
               matrix:
@@ -89,6 +104,25 @@ class VerifyMsixbundlePipelineTest < Minitest::Test
     end
   end
 
+  def test_verifier_requires_native_executable_architecture_check
+    Dir.mktmpdir('flclash-msixbundle-verifier-test-') do |root|
+      workflow = File.join(root, 'workflow.yml')
+      File.write(workflow, valid_workflow_yaml)
+      write_pipeline_files(root)
+      File.write(File.join(root, 'tool', 'verify_msix.ps1'), 'manifest-only')
+
+      _stdout, stderr, status = Open3.capture3(
+        RbConfig.ruby,
+        SCRIPT,
+        workflow,
+        root,
+      )
+
+      refute status.success?
+      assert_includes stderr, 'PE machine type'
+    end
+  end
+
   private
 
   def valid_workflow_yaml
@@ -100,9 +134,23 @@ class VerifyMsixbundlePipelineTest < Minitest::Test
               include:
                 - architecture: x64
                   os: windows-2022
+                  flutter_architecture: x64
                 - architecture: arm64
                   os: windows-11-arm
+                  flutter_architecture: x64
           steps:
+            - id: flutter
+              uses: subosito/flutter-action@v2
+              with:
+                architecture: ${{ matrix.flutter_architecture }}
+            - name: Bootstrap native ARM64 Flutter SDK
+              if: ${{ matrix.architecture == 'arm64' }}
+              shell: pwsh
+              run: |
+                Remove-Item engine-dart-sdk.stamp
+                update_dart_sdk.ps1
+                windows_arm64
+                windows-arm64-release
             - run: dart setup.dart windows --targets msix -v
             - shell: pwsh
               run: |

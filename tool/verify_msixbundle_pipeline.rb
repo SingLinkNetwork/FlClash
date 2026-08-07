@@ -33,16 +33,38 @@ else
     'x64' => 'windows-2022',
     'arm64' => 'windows-11-arm',
   }
+  expected_flutter_architectures = {
+    'x64' => 'x64',
+    # subosito/flutter-action publishes the Windows SDK as x64. The ARM64
+    # runner bootstraps the native Dart SDK and engine in a later step.
+    'arm64' => 'x64',
+  }
   expected_runners.each do |architecture, runner|
     entry = matrix.find { |item| item['architecture'] == architecture }
     if entry.nil?
       errors << "windows-msix matrix is missing #{architecture}"
     elsif entry['os'] != runner
       errors << "windows-msix #{architecture} must run on #{runner}"
+    elsif entry['flutter_architecture'] != expected_flutter_architectures.fetch(architecture)
+      errors << "windows-msix #{architecture} must use the x64 Flutter SDK bootstrap"
     end
   end
 
   steps = msix_job.fetch('steps', [])
+  flutter_step = steps.find { |step| step['uses'] == 'subosito/flutter-action@v2' }
+  unless flutter_step && flutter_step['id'] == 'flutter' &&
+         flutter_step.dig('with', 'architecture') == '${{ matrix.flutter_architecture }}'
+    errors << 'windows-msix must expose the Flutter cache path and select the matrix SDK architecture'
+  end
+  arm64_bootstrap = steps.find { |step| step['name'] == 'Bootstrap native ARM64 Flutter SDK' }
+  unless arm64_bootstrap && arm64_bootstrap['if'].to_s.include?("matrix.architecture == 'arm64'") &&
+         arm64_bootstrap['shell'] == 'pwsh' &&
+         arm64_bootstrap['run'].to_s.include?('engine-dart-sdk.stamp') &&
+         arm64_bootstrap['run'].to_s.include?('update_dart_sdk.ps1') &&
+         arm64_bootstrap['run'].to_s.include?('windows_arm64') &&
+         arm64_bootstrap['run'].to_s.include?('windows-arm64-release')
+    errors << 'windows-msix must bootstrap and verify the native ARM64 Dart SDK and engine'
+  end
   unless steps.any? { |step| step['run'].to_s.strip == 'dart setup.dart windows --targets msix -v' }
     errors << 'windows-msix must invoke the repository MSIX setup target'
   end
@@ -137,6 +159,16 @@ if File.file?(bundler_path)
   bundler = File.read(bundler_path)
   unless bundler.match?(/&\s*\$makeAppx\s+bundle\s+\/v\s+\/d\s+\$stageDirectory\s+\/p\s+\$resolvedOutput/)
     errors << 'bundle_msix.ps1 must invoke MakeAppx bundle'
+  end
+end
+
+msix_verifier_path = File.join(root, 'tool', 'verify_msix.ps1')
+if File.file?(msix_verifier_path)
+  msix_verifier = File.read(msix_verifier_path)
+  unless msix_verifier.include?('[BitConverter]::ToUInt16') &&
+         msix_verifier.include?('0x8664') &&
+         msix_verifier.include?('0xaa64')
+    errors << 'verify_msix.ps1 must validate the executable PE machine type'
   end
 end
 

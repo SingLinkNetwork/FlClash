@@ -175,7 +175,7 @@ Resolve `makeappx.exe` from `PATH` first, then from `Program Files (x86)\Windows
 
 - [ ] **Step 3: Implement the single-package PowerShell verifier**
 
-Open one `.msix` as a ZIP and require `AppxManifest.xml`, `AppxBlockMap.xml`, `resources.pri`, and a Windows executable. Parse the manifest with namespace-safe XPath and fail unless the processor architecture matches the requested x64 or arm64 value.
+Open one `.msix` as a ZIP and require `AppxManifest.xml`, `AppxBlockMap.xml`, `resources.pri`, and a Windows executable. Parse the manifest with namespace-safe XPath and fail unless the processor architecture matches the requested x64 or arm64 value. Read the executable's PE header and require machine type `0x8664` for x64 or `0xAA64` for ARM64 so a mislabeled binary cannot pass.
 
 - [ ] **Step 4: Implement the PowerShell bundle manifest verifier**
 
@@ -217,7 +217,7 @@ git commit -m "feat: add MSIXBundle bundler and verifier"
 
 - [ ] **Step 1: Add the architecture build matrix**
 
-Install Go, Rust, Flutter, and dependencies; run `dart setup.dart windows --targets msix`; assert exactly one `dist/FlClash-<architecture>.msix`; run `tool/verify_msix.ps1` against the native package; upload it as `windows-msix-<architecture>`.
+Install Go, Rust, and dependencies; run the x64 Flutter SDK on both Windows runners; on the ARM64 runner, replace the cached Dart SDK and precache the native ARM64 engine; run `dart setup.dart windows --targets msix`; assert exactly one `dist/FlClash-<architecture>.msix`; run `tool/verify_msix.ps1` against the native package; upload it as `windows-msix-<architecture>`.
 
 - [ ] **Step 2: Add the bundle job**
 

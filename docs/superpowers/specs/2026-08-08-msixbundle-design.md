@@ -39,6 +39,11 @@ step and the Windows SDK directly for bundling. Microsoft documents that
 different processor architectures, and that the resulting bundle must be
 signed before distribution.
 
+The hosted Flutter action currently provides the Windows SDK as x64. The
+ARM64 job therefore installs that SDK as a bootstrap tool, removes its cached
+x64 Dart stamp, downloads the native ARM64 Dart SDK, precaches the ARM64
+Windows engine, and fails before building if either native component is absent.
+
 ## Approaches considered
 
 ### A. Use Flutter Distributor only
@@ -104,8 +109,10 @@ stable status check that can be required by branch protection.
   with matching identity, version, publisher, architecture, and file
   references.
 - The same Windows job verifies each individual `.msix` before it is uploaded,
-  including `AppxManifest.xml`, `AppxBlockMap.xml`, `resources.pri`, and an
-  application executable.
+  including `AppxManifest.xml`, `AppxBlockMap.xml`, `resources.pri`, an
+  application executable, and the executable's PE machine type (`0x8664` for
+  x64 or `0xAA64` for ARM64). This prevents a package from passing only because
+  its manifest was labeled with the requested architecture.
 - The CI layout verifier requires the new job dependencies and static verifier
   entry plus the final `ci-complete` gate, preventing the checks from
   disappearing during later workflow edits.
