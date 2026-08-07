@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fl_clash/common/proxy_environment.dart';
 import 'package:fl_clash/common/tray.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:test/test.dart';
@@ -67,6 +68,23 @@ void main() {
 
     expect(item.label, 'Stop');
     expect(item.checked, true);
+  });
+
+  test('builds one copy item for each supported shell', () {
+    final copied = <ProxyEnvironmentShell>[];
+    final items = buildProxyEnvironmentMenuItems(onCopy: copied.add);
+
+    expect(items, hasLength(4));
+    expect(items.map((item) => item.label).toList(), [
+      'Bash',
+      'Fish',
+      'Zsh',
+      'PowerShell',
+    ]);
+    expect(items.every((item) => item.type == 'normal'), isTrue);
+
+    items[2].onClick!(items[2]);
+    expect(copied, [ProxyEnvironmentShell.zsh]);
   });
 
   group('handleTrayIconMouseDown', () {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fl_clash/enum/enum.dart';
@@ -11,6 +12,7 @@ import 'package:tray_manager/tray_manager.dart';
 import 'app_localizations.dart';
 import 'constant.dart';
 import 'linux_clipboard.dart';
+import 'proxy_environment.dart';
 import 'system.dart';
 import 'tray_title.dart';
 import 'window.dart';
@@ -51,6 +53,15 @@ List<TrayClickAction> supportedTrayClickActions({required bool isMacOS}) => [
   if (isMacOS) TrayClickAction.showTrayMenu,
   TrayClickAction.toggleProxy,
 ];
+
+List<MenuItem> buildProxyEnvironmentMenuItems({
+  required void Function(ProxyEnvironmentShell shell) onCopy,
+}) {
+  return [
+    for (final shell in ProxyEnvironmentShell.values)
+      MenuItem(label: shell.label, onClick: (_) => onCopy(shell)),
+  ];
+}
 
 bool shouldDestroyTrayOnExit({required bool isMacOS}) => !isMacOS;
 
@@ -222,11 +233,14 @@ class Tray {
       },
       checked: trayState.autoLaunch,
     );
-    final copyEnvVarMenuItem = MenuItem(
+    final copyEnvVarMenuItem = MenuItem.submenu(
       label: appLocalizations.copyEnvVar,
-      onClick: (_) async {
-        await _copyEnv(trayState.port);
-      },
+      submenu: Menu(
+        items: buildProxyEnvironmentMenuItems(
+          onCopy: (shell) =>
+              unawaited(_copyEnv(port: trayState.port, shell: shell)),
+        ),
+      ),
     );
     menuItems.add(autoStartMenuItem);
     menuItems.add(copyEnvVarMenuItem);
@@ -266,11 +280,11 @@ class Tray {
     await trayManager.setTitle(title);
   }
 
-  Future<void> _copyEnv(int port) async {
-    final cmdline = buildProxyEnvironmentCommand(
-      isWindows: system.isWindows,
-      port: port,
-    );
+  Future<void> _copyEnv({
+    required int port,
+    required ProxyEnvironmentShell shell,
+  }) async {
+    final cmdline = buildProxyEnvironmentShellCommand(shell: shell, port: port);
 
     if (system.isLinux && await (linuxClipboard?.copy(cmdline) ?? false)) {
       return;
