@@ -27,6 +27,8 @@ MenuItem buildTrayStartMenuItem({
   );
 }
 
+bool shouldDestroyTrayOnExit({required bool isMacOS}) => !isMacOS;
+
 class Tray {
   static Tray? _instance;
 
@@ -44,6 +46,9 @@ class Tray {
   }
 
   Future<void> destroy() async {
+    if (!shouldDestroyTrayOnExit(isMacOS: system.isMacOS)) {
+      return;
+    }
     await trayManager.destroy();
     _trayTitleCache.reset();
   }

@@ -218,6 +218,10 @@ jobs:
         if: matrix.platform == 'macos'
         run: ruby tool/verify_macos_window_lifecycle.rb
 
+      - name: Verify macOS tray position preservation
+        if: matrix.platform == 'macos'
+        run: ruby tool/verify_macos_tray_destroy.rb
+
       - name: Verify macOS SQLite bundle and loader
         if: matrix.platform == 'macos'
         run: ruby tool/verify_macos_sqlite_bundle.rb build/macos/Build/Products/Debug/FlClash.app lib/common/sqlite.dart x86_64

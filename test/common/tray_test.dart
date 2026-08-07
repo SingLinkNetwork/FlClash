@@ -4,6 +4,16 @@ import 'package:fl_clash/common/tray.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('Tray.shouldDestroyTrayOnExit', () {
+    test('keeps the macOS status item alive during app exit', () {
+      expect(shouldDestroyTrayOnExit(isMacOS: true), false);
+    });
+
+    test('destroys the status item on non-macOS desktop platforms', () {
+      expect(shouldDestroyTrayOnExit(isMacOS: false), true);
+    });
+  });
+
   group('Tray.getTryIcon', () {
     final tray = Tray();
     final suffix = tray.trayIconSuffix;
