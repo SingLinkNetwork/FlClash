@@ -61,6 +61,9 @@ jobs:
       - name: Verify Linux CJK font fallback
         run: ruby tool/verify_linux_cjk_font_fallback.rb
 
+      - name: Verify Linux StartupWMClass packaging wiring
+        run: ruby tool/verify_linux_startup_wm_class.rb
+
   build:
     needs: [ test ]
     runs-on: ${{ matrix.os }}
@@ -171,6 +174,10 @@ jobs:
       - name: Verify Linux tray clipboard fallback
         if: startsWith(matrix.platform, 'linux')
         run: ruby tool/verify_linux_tray_clipboard.rb
+
+      - name: Verify Linux packaged desktop entries
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_packages.rb dist ${{ matrix.arch == 'amd64' && 'deb,appimage,rpm' || 'deb' }}
 
       - name: Verify Windows proxy shutdown cleanup
         if: startsWith(matrix.platform, 'windows')

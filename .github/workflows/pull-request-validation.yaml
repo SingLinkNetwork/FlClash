@@ -357,6 +357,8 @@ jobs:
             script: tool/verify_macos_tray_click_action.rb
           - id: desktop-tray-proxy-toggle
             script: tool/verify_desktop_tray_click_action.rb
+          - id: linux-startup-wm-class
+            script: tool/verify_linux_startup_wm_class.rb
           - id: custom-test-urls
             script: tool/verify_custom_test_urls.rb
           - id: core-callback-cleanup
@@ -370,6 +372,58 @@ jobs:
 
       - name: Run ${{ matrix.id }} verifier
         run: ruby ${{ matrix.script }}
+
+  linux-packaging:
+    name: Linux packages and desktop entry
+    needs:
+      - dart-format
+      - dart-analyze
+      - flutter-tests
+      - go-tests
+      - go-vet
+      - static-source
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Linux packages
+        run: dart setup.dart linux --targets deb,appimage,rpm -v
+
+      - name: Verify packaged desktop entries
+        run: ruby tool/verify_linux_packages.rb dist
+
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/*.appimage
+            dist/*.AppImage
+          if-no-files-found: error
 
   build:
     name: Build ${{ matrix.platform }} on ${{ matrix.os }}
@@ -387,6 +441,7 @@ jobs:
       - custom-test-urls
       - windows-core-callback
       - static-source
+      - linux-packaging
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

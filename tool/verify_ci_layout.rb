@@ -26,13 +26,19 @@ required_jobs = %w[
   custom-test-urls
   windows-core-callback
   static-source
+  linux-packaging
   build
 ]
 missing_jobs = required_jobs.reject { |job| jobs.key?(job) }
 abort "CI workflow is missing jobs: #{missing_jobs.join(', ')}" unless missing_jobs.empty?
 
 static_entries = jobs.fetch('static-source').fetch('strategy').fetch('matrix').fetch('include')
-abort 'CI static-source matrix must expose at least 20 independent checks' unless static_entries.length >= 20
+abort 'CI static-source matrix must expose at least 30 independent checks' unless static_entries.length >= 30
+
+linux_packaging_steps = jobs.fetch('linux-packaging').fetch('steps')
+unless linux_packaging_steps.any? { |step| step['run'] == 'ruby tool/verify_linux_packages.rb dist' }
+  abort 'Linux packaging job must inspect the generated package contents'
+end
 
 expected_scripts = %w[
   tool/verify_lan_proxy_toggle.rb
@@ -63,6 +69,7 @@ expected_scripts = %w[
   tool/verify_macos_ip_forwarding.rb
   tool/verify_macos_tray_click_action.rb
   tool/verify_desktop_tray_click_action.rb
+  tool/verify_linux_startup_wm_class.rb
   tool/verify_custom_test_urls.rb
   tool/verify_core_callback_cleanup.rb
   tool/verify_ci_layout.rb
@@ -85,6 +92,7 @@ expected_build_needs = %w[
   custom-test-urls
   windows-core-callback
   static-source
+  linux-packaging
 ]
 build_needs = Array(jobs.fetch('build').fetch('needs'))
 missing_build_needs = expected_build_needs.reject { |job| build_needs.include?(job) }
@@ -93,5 +101,8 @@ abort "CI build job is missing prerequisites: #{missing_build_needs.join(', ')}"
 expected_scripts.each do |script|
   abort "CI verifier does not exist: #{script}" unless File.file?(File.join(root, script))
 end
+
+abort 'Linux package verifier does not exist' unless
+  File.file?(File.join(root, 'tool/verify_linux_packages.rb'))
 
 puts "CI layout verified: #{static_entries.length} independent static checks plus separate core and platform jobs"
