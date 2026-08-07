@@ -13,7 +13,10 @@ abort 'UpdateParams must expose the allow-lan update' unless
 abort 'The Flutter update parameters must include the LAN proxy state' unless
   state_source.include?('allowLan: state.allowLan')
 
-update_config = common_source.split('func updateConfig(params *UpdateParams) {', 2).last
+update_config = common_source.split(
+  /func updateConfig\(params \*UpdateParams\)(?:\s+error)?\s*\{/,
+  2,
+).last
 abort 'The core must apply allow-lan before recreating listeners' unless
   update_config&.include?('applyAllowLanUpdate(general, params.AllowLan)') &&
   update_config.index('applyAllowLanUpdate(general, params.AllowLan') <
