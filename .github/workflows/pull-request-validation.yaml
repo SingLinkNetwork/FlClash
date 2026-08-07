@@ -143,6 +143,10 @@ jobs:
         if: matrix.platform == 'android'
         run: ruby tool/verify_android_background_location_permission.rb
 
+      - name: Verify Android tile background toggle
+        if: matrix.platform == 'android'
+        run: ruby tool/verify_android_tile_background_toggle.rb
+
       - name: Build Linux
         if: matrix.platform == 'linux'
         run: flutter build linux --debug
