@@ -85,7 +85,7 @@ ArgParser createSetupArgParser() {
     )
     ..addOption(
       'targets',
-      valueHelp: 'exe,zip,dmg,apk,...',
+      valueHelp: 'exe,zip,msix,dmg,apk,...',
       help: 'Package targets (default: all for platform)',
     )
     ..addOption(
@@ -100,6 +100,65 @@ ArgParser createSetupArgParser() {
       negatable: false,
       help: 'Enable verbose Flutter build output',
     );
+}
+
+String windowsMsixArchitecture(String hostArch) {
+  switch (hostArch.toLowerCase()) {
+    case 'amd64':
+    case 'x64':
+      return 'x64';
+    case 'arm64':
+      return 'arm64';
+    default:
+      throw ArgumentError.value(
+        hostArch,
+        'hostArch',
+        'Windows MSIX supports only amd64/x64 and arm64 hosts',
+      );
+  }
+}
+
+List<String> createWindowsMsixBuildArgs({required bool verbose}) {
+  return [
+    'build',
+    'windows',
+    '--release',
+    if (verbose) '--verbose',
+    '--dart-define-from-file=env.json',
+  ];
+}
+
+List<String> createMsixCreateArgs({
+  required String architecture,
+  required String outputDirectory,
+}) {
+  return [
+    'run',
+    'msix:create',
+    '--release',
+    '--build-windows',
+    'false',
+    '--architecture',
+    architecture,
+    '--output-path',
+    outputDirectory,
+    '--output-name',
+    'FlClash-$architecture',
+    '--display-name',
+    'FlClash',
+    '--publisher-display-name',
+    'SingLinkNetwork',
+    '--identity-name',
+    'com.singlinknetwork.flclash',
+    '--publisher',
+    'CN=SingLinkNetwork',
+    '--capabilities',
+    'internetClient',
+    '--sign-msix',
+    'false',
+    '--install-certificate',
+    'false',
+  ];
 }
 
 List<String> createFlutterBuildArgs({
@@ -161,6 +220,14 @@ Future<int> _package(
   final depExit = await _ensureDependencies(platform, arch);
   if (depExit != 0) return depExit;
 
+  if (platform == 'windows' && _isMsixOnlyTarget(targets)) {
+    return _packageWindowsMsix(
+      rootDir: rootDir,
+      arch: arch,
+      verbose: verbose,
+    );
+  }
+
   final activateExit = await _activateFlutterDistributor(
     rootDir: rootDir,
     platform: platform,
@@ -195,6 +262,59 @@ Future<int> _package(
   });
   final exitCode = await process.exitCode;
   return exitCode;
+}
+
+bool _isMsixOnlyTarget(String targets) {
+  final targetList = targets
+      .split(',')
+      .map((target) => target.trim())
+      .where((target) => target.isNotEmpty)
+      .toList();
+  return targetList.length == 1 && targetList.single == 'msix';
+}
+
+Future<int> _packageWindowsMsix({
+  required String rootDir,
+  required String arch,
+  required bool verbose,
+}) async {
+  final architecture = windowsMsixArchitecture(arch);
+  final buildExit = await _runStreamingProcess(
+    'flutter',
+    createWindowsMsixBuildArgs(verbose: verbose),
+    workingDirectory: rootDir,
+  );
+  if (buildExit != 0) return buildExit;
+
+  return _runStreamingProcess(
+    'dart',
+    createMsixCreateArgs(
+      architecture: architecture,
+      outputDirectory: p.join(rootDir, 'dist'),
+    ),
+    workingDirectory: rootDir,
+  );
+}
+
+Future<int> _runStreamingProcess(
+  String executable,
+  List<String> args, {
+  required String workingDirectory,
+}) async {
+  final process = await Process.start(
+    executable,
+    args,
+    workingDirectory: workingDirectory,
+    includeParentEnvironment: true,
+    runInShell: Platform.isWindows,
+  );
+  process.stdout.listen((data) {
+    stdout.write(utf8.decode(data));
+  });
+  process.stderr.listen((data) {
+    stderr.write(utf8.decode(data));
+  });
+  return process.exitCode;
 }
 
 Future<int> _activateFlutterDistributor({
