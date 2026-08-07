@@ -1,4 +1,5 @@
 import 'package:fl_clash/common/linux_clipboard.dart';
+import 'package:fl_clash/common/proxy_environment.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -62,12 +63,18 @@ void main() {
 
   test('builds the expected proxy command for each desktop shell', () {
     expect(
-      buildProxyEnvironmentCommand(isWindows: false, port: 7890),
+      buildProxyEnvironmentShellCommand(
+        shell: ProxyEnvironmentShell.bash,
+        port: 7890,
+      ),
       'export all_proxy=http://127.0.0.1:7890',
     );
     expect(
-      buildProxyEnvironmentCommand(isWindows: true, port: 7890),
-      'set \$env:all_proxy=http://127.0.0.1:7890',
+      buildProxyEnvironmentShellCommand(
+        shell: ProxyEnvironmentShell.powershell,
+        port: 7890,
+      ),
+      "\$env:all_proxy = 'http://127.0.0.1:7890'",
     );
   });
 }
