@@ -35,6 +35,7 @@ expected_scripts = %w[
   tool/verify_android_background_location_permission.rb
   tool/verify_android_tile_background_toggle.rb
   tool/verify_android_proxy_stop.rb
+  tool/verify_android_service_lifecycle.rb
   tool/verify_linux_x11_thread_init.rb
   tool/verify_windows_maximize_work_area.rb
   tool/verify_windows_proxy_shutdown.rb
