@@ -25,6 +25,9 @@ abort 'The allow-lan update helper must write the active general config' unless
 abort 'The runtime LAN regression test must exercise listener recreation' unless
   listener_test_source.include?('TestUpdateConfigRecreatesMixedListenerForAllowLan') &&
   listener_test_source.include?('updateConfig(&UpdateParams{AllowLan: &allowLan})') &&
-  listener_test_source.include?('canConnectToAnyHost')
+  listener_test_source.include?('canConnectToAnyHost') &&
+  listener_test_source.include?('previousAllowLan := listener.AllowLan()') &&
+  listener_test_source.include?('previousBindAddress := listener.BindAddress()') &&
+  listener_test_source.include?('LAN address remained reachable after allow-lan was disabled')
 
 puts 'LAN proxy runtime update verified'

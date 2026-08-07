@@ -14,11 +14,15 @@ func TestUpdateConfigRecreatesMixedListenerForAllowLan(t *testing.T) {
 	port := reserveTCPPort(t)
 	previousConfig := currentConfig
 	previousRunning := isRunning
+	previousAllowLan := listener.AllowLan()
+	previousBindAddress := listener.BindAddress()
 	listener.StopListener()
 	geoUpdater.stop()
 	t.Cleanup(func() {
 		listener.StopListener()
 		geoUpdater.stop()
+		listener.SetAllowLan(previousAllowLan)
+		listener.SetBindAddress(previousBindAddress)
 		currentConfig = previousConfig
 		isRunning = previousRunning
 	})
@@ -44,6 +48,13 @@ func TestUpdateConfigRecreatesMixedListenerForAllowLan(t *testing.T) {
 
 	if !canConnectToAnyHost(port, "::1", "127.0.0.2") {
 		t.Fatal("LAN address could not reach the recreated mixed listener")
+	}
+
+	allowLan = false
+	updateConfig(&UpdateParams{AllowLan: &allowLan})
+
+	if canConnectToAnyHost(port, "::1", "127.0.0.2") {
+		t.Fatal("LAN address remained reachable after allow-lan was disabled")
 	}
 }
 
