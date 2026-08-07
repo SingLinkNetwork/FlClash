@@ -1087,16 +1087,19 @@ class MessageLookup extends MessageLookupByLibrary {
       "Использование трафика",
     ),
     "trayClickAction": MessageLookupByLibrary.simpleMessage(
-      "Действие при нажатии на значок в строке меню",
+      "Действие при нажатии на значок трея",
     ),
     "trayClickActionDesc": MessageLookupByLibrary.simpleMessage(
-      "Выберите действие для нажатия левой кнопкой по значку в строке меню",
+      "Выберите действие для нажатия левой кнопкой по значку трея",
     ),
     "trayClickAction_showMainWindow": MessageLookupByLibrary.simpleMessage(
       "Показать главное окно",
     ),
     "trayClickAction_showTrayMenu": MessageLookupByLibrary.simpleMessage(
       "Показать меню трея",
+    ),
+    "trayClickAction_toggleProxy": MessageLookupByLibrary.simpleMessage(
+      "Запустить/остановить прокси",
     ),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunDesc": MessageLookupByLibrary.simpleMessage(

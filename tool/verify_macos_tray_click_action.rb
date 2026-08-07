@@ -14,19 +14,21 @@ model_test = read.call('test/models/config_test.dart')
 view_test = read.call('test/views/application_setting_test.dart')
 
 checks = {
-  'tray click action has the two supported choices' =>
-    enum.include?('enum TrayClickAction { showMainWindow, showTrayMenu }'),
+  'tray click action keeps the supported choices' =>
+    enum.include?(
+      'enum TrayClickAction { showMainWindow, showTrayMenu, toggleProxy }',
+    ),
   'old settings keep showing the main window' =>
     model.include?('@Default(TrayClickAction.showMainWindow) TrayClickAction trayClickAction'),
   'macOS uses the saved action while other platforms keep the main window' =>
-    tray.include?('if (!isMacOS || action == TrayClickAction.showMainWindow)') &&
+    tray.include?('return isMacOS ? showMenu() : showWindow();') &&
       manager.include?('isMacOS: system.isMacOS') &&
       manager.include?('action: ref.read(appSettingProvider).trayClickAction'),
   'tray manager can open the menu on a left click' =>
     manager.include?('trayManager.popUpContextMenu(bringAppToFront: true)'),
-  'settings expose the choice only on macOS' =>
-    view.include?('if (system.isMacOS) const TrayClickActionItem()') &&
-      view.include?('options: TrayClickAction.values'),
+  'settings expose the desktop choices and filter the macOS menu' =>
+    view.include?('if (system.isDesktop) const TrayClickActionItem()') &&
+      view.include?('supportedTrayClickActions(isMacOS: system.isMacOS)'),
   'behavior and persistence have focused tests' =>
     tray_test.include?('handleTrayIconMouseDown') &&
       model_test.include?('persists the macOS tray click action') &&
@@ -36,7 +38,8 @@ checks = {
       content = File.read(path)
       content.include?('"trayClickAction"') &&
         content.include?('"trayClickAction_showMainWindow"') &&
-        content.include?('"trayClickAction_showTrayMenu"')
+        content.include?('"trayClickAction_showTrayMenu"') &&
+        content.include?('"trayClickAction_toggleProxy"')
     end,
 }
 
@@ -45,4 +48,4 @@ failed = checks.each_with_object([]) do |(name, passed), names|
 end
 abort "macOS tray click action verifier failed: #{failed.join(', ')}" unless failed.empty?
 
-puts 'macOS tray click action wiring verified'
+puts 'desktop tray click action wiring verified'

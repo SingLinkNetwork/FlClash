@@ -83,6 +83,7 @@ const _$RestoreStrategyEnumMap = {
 const _$TrayClickActionEnumMap = {
   TrayClickAction.showMainWindow: 'showMainWindow',
   TrayClickAction.showTrayMenu: 'showTrayMenu',
+  TrayClickAction.toggleProxy: 'toggleProxy',
 };
 
 const _$DashboardWidgetEnumMap = {

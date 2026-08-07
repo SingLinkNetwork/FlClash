@@ -165,6 +165,19 @@ void main() {
       expect(restored.trayClickAction, TrayClickAction.showTrayMenu);
     });
 
+    test('persists the desktop proxy toggle tray click action', () {
+      const props = AppSettingProps(
+        trayClickAction: TrayClickAction.toggleProxy,
+      );
+
+      final restored = roundTrip(
+        () => props.toJson(),
+        AppSettingProps.fromJson,
+      );
+
+      expect(restored.trayClickAction, TrayClickAction.toggleProxy);
+    });
+
     test('legacy settings without tray click action keep the main window', () {
       final props = AppSettingProps.fromJson(const {});
 

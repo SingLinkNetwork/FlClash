@@ -1025,17 +1025,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "tools": MessageLookupByLibrary.simpleMessage("Tools"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxy Port"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Traffic usage"),
-    "trayClickAction": MessageLookupByLibrary.simpleMessage(
-      "Menu bar icon click",
-    ),
+    "trayClickAction": MessageLookupByLibrary.simpleMessage("Tray icon click"),
     "trayClickActionDesc": MessageLookupByLibrary.simpleMessage(
-      "Choose what a left click on the menu bar icon does",
+      "Choose what a left click on the tray icon does",
     ),
     "trayClickAction_showMainWindow": MessageLookupByLibrary.simpleMessage(
       "Show main window",
     ),
     "trayClickAction_showTrayMenu": MessageLookupByLibrary.simpleMessage(
       "Show tray menu",
+    ),
+    "trayClickAction_toggleProxy": MessageLookupByLibrary.simpleMessage(
+      "Start/stop proxy",
     ),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunDesc": MessageLookupByLibrary.simpleMessage(

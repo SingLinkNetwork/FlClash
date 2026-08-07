@@ -33,12 +33,24 @@ Future<void> handleTrayIconMouseDown({
   required TrayClickAction action,
   required Future<void> Function() showWindow,
   required Future<void> Function() showMenu,
+  required void Function() toggleProxy,
 }) {
-  if (!isMacOS || action == TrayClickAction.showMainWindow) {
-    return showWindow();
+  switch (action) {
+    case TrayClickAction.showMainWindow:
+      return showWindow();
+    case TrayClickAction.showTrayMenu:
+      return isMacOS ? showMenu() : showWindow();
+    case TrayClickAction.toggleProxy:
+      toggleProxy();
+      return Future.value();
   }
-  return showMenu();
 }
+
+List<TrayClickAction> supportedTrayClickActions({required bool isMacOS}) => [
+  TrayClickAction.showMainWindow,
+  if (isMacOS) TrayClickAction.showTrayMenu,
+  TrayClickAction.toggleProxy,
+];
 
 bool shouldDestroyTrayOnExit({required bool isMacOS}) => !isMacOS;
 

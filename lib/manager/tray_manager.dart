@@ -67,6 +67,9 @@ class _TrayContainerState extends ConsumerState<TrayManager> with TrayListener {
           // ignore: deprecated_member_use
           return trayManager.popUpContextMenu(bringAppToFront: true);
         },
+        toggleProxy: () {
+          ref.read(commonActionProvider.notifier).updateStart();
+        },
       ),
     );
   }

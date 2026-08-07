@@ -309,20 +309,20 @@ class AppLocalizations {
     );
   }
 
-  /// `Menu bar icon click`
+  /// `Tray icon click`
   String get trayClickAction {
     return Intl.message(
-      'Menu bar icon click',
+      'Tray icon click',
       name: 'trayClickAction',
       desc: '',
       args: [],
     );
   }
 
-  /// `Choose what a left click on the menu bar icon does`
+  /// `Choose what a left click on the tray icon does`
   String get trayClickActionDesc {
     return Intl.message(
-      'Choose what a left click on the menu bar icon does',
+      'Choose what a left click on the tray icon does',
       name: 'trayClickActionDesc',
       desc: '',
       args: [],
@@ -344,6 +344,16 @@ class AppLocalizations {
     return Intl.message(
       'Show tray menu',
       name: 'trayClickAction_showTrayMenu',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Start/stop proxy`
+  String get trayClickAction_toggleProxy {
+    return Intl.message(
+      'Start/stop proxy',
+      name: 'trayClickAction_toggleProxy',
       desc: '',
       args: [],
     );

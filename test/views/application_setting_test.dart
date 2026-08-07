@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
@@ -27,19 +29,32 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Menu bar icon click'), findsOneWidget);
+    expect(find.text('Tray icon click'), findsOneWidget);
     expect(find.text('Show main window'), findsOneWidget);
 
-    await tester.tap(find.text('Menu bar icon click'));
+    if (Platform.isMacOS) {
+      await tester.tap(find.text('Tray icon click'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Show tray menu'));
+      await tester.pumpAndSettle();
+
+      expect(
+        container.read(appSettingProvider).trayClickAction.name,
+        'showTrayMenu',
+      );
+      expect(find.text('Show tray menu'), findsOneWidget);
+    }
+
+    await tester.tap(find.text('Tray icon click'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Show tray menu'));
+    await tester.tap(find.text('Start/stop proxy'));
     await tester.pumpAndSettle();
 
     expect(
       container.read(appSettingProvider).trayClickAction.name,
-      'showTrayMenu',
+      'toggleProxy',
     );
-    expect(find.text('Show tray menu'), findsOneWidget);
+    expect(find.text('Start/stop proxy'), findsOneWidget);
   });
 }
 

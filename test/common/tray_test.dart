@@ -73,46 +73,87 @@ void main() {
     test('shows the main window by default on macOS', () async {
       var showWindowCalls = 0;
       var showMenuCalls = 0;
+      var toggleProxyCalls = 0;
 
       await handleTrayIconMouseDown(
         isMacOS: true,
         action: TrayClickAction.showMainWindow,
         showWindow: () async => showWindowCalls++,
         showMenu: () async => showMenuCalls++,
+        toggleProxy: () => toggleProxyCalls++,
       );
 
       expect(showWindowCalls, 1);
       expect(showMenuCalls, 0);
+      expect(toggleProxyCalls, 0);
     });
 
     test('shows the tray menu when configured on macOS', () async {
       var showWindowCalls = 0;
       var showMenuCalls = 0;
+      var toggleProxyCalls = 0;
 
       await handleTrayIconMouseDown(
         isMacOS: true,
         action: TrayClickAction.showTrayMenu,
         showWindow: () async => showWindowCalls++,
         showMenu: () async => showMenuCalls++,
+        toggleProxy: () => toggleProxyCalls++,
       );
 
       expect(showWindowCalls, 0);
       expect(showMenuCalls, 1);
+      expect(toggleProxyCalls, 0);
     });
 
     test('keeps showing the main window on non-macOS platforms', () async {
       var showWindowCalls = 0;
       var showMenuCalls = 0;
+      var toggleProxyCalls = 0;
 
       await handleTrayIconMouseDown(
         isMacOS: false,
         action: TrayClickAction.showTrayMenu,
         showWindow: () async => showWindowCalls++,
         showMenu: () async => showMenuCalls++,
+        toggleProxy: () => toggleProxyCalls++,
       );
 
       expect(showWindowCalls, 1);
       expect(showMenuCalls, 0);
+      expect(toggleProxyCalls, 0);
+    });
+
+    test('toggles the proxy when configured on a desktop platform', () async {
+      var showWindowCalls = 0;
+      var showMenuCalls = 0;
+      var toggleProxyCalls = 0;
+
+      await handleTrayIconMouseDown(
+        isMacOS: false,
+        action: TrayClickAction.toggleProxy,
+        showWindow: () async => showWindowCalls++,
+        showMenu: () async => showMenuCalls++,
+        toggleProxy: () => toggleProxyCalls++,
+      );
+
+      expect(showWindowCalls, 0);
+      expect(showMenuCalls, 0);
+      expect(toggleProxyCalls, 1);
+    });
+  });
+
+  group('supportedTrayClickActions', () {
+    test('includes the tray menu only on macOS', () {
+      expect(supportedTrayClickActions(isMacOS: true), [
+        TrayClickAction.showMainWindow,
+        TrayClickAction.showTrayMenu,
+        TrayClickAction.toggleProxy,
+      ]);
+      expect(supportedTrayClickActions(isMacOS: false), [
+        TrayClickAction.showMainWindow,
+        TrayClickAction.toggleProxy,
+      ]);
     });
   });
 }

@@ -831,17 +831,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "tools": MessageLookupByLibrary.simpleMessage("ツール"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxyポート"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("トラフィック使用量"),
-    "trayClickAction": MessageLookupByLibrary.simpleMessage(
-      "メニューバーアイコンのクリック動作",
-    ),
+    "trayClickAction": MessageLookupByLibrary.simpleMessage("トレイアイコンのクリック動作"),
     "trayClickActionDesc": MessageLookupByLibrary.simpleMessage(
-      "メニューバーアイコンを左クリックしたときの動作を選択",
+      "トレイアイコンを左クリックしたときの動作を選択",
     ),
     "trayClickAction_showMainWindow": MessageLookupByLibrary.simpleMessage(
       "メインウィンドウを表示",
     ),
     "trayClickAction_showTrayMenu": MessageLookupByLibrary.simpleMessage(
       "トレイメニューを表示",
+    ),
+    "trayClickAction_toggleProxy": MessageLookupByLibrary.simpleMessage(
+      "プロキシを起動/停止",
     ),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("管理者モードでのみ有効"),

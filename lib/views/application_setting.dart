@@ -135,14 +135,18 @@ class TrayClickActionItem extends ConsumerWidget {
     final trayClickAction = ref.watch(
       appSettingProvider.select((state) => state.trayClickAction),
     );
+    final options = supportedTrayClickActions(isMacOS: system.isMacOS);
+    final selectedAction = options.contains(trayClickAction)
+        ? trayClickAction
+        : TrayClickAction.showMainWindow;
     return ListItem<TrayClickAction>.options(
       title: Text(appLocalizations.trayClickAction),
-      subtitle: Text(Intl.message('trayClickAction_${trayClickAction.name}')),
+      subtitle: Text(Intl.message('trayClickAction_${selectedAction.name}')),
       delegate: OptionsDelegate<TrayClickAction>(
         title: appLocalizations.trayClickAction,
-        options: TrayClickAction.values,
+        options: options,
         textBuilder: (value) => Intl.message('trayClickAction_${value.name}'),
-        value: trayClickAction,
+        value: selectedAction,
         onChanged: (value) {
           if (value == null) return;
           ref
@@ -309,7 +313,7 @@ class ApplicationSettingView extends StatelessWidget {
         const AutoLaunchItem(),
         const SilentLaunchItem(),
       ],
-      if (system.isMacOS) const TrayClickActionItem(),
+      if (system.isDesktop) const TrayClickActionItem(),
       const AutoRunItem(),
       if (system.isAndroid) ...[const HiddenItem()],
       const AnimateTabItem(),
