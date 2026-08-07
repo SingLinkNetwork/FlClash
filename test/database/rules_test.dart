@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/database/database.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:test/test.dart';
 
@@ -158,4 +159,26 @@ void main() {
       );
     },
   );
+
+  test('serializes a MATCH rule without a content placeholder', () async {
+    final profile = await makeRealProfileTask(
+      const MakeRealProfileState(
+        profilesPath: '/tmp/flclash-match-rule-test',
+        profileId: 10,
+        rawConfig: {},
+        realPatchConfig: PatchClashConfig(),
+        overrideDns: false,
+        appendSystemDns: false,
+        proxyGroups: [],
+        rules: [],
+        addedRules: [
+          Rule(id: 601, ruleAction: RuleAction.MATCH, ruleTarget: 'DIRECT'),
+        ],
+        defaultUA: 'FlClash-Test',
+      ),
+    );
+
+    expect(profile.a, contains('MATCH,DIRECT'));
+    expect(profile.a, isNot(contains('MATCH,null')));
+  });
 }

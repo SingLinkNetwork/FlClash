@@ -409,10 +409,15 @@ extension RuleExt on Rule {
   }
 
   String? get realContent {
-    return switch (ruleAction == RuleAction.RULE_SET) {
-      true => ruleProvider,
-      false => content,
+    return switch (ruleAction) {
+      RuleAction.RULE_SET => ruleProvider,
+      RuleAction.MATCH => null,
+      _ => content,
     };
+  }
+
+  bool get hasValidContent {
+    return ruleAction == RuleAction.MATCH || realContent?.isNotEmpty == true;
   }
 
   String? get realTarget {
@@ -432,7 +437,7 @@ extension RuleExt on Rule {
   String get rawValue {
     return [
       ruleAction.value,
-      realContent,
+      if (ruleAction != RuleAction.MATCH) realContent,
       realTarget,
       if (ruleAction.hasParams) ...[
         if (src) 'src',
