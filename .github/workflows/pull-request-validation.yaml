@@ -232,6 +232,28 @@ jobs:
           test/views/proxies/test_url_selector_test.dart
           --reporter expanded
 
+  windows-core-callback:
+    name: Windows core callback cleanup
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test core callback cleanup
+        run: flutter test test/core/service_test.dart --reporter expanded
+
   static-source:
     name: Static ${{ matrix.id }}
     runs-on: ubuntu-latest
@@ -291,6 +313,8 @@ jobs:
             script: tool/verify_hotkey_scope.rb
           - id: custom-test-urls
             script: tool/verify_custom_test_urls.rb
+          - id: core-callback-cleanup
+            script: tool/verify_core_callback_cleanup.rb
           - id: ci-layout
             script: tool/verify_ci_layout.rb
 
@@ -314,6 +338,7 @@ jobs:
       - macos-tun-recvmsgx
       - macos-hotkey-scope
       - custom-test-urls
+      - windows-core-callback
       - static-source
     runs-on: ${{ matrix.os }}
     strategy:

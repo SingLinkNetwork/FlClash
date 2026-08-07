@@ -18,6 +18,7 @@ required_jobs = %w[
   macos-tun-recvmsgx
   macos-hotkey-scope
   custom-test-urls
+  windows-core-callback
   static-source
   build
 ]
@@ -54,6 +55,7 @@ expected_scripts = %w[
   tool/verify_macos_tun_recvmsgx.rb
   tool/verify_hotkey_scope.rb
   tool/verify_custom_test_urls.rb
+  tool/verify_core_callback_cleanup.rb
   tool/verify_ci_layout.rb
 ]
 actual_scripts = static_entries.map { |entry| entry.fetch('script') }
@@ -71,6 +73,7 @@ expected_build_needs = %w[
   macos-tun-recvmsgx
   macos-hotkey-scope
   custom-test-urls
+  windows-core-callback
   static-source
 ]
 build_needs = Array(jobs.fetch('build').fetch('needs'))
