@@ -193,7 +193,8 @@ bool ResetInterfaceRoutes(const NET_LUID& interface_luid)
 bool ResetInterfaceMetric(const NET_LUID& interface_luid)
 {
   bool success = true;
-  for (const auto family : {AF_INET, AF_INET6})
+  const ADDRESS_FAMILY families[] = {AF_INET, AF_INET6};
+  for (const auto family : families)
   {
     MIB_IPINTERFACE_ROW interface_row = {};
     InitializeIpInterfaceEntry(&interface_row);
