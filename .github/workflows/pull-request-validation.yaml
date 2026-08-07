@@ -72,6 +72,9 @@ jobs:
       - name: Verify Linux renderer fallback
         run: ruby tool/verify_linux_renderer_fallback.rb
 
+      - name: Verify Linux CJK font fallback
+        run: ruby tool/verify_linux_cjk_font_fallback.rb
+
   build:
     name: Build ${{ matrix.platform }} on ${{ matrix.os }}
     needs: test
@@ -167,6 +170,10 @@ jobs:
       - name: Verify Linux renderer fallback
         if: matrix.platform == 'linux'
         run: ruby tool/verify_linux_renderer_fallback.rb
+
+      - name: Verify Linux CJK font fallback
+        if: matrix.platform == 'linux'
+        run: ruby tool/verify_linux_cjk_font_fallback.rb
 
       - name: Verify Linux QuickJS bundle
         if: matrix.platform == 'linux'

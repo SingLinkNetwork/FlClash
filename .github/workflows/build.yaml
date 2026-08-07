@@ -58,6 +58,9 @@ jobs:
       - name: Verify window visibility queue
         run: ruby tool/verify_window_visibility_queue.rb
 
+      - name: Verify Linux CJK font fallback
+        run: ruby tool/verify_linux_cjk_font_fallback.rb
+
   build:
     needs: [ test ]
     runs-on: ${{ matrix.os }}
@@ -160,6 +163,10 @@ jobs:
       - name: Verify Linux renderer fallback
         if: startsWith(matrix.platform, 'linux')
         run: ruby tool/verify_linux_renderer_fallback.rb
+
+      - name: Verify Linux CJK font fallback
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_cjk_font_fallback.rb
 
       - name: Verify Linux tray clipboard fallback
         if: startsWith(matrix.platform, 'linux')
