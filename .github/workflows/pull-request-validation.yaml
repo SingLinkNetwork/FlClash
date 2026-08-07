@@ -11,8 +11,27 @@ env:
   FLUTTER_VERSION: '3.44.8'
 
 jobs:
-  test:
-    name: Dart tests and analysis
+  dart-format:
+    name: Dart format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Verify changed Dart files are formatted
+        run: ruby tool/verify_dart_format.rb
+
+  dart-analyze:
+    name: Dart analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,17 +49,45 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+  flutter-tests:
+    name: Flutter tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test --reporter expanded
+
+  go-tests:
+    name: Go tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.26.4'
           cache-dependency-path: core/go.sum
-
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos
-
-      - name: Run tests
-        run: flutter test --reporter expanded
 
       - name: Test Go core scheduler
         working-directory: core
@@ -48,36 +95,93 @@ jobs:
           CGO_ENABLED: '0'
         run: go test .
 
-      - name: Verify LAN proxy runtime update
-        run: ruby tool/verify_lan_proxy_toggle.rb
+  go-vet:
+    name: Go vet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Verify delay test concurrency alignment
-        run: ruby tool/verify_delay_test_concurrency.rb
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
 
-      - name: Verify Android resolve_process JNI guard
-        run: ruby tool/verify_android_jni_resolve_guard.rb
+      - name: Vet Go core scheduler
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go vet .
 
-      - name: Verify window visibility queue
-        run: ruby tool/verify_window_visibility_queue.rb
+  static-source:
+    name: Static ${{ matrix.id }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: lan-proxy-runtime
+            script: tool/verify_lan_proxy_toggle.rb
+          - id: delay-test-concurrency
+            script: tool/verify_delay_test_concurrency.rb
+          - id: android-jni-guard
+            script: tool/verify_android_jni_resolve_guard.rb
+          - id: window-visibility-queue
+            script: tool/verify_window_visibility_queue.rb
+          - id: linux-tray-clipboard
+            script: tool/verify_linux_tray_clipboard.rb
+          - id: windows-paste-workaround
+            script: tool/verify_windows_paste_fix.rb
+          - id: windows-search-close
+            script: tool/verify_windows_search_close.rb
+          - id: linux-renderer-fallback
+            script: tool/verify_linux_renderer_fallback.rb
+          - id: linux-cjk-font-fallback
+            script: tool/verify_linux_cjk_font_fallback.rb
+          - id: android-background-location
+            script: tool/verify_android_background_location_permission.rb
+          - id: android-tile-background
+            script: tool/verify_android_tile_background_toggle.rb
+          - id: linux-x11-thread
+            script: tool/verify_linux_x11_thread_init.rb
+          - id: windows-maximize-work-area
+            script: tool/verify_windows_maximize_work_area.rb
+          - id: windows-proxy-shutdown
+            script: tool/verify_windows_proxy_shutdown.rb
+          - id: windows-tun-metric-cleanup
+            script: tool/verify_windows_tun_metric_cleanup.rb
+          - id: desktop-render-visibility
+            script: tool/verify_desktop_render_visibility.rb
+          - id: windows-wifi-ssid
+            script: tool/verify_windows_wifi_ssid_plugin.rb
+          - id: macos-window-lifecycle
+            script: tool/verify_macos_window_lifecycle.rb
+          - id: macos-tray-destroy
+            script: tool/verify_macos_tray_destroy.rb
+          - id: macos-wifi-ssid
+            script: tool/verify_macos_wifi_ssid_plugin.rb
+          - id: ci-layout
+            script: tool/verify_ci_layout.rb
 
-      - name: Verify Linux tray clipboard fallback
-        run: ruby tool/verify_linux_tray_clipboard.rb
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Verify Windows Win+V paste workaround
-        run: ruby tool/verify_windows_paste_fix.rb
-
-      - name: Verify Windows search close handling
-        run: ruby tool/verify_windows_search_close.rb
-
-      - name: Verify Linux renderer fallback
-        run: ruby tool/verify_linux_renderer_fallback.rb
-
-      - name: Verify Linux CJK font fallback
-        run: ruby tool/verify_linux_cjk_font_fallback.rb
+      - name: Run ${{ matrix.id }} verifier
+        run: ruby ${{ matrix.script }}
 
   build:
     name: Build ${{ matrix.platform }} on ${{ matrix.os }}
-    needs: test
+    needs:
+      - dart-format
+      - dart-analyze
+      - flutter-tests
+      - go-tests
+      - go-vet
+      - static-source
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -151,29 +255,9 @@ jobs:
         if: matrix.platform == 'android'
         run: flutter build apk --debug --target-platform android-arm64
 
-      - name: Verify Android background location permission
-        if: matrix.platform == 'android'
-        run: ruby tool/verify_android_background_location_permission.rb
-
-      - name: Verify Android tile background toggle
-        if: matrix.platform == 'android'
-        run: ruby tool/verify_android_tile_background_toggle.rb
-
       - name: Build Linux
         if: matrix.platform == 'linux'
         run: flutter build linux --debug
-
-      - name: Verify Linux X11 thread initialization
-        if: matrix.platform == 'linux'
-        run: ruby tool/verify_linux_x11_thread_init.rb
-
-      - name: Verify Linux renderer fallback
-        if: matrix.platform == 'linux'
-        run: ruby tool/verify_linux_renderer_fallback.rb
-
-      - name: Verify Linux CJK font fallback
-        if: matrix.platform == 'linux'
-        run: ruby tool/verify_linux_cjk_font_fallback.rb
 
       - name: Verify Linux QuickJS bundle
         if: matrix.platform == 'linux'
@@ -182,34 +266,6 @@ jobs:
       - name: Build Windows
         if: matrix.platform == 'windows'
         run: flutter build windows --debug
-
-      - name: Verify Windows Win+V paste workaround
-        if: matrix.platform == 'windows'
-        run: ruby tool/verify_windows_paste_fix.rb
-
-      - name: Verify Windows search close handling
-        if: matrix.platform == 'windows'
-        run: ruby tool/verify_windows_search_close.rb
-
-      - name: Verify Windows maximize work area
-        if: matrix.platform == 'windows'
-        run: ruby tool/verify_windows_maximize_work_area.rb
-
-      - name: Verify Windows proxy shutdown cleanup
-        if: matrix.platform == 'windows'
-        run: ruby tool/verify_windows_proxy_shutdown.rb
-
-      - name: Verify Windows TUN route and metric cleanup
-        if: matrix.platform == 'windows'
-        run: ruby tool/verify_windows_tun_metric_cleanup.rb
-
-      - name: Verify desktop render visibility
-        if: matrix.platform == 'windows'
-        run: ruby tool/verify_desktop_render_visibility.rb
-
-      - name: Verify Windows Wi-Fi SSID optional dependency
-        if: matrix.platform == 'windows'
-        run: ruby tool/verify_windows_wifi_ssid_plugin.rb
 
       - name: Verify Windows installer runtime
         if: matrix.platform == 'windows'
@@ -273,21 +329,9 @@ jobs:
         if: matrix.platform == 'macos'
         run: flutter build macos --debug
 
-      - name: Verify macOS window lifecycle
-        if: matrix.platform == 'macos'
-        run: ruby tool/verify_macos_window_lifecycle.rb
-
-      - name: Verify macOS tray position preservation
-        if: matrix.platform == 'macos'
-        run: ruby tool/verify_macos_tray_destroy.rb
-
       - name: Verify macOS SQLite bundle and loader
         if: matrix.platform == 'macos'
         run: ruby tool/verify_macos_sqlite_bundle.rb build/macos/Build/Products/Debug/FlClash.app lib/common/sqlite.dart x86_64
-
-      - name: Verify macOS Wi-Fi SSID safety
-        if: matrix.platform == 'macos'
-        run: ruby tool/verify_macos_wifi_ssid_plugin.rb
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
