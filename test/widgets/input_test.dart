@@ -68,7 +68,7 @@ void main() {
         overrides: [
           viewSizeProvider.overrideWithBuild((_, _) => const Size(1200, 1000)),
         ],
-        child: _TestApp(
+        child: const _TestApp(
           child: Scaffold(
             body: InputDialog(title: 'Import URL', value: '', labelText: 'URL'),
           ),
@@ -109,7 +109,7 @@ void main() {
         overrides: [
           viewSizeProvider.overrideWithBuild((_, _) => const Size(1200, 1000)),
         ],
-        child: _TestApp(
+        child: const _TestApp(
           child: Scaffold(
             body: InputDialog(
               title: 'Import URL',

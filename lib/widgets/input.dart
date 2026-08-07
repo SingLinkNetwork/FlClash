@@ -156,6 +156,18 @@ class _InputDialogState extends State<InputDialog> {
     Navigator.of(context).pop<String>(widget.resetValue);
   }
 
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (!mounted || text == null || text.isEmpty) {
+      return;
+    }
+    _textController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
   @override
   void dispose() {
     _textController.dispose();
@@ -208,6 +220,12 @@ class _InputDialogState extends State<InputDialog> {
                 suffixText: suffixText,
                 hintText: widget.hintText,
                 labelText: widget.labelText,
+                suffixIcon: IconButton(
+                  key: const ValueKey('input-dialog-paste'),
+                  tooltip: appLocalizations.paste,
+                  onPressed: _pasteFromClipboard,
+                  icon: const Icon(Icons.content_paste),
+                ),
               ),
               validator: widget.validator,
             ),
