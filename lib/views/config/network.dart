@@ -55,6 +55,30 @@ class TUNItem extends ConsumerWidget {
   }
 }
 
+class MacOSIpForwardingItem extends ConsumerWidget {
+  const MacOSIpForwardingItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final appLocalizations = context.appLocalizations;
+    final enabled = ref.watch(
+      appSettingProvider.select((state) => state.macOSIpForwarding),
+    );
+    return ListItem.switchItem(
+      title: Text(appLocalizations.macOSIpForwarding),
+      subtitle: Text(appLocalizations.macOSIpForwardingDesc),
+      delegate: SwitchDelegate(
+        value: enabled,
+        onChanged: (value) {
+          ref
+              .read(appSettingProvider.notifier)
+              .update((state) => state.copyWith(macOSIpForwarding: value));
+        },
+      ),
+    );
+  }
+}
+
 class AllowBypassItem extends ConsumerWidget {
   const AllowBypassItem({super.key});
 
@@ -383,6 +407,7 @@ class NetworkListView extends StatelessWidget {
         title: appLocalizations.options,
         items: [
           if (system.isDesktop) const TUNItem(),
+          if (system.isMacOS) const MacOSIpForwardingItem(),
           if (system.isMacOS) const AutoSetSystemDnsItem(),
           const TunStackItem(),
           if (system.isMacOS) const TunRecvMsgXItem(),

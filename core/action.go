@@ -62,6 +62,14 @@ func handleAction(action *Action, result ActionResult) {
 	case shutdownMethod:
 		result.success(handleShutdown())
 		return
+	case setIPForwardingMethod:
+		enabled, ok := action.Data.(bool)
+		if !ok {
+			result.error("setIpForwarding expects a boolean")
+			return
+		}
+		result.success(setIPForwarding(enabled))
+		return
 	case validateConfigMethod:
 		path := action.Data.(string)
 		result.success(handleValidateConfig(path))

@@ -771,6 +771,49 @@ final class IsStartProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$isStartHash() => r'f8bcefa8515c44fbe14876a5fc6676110508e9b2';
 
+@ProviderFor(shouldEnableMacOSIpForwarding)
+final shouldEnableMacOSIpForwardingProvider =
+    ShouldEnableMacOSIpForwardingProvider._();
+
+final class ShouldEnableMacOSIpForwardingProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  ShouldEnableMacOSIpForwardingProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'shouldEnableMacOSIpForwardingProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$shouldEnableMacOSIpForwardingHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return shouldEnableMacOSIpForwarding(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$shouldEnableMacOSIpForwardingHash() =>
+    r'b85f5ba014fa035ead9e83d5f48411d203f6032f';
+
 @ProviderFor(proxiesTabControllerState)
 final proxiesTabControllerStateProvider = ProxiesTabControllerStateProvider._();
 

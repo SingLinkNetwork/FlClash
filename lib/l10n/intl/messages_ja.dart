@@ -438,6 +438,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopback": MessageLookupByLibrary.simpleMessage("ループバック解除ツール"),
     "loopbackDesc": MessageLookupByLibrary.simpleMessage("UWPループバック解除用"),
     "loose": MessageLookupByLibrary.simpleMessage("疎"),
+    "macOSIpForwarding": MessageLookupByLibrary.simpleMessage("LANゲートウェイ"),
+    "macOSIpForwardingDesc": MessageLookupByLibrary.simpleMessage(
+      "TUN 実行中に他のLANデバイスをこのMac経由で接続",
+    ),
     "matchSourceIp": MessageLookupByLibrary.simpleMessage("送信元IPをマッチング"),
     "maxFailedTimes": MessageLookupByLibrary.simpleMessage("最大失敗回数"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("メモリ情報"),

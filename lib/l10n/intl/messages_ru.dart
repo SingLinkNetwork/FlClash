@@ -579,6 +579,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Используется для разблокировки Loopback UWP",
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Свободный"),
+    "macOSIpForwarding": MessageLookupByLibrary.simpleMessage(
+      "Шлюз локальной сети",
+    ),
+    "macOSIpForwardingDesc": MessageLookupByLibrary.simpleMessage(
+      "Перенаправлять трафик локальной сети через этот Mac при работе TUN",
+    ),
     "matchSourceIp": MessageLookupByLibrary.simpleMessage(
       "Сопоставить исходный IP",
     ),

@@ -289,6 +289,26 @@ class AppLocalizations {
     );
   }
 
+  /// `LAN gateway`
+  String get macOSIpForwarding {
+    return Intl.message(
+      'LAN gateway',
+      name: 'macOSIpForwarding',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Forward LAN traffic through this Mac while TUN is running`
+  String get macOSIpForwardingDesc {
+    return Intl.message(
+      'Forward LAN traffic through this Mac while TUN is running',
+      name: 'macOSIpForwardingDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `TUN recvmsgx`
   String get tunRecvMsgX {
     return Intl.message(

@@ -386,6 +386,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopback": MessageLookupByLibrary.simpleMessage("回环解锁工具"),
     "loopbackDesc": MessageLookupByLibrary.simpleMessage("用于UWP回环解锁"),
     "loose": MessageLookupByLibrary.simpleMessage("宽松"),
+    "macOSIpForwarding": MessageLookupByLibrary.simpleMessage("局域网网关"),
+    "macOSIpForwardingDesc": MessageLookupByLibrary.simpleMessage(
+      "TUN 运行时允许其他局域网设备通过此 Mac 上网",
+    ),
     "matchSourceIp": MessageLookupByLibrary.simpleMessage("匹配来源IP"),
     "maxFailedTimes": MessageLookupByLibrary.simpleMessage("最大失败次数"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("内存信息"),

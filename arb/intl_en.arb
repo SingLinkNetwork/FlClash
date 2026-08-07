@@ -35,6 +35,8 @@
   "allowLanDesc": "Allow access proxy through the LAN",
   "tun": "TUN",
   "tunDesc": "only effective in administrator mode",
+  "macOSIpForwarding": "LAN gateway",
+  "macOSIpForwardingDesc": "Forward LAN traffic through this Mac while TUN is running",
   "tunRecvMsgX": "TUN recvmsgx",
   "tunRecvMsgXDesc": "Use macOS recvmsgx for better TUN receive performance; turn it off if it causes instability",
   "minimizeOnExit": "Minimize on exit",

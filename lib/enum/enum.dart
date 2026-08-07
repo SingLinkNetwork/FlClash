@@ -258,6 +258,7 @@ enum ActionMethod {
   stopLog,
   startListener,
   stopListener,
+  setIpForwarding,
   getCountryCode,
   getMemory,
   crash,

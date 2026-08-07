@@ -104,6 +104,7 @@ const (
 	startListenerMethod            Method = "startListener"
 	stopListenerMethod             Method = "stopListener"
 	updateDnsMethod                Method = "updateDns"
+	setIPForwardingMethod          Method = "setIpForwarding"
 	crashMethod                    Method = "crash"
 	setupConfigMethod              Method = "setupConfig"
 	getConfigMethod                Method = "getConfig"

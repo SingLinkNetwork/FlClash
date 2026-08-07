@@ -17,6 +17,7 @@ required_jobs = %w[
   linux-cli-start
   macos-tun-recvmsgx
   macos-hotkey-scope
+  macos-ip-forwarding
   custom-test-urls
   windows-core-callback
   static-source
@@ -54,6 +55,7 @@ expected_scripts = %w[
   tool/verify_linux_cli_start.rb
   tool/verify_macos_tun_recvmsgx.rb
   tool/verify_hotkey_scope.rb
+  tool/verify_macos_ip_forwarding.rb
   tool/verify_custom_test_urls.rb
   tool/verify_core_callback_cleanup.rb
   tool/verify_ci_layout.rb
@@ -72,6 +74,7 @@ expected_build_needs = %w[
   linux-cli-start
   macos-tun-recvmsgx
   macos-hotkey-scope
+  macos-ip-forwarding
   custom-test-urls
   windows-core-callback
   static-source

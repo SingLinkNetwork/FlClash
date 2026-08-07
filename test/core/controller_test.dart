@@ -245,6 +245,13 @@ void main() {
       expect(result, false);
     });
 
+    test('setIpForwarding delegates', () async {
+      when(() => mock.setIpForwarding(true)).thenAnswer((_) async => true);
+      final result = await controller.setIpForwarding(true);
+      expect(result, true);
+      verify(() => mock.setIpForwarding(true)).called(1);
+    });
+
     test('updateGeoData delegates', () async {
       when(() => mock.updateGeoData('MMDB')).thenAnswer((_) async => 'ok');
       final result = await controller.updateGeoData('MMDB');

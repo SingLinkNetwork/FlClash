@@ -322,6 +322,29 @@ bool isStart(Ref ref) {
   return ref.watch(runTimeProvider.select((state) => state != null));
 }
 
+bool isMacOSIpForwardingEligible({
+  required bool isMacOS,
+  required bool configured,
+  required bool tunEnabled,
+  required bool isStarted,
+  required bool coreConnected,
+}) {
+  return isMacOS && configured && tunEnabled && isStarted && coreConnected;
+}
+
+@riverpod
+bool shouldEnableMacOSIpForwarding(Ref ref) {
+  return isMacOSIpForwardingEligible(
+    isMacOS: system.isMacOS,
+    configured: ref.watch(
+      appSettingProvider.select((state) => state.macOSIpForwarding),
+    ),
+    tunEnabled: ref.watch(realTunEnableProvider),
+    isStarted: ref.watch(isStartProvider),
+    coreConnected: ref.watch(coreStatusProvider) == CoreStatus.connected,
+  );
+}
+
 @riverpod
 VM2<List<String>, String?> proxiesTabControllerState(Ref ref) {
   return ref.watch(

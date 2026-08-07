@@ -35,6 +35,8 @@
   "allowLanDesc": "Разрешить доступ к прокси через локальную сеть",
   "tun": "TUN",
   "tunDesc": "действительно только в режиме администратора",
+  "macOSIpForwarding": "Шлюз локальной сети",
+  "macOSIpForwardingDesc": "Перенаправлять трафик локальной сети через этот Mac при работе TUN",
   "tunRecvMsgX": "TUN recvmsgx",
   "tunRecvMsgXDesc": "Использовать recvmsgx macOS для повышения производительности TUN; отключите при нестабильности",
   "minimizeOnExit": "Свернуть при выходе",

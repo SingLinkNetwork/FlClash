@@ -35,6 +35,8 @@
   "allowLanDesc": "LAN経由でのプロキシアクセスを許可",
   "tun": "TUN",
   "tunDesc": "管理者モードでのみ有効",
+  "macOSIpForwarding": "LANゲートウェイ",
+  "macOSIpForwardingDesc": "TUN 実行中に他のLANデバイスをこのMac経由で接続",
   "tunRecvMsgX": "TUN recvmsgx",
   "tunRecvMsgXDesc": "macOS の TUN 受信性能を高めます。不安定な場合はオフにしてください",
   "minimizeOnExit": "終了時に最小化",

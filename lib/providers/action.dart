@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/common/ip_forwarding.dart';
 import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/database/database.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -549,8 +550,29 @@ class BackupAction extends _$BackupAction {
 
 @Riverpod(keepAlive: true)
 class CoreAction extends _$CoreAction {
+  late final _ipForwardingQueue = IpForwardingRequestQueue(_setIpForwarding);
+
   @override
   void build() {}
+
+  Future<bool> _setIpForwarding(bool enabled) async {
+    if (!system.isMacOS ||
+        ref.read(coreStatusProvider) != CoreStatus.connected) {
+      return true;
+    }
+    final result = await coreController.setIpForwarding(enabled);
+    if (!result) {
+      commonPrint.log(
+        'Failed to ${enabled ? 'enable' : 'restore'} macOS IP forwarding',
+        logLevel: LogLevel.warning,
+      );
+    }
+    return result;
+  }
+
+  Future<bool> setIpForwarding(bool enabled) {
+    return _ipForwardingQueue.set(enabled);
+  }
 
   Future<void> initCore() async {
     final isInit = await coreController.isInit;
@@ -601,6 +623,9 @@ class CoreAction extends _$CoreAction {
   Future<void> restartCore([bool start = false]) async {
     final isDisconnected =
         ref.read(coreStatusProvider) == CoreStatus.disconnected;
+    if (!isDisconnected) {
+      await setIpForwarding(false);
+    }
     ref.read(coreStatusProvider.notifier).value = CoreStatus.disconnected;
     await coreController.shutdown(!isDisconnected);
     await connectCore();
@@ -646,6 +671,9 @@ class SystemAction extends _$SystemAction {
       system.exit();
     });
     try {
+      if (system.isMacOS) {
+        await ref.read(coreActionProvider.notifier).setIpForwarding(false);
+      }
       await Future.wait([
         if (needSave) preferences.saveConfig(ref.read(configProvider)),
         if (macOS != null) macOS!.updateDns(true),

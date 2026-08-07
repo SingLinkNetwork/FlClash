@@ -558,6 +558,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Used for UWP loopback unlocking",
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Loose"),
+    "macOSIpForwarding": MessageLookupByLibrary.simpleMessage("LAN gateway"),
+    "macOSIpForwardingDesc": MessageLookupByLibrary.simpleMessage(
+      "Forward LAN traffic through this Mac while TUN is running",
+    ),
     "matchSourceIp": MessageLookupByLibrary.simpleMessage("Match source IP"),
     "maxFailedTimes": MessageLookupByLibrary.simpleMessage("Max failed times"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Memory info"),

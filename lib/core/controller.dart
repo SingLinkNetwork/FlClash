@@ -211,6 +211,10 @@ class CoreController {
     }
   }
 
+  Future<bool> setIpForwarding(bool enabled) {
+    return _interface.setIpForwarding(enabled);
+  }
+
   Future<void> _resetWindowsTunInterface() async {
     if (!system.isWindows) {
       return;

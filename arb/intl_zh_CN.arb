@@ -35,6 +35,8 @@
   "allowLanDesc": "允许通过局域网访问代理",
   "tun": "虚拟网卡",
   "tunDesc": "仅在管理员模式生效",
+  "macOSIpForwarding": "局域网网关",
+  "macOSIpForwardingDesc": "TUN 运行时允许其他局域网设备通过此 Mac 上网",
   "tunRecvMsgX": "TUN recvmsgx",
   "tunRecvMsgXDesc": "使用 macOS recvmsgx 提升 TUN 接收性能；如果不稳定可以关闭",
   "minimizeOnExit": "退出时最小化",

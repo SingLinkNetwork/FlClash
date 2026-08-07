@@ -206,6 +206,40 @@ jobs:
       - name: Test hotkey scope mapping
         run: flutter test test/enum/enum_test.dart --name 'HotKeyTriggerScopeExt' --reporter expanded
 
+  macos-ip-forwarding:
+    name: macOS LAN gateway forwarding
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test macOS LAN gateway wiring
+        run: >-
+          flutter test
+          test/core/ip_forwarding_action_test.dart
+          test/models/macos_ip_forwarding_test.dart
+          test/providers/ip_forwarding_state_test.dart
+          test/views/config/network_test.dart
+          --reporter expanded
+
+      - name: Test core sysctl state machine
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go test ip_forwarding.go ip_forwarding_test.go -count=1
+
   custom-test-urls:
     name: Custom test URL tests
     runs-on: macos-15-intel
@@ -311,6 +345,8 @@ jobs:
             script: tool/verify_macos_tun_recvmsgx.rb
           - id: hotkey-trigger-scope
             script: tool/verify_hotkey_scope.rb
+          - id: macos-ip-forwarding
+            script: tool/verify_macos_ip_forwarding.rb
           - id: custom-test-urls
             script: tool/verify_custom_test_urls.rb
           - id: core-callback-cleanup
@@ -337,6 +373,7 @@ jobs:
       - linux-cli-start
       - macos-tun-recvmsgx
       - macos-hotkey-scope
+      - macos-ip-forwarding
       - custom-test-urls
       - windows-core-callback
       - static-source
