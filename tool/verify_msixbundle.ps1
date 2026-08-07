@@ -33,6 +33,7 @@ function Open-NestedZip {
     [System.IO.Compression.ZipArchiveEntry] $Entry,
 
     [Parameter(Mandatory = $true)]
+    [AllowEmptyCollection()]
     [System.Collections.Generic.List[System.IO.MemoryStream]] $Streams
   )
 

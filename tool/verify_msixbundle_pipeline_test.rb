@@ -125,6 +125,25 @@ class VerifyMsixbundlePipelineTest < Minitest::Test
     end
   end
 
+  def test_verifier_requires_empty_nested_stream_collection_support
+    Dir.mktmpdir('flclash-msixbundle-verifier-test-') do |root|
+      workflow = File.join(root, 'workflow.yml')
+      File.write(workflow, valid_workflow_yaml)
+      write_pipeline_files(root)
+      File.write(File.join(root, 'tool', 'verify_msixbundle.ps1'), 'nested verifier')
+
+      _stdout, stderr, status = Open3.capture3(
+        RbConfig.ruby,
+        SCRIPT,
+        workflow,
+        root,
+      )
+
+      refute status.success?
+      assert_includes stderr, 'empty nested-stream collection'
+    end
+  end
+
   private
 
   def valid_workflow_yaml

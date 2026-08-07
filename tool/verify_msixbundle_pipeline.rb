@@ -174,6 +174,15 @@ if File.file?(msix_verifier_path)
   end
 end
 
+bundle_verifier_path = File.join(root, 'tool', 'verify_msixbundle.ps1')
+if File.file?(bundle_verifier_path)
+  bundle_verifier = File.read(bundle_verifier_path)
+  unless bundle_verifier.include?('[AllowEmptyCollection()]') &&
+         bundle_verifier.include?('[System.Collections.Generic.List[System.IO.MemoryStream]] $Streams')
+    errors << 'verify_msixbundle.ps1 must allow the initially empty nested-stream collection'
+  end
+end
+
 static_entries = jobs.dig('static-source', 'strategy', 'matrix', 'include') || []
 unless static_entries.any? { |entry| entry['script'] == 'tool/verify_msixbundle_pipeline.rb' }
   errors << 'static-source must run verify_msixbundle_pipeline.rb'
