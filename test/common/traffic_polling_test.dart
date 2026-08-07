@@ -25,14 +25,8 @@ void main() {
     });
 
     test('skips connection event parsing while the window is hidden', () {
-      expect(
-        shouldHandleCoreRequestEvent(renderPaused: true),
-        isFalse,
-      );
-      expect(
-        shouldHandleCoreRequestEvent(renderPaused: false),
-        isTrue,
-      );
+      expect(shouldHandleCoreRequestEvent(renderPaused: true), isFalse);
+      expect(shouldHandleCoreRequestEvent(renderPaused: false), isTrue);
     });
   });
 }

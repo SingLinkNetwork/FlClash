@@ -39,7 +39,9 @@ void main() {
         },
       );
 
-      final copied = await clipboard.copy('export all_proxy=http://127.0.0.1:7890');
+      final copied = await clipboard.copy(
+        'export all_proxy=http://127.0.0.1:7890',
+      );
 
       expect(copied, isTrue);
       expect(attempts, [

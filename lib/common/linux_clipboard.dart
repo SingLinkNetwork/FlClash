@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-typedef LinuxClipboardCommandRunner = Future<bool> Function(
-  String executable,
-  List<String> arguments,
-  String text,
-);
+typedef LinuxClipboardCommandRunner =
+    Future<bool> Function(
+      String executable,
+      List<String> arguments,
+      String text,
+    );
 
 class LinuxClipboardCommand {
   const LinuxClipboardCommand(this.executable, this.arguments);
@@ -71,7 +72,9 @@ Future<bool> _runCommand(
     // xclip/xsel intentionally remain alive while they own the clipboard.
     // A short wait still catches an unavailable or immediately failing helper.
     try {
-      return await process.exitCode.timeout(const Duration(milliseconds: 750)) ==
+      return await process.exitCode.timeout(
+            const Duration(milliseconds: 750),
+          ) ==
           0;
     } on TimeoutException {
       return true;

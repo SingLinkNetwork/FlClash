@@ -10,10 +10,7 @@ void main() {
         cache.next(show: true, trafficTitle: '↓ 1 KB/s ↑ 2 KB/s'),
         '↓ 1 KB/s ↑ 2 KB/s',
       );
-      expect(
-        cache.next(show: true, trafficTitle: '↓ 1 KB/s ↑ 2 KB/s'),
-        isNull,
-      );
+      expect(cache.next(show: true, trafficTitle: '↓ 1 KB/s ↑ 2 KB/s'), isNull);
     });
 
     test('emits the hidden title once and suppresses hidden duplicates', () {

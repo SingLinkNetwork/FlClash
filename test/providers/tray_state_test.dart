@@ -8,18 +8,18 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    container.read(appSettingProvider.notifier).update(
-          (state) => state.copyWith(showTrayTitle: false),
-        );
+    container
+        .read(appSettingProvider.notifier)
+        .update((state) => state.copyWith(showTrayTitle: false));
 
     expect(
       container.read(trayTitleStateProvider),
       const TrayTitleState(showTrayTitle: false, traffic: Traffic()),
     );
 
-    container.read(trafficsProvider.notifier).addTraffic(
-          const Traffic(up: 10, down: 20),
-        );
+    container
+        .read(trafficsProvider.notifier)
+        .addTraffic(const Traffic(up: 10, down: 20));
 
     expect(
       container.read(trayTitleStateProvider),
@@ -31,9 +31,9 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    container.read(trafficsProvider.notifier).addTraffic(
-          const Traffic(up: 10, down: 20),
-        );
+    container
+        .read(trafficsProvider.notifier)
+        .addTraffic(const Traffic(up: 10, down: 20));
 
     expect(
       container.read(trayTitleStateProvider),

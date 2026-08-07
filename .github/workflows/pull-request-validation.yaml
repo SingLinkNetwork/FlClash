@@ -27,6 +27,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Install dependencies
+        run: flutter pub get
+
       - name: Verify changed Dart files are formatted
         run: ruby tool/verify_dart_format.rb
 
