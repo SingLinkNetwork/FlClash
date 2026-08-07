@@ -145,6 +145,7 @@ git commit -m "feat: add Windows MSIX setup target"
 ### Task 3: Add the bundle command and structural verifier
 
 **Files:**
+- Create: `tool/verify_msix.ps1`
 - Create: `tool/bundle_msix.ps1`
 - Create: `tool/verify_msixbundle.ps1`
 - Create: `tool/verify_msixbundle_pipeline.rb`
@@ -152,6 +153,7 @@ git commit -m "feat: add Windows MSIX setup target"
 
 **Interfaces:**
 - `bundle_msix.ps1 -X64Package <path> -Arm64Package <path> -OutputPath <path>` creates a clean staging directory and invokes the newest Windows SDK `MakeAppx.exe bundle` command.
+- `verify_msix.ps1 -PackagePath <path> -ExpectedArchitecture <x64|arm64>` checks one native package before it enters the bundle.
 - `verify_msixbundle.ps1 -BundlePath <path>` fails unless the bundle contains exactly two MSIX files, one x64 and one arm64, with matching `Name`, `Version`, and `Publisher` values and an `AppxBundleManifest.xml`.
 - `verify_msixbundle_pipeline.rb` checks workflow wiring and the presence of both scripts.
 
@@ -171,15 +173,19 @@ Expected: failure identifying missing MSIX bundle CI wiring.
 
 Resolve `makeappx.exe` from `PATH` first, then from `Program Files (x86)\Windows Kits\10\bin\*\x64`. Copy only the two supplied `.msix` files into a clean temporary directory, run `MakeAppx.exe bundle /v /d <stage> /p <output>.msixbundle`, and fail on any missing input or non-zero exit code.
 
-- [ ] **Step 3: Implement the PowerShell manifest verifier**
+- [ ] **Step 3: Implement the single-package PowerShell verifier**
+
+Open one `.msix` as a ZIP and require `AppxManifest.xml`, `AppxBlockMap.xml`, `resources.pri`, and a Windows executable. Parse the manifest with namespace-safe XPath and fail unless the processor architecture matches the requested x64 or arm64 value.
+
+- [ ] **Step 4: Implement the PowerShell bundle manifest verifier**
 
 Open the `.msixbundle` as a ZIP, locate the bundle manifest and exactly two nested `.msix` files, open each nested package as a ZIP, parse its manifest with namespace-safe XPath, and compare the required identity fields. Print that the structure is verified and that production signing remains required.
 
-- [ ] **Step 4: Implement the Ruby workflow verifier and its regression test**
+- [ ] **Step 5: Implement the Ruby workflow verifier and its regression test**
 
 Require the `windows-msix` architecture matrix, `windows-msixbundle` dependency, `MakeAppx` command, PowerShell verifier, artifact downloads/uploads, `msix` dependency, and static matrix entry. Add a test that uses fake workflow text to ensure a missing required element fails rather than passing silently.
 
-- [ ] **Step 5: Run the Ruby regression test**
+- [ ] **Step 6: Run the Ruby regression test**
 
 Run:
 
@@ -189,10 +195,10 @@ ruby tool/verify_msixbundle_pipeline_test.rb
 
 Expected: the test passes after the verifier is implemented, while the real repository verifier remains red until the workflow is wired in Task 4.
 
-- [ ] **Step 6: Commit the bundle tooling**
+- [ ] **Step 7: Commit the bundle tooling**
 
 ```bash
-git add tool/bundle_msix.ps1 tool/verify_msixbundle.ps1 tool/verify_msixbundle_pipeline.rb tool/verify_msixbundle_pipeline_test.rb
+git add tool/verify_msix.ps1 tool/bundle_msix.ps1 tool/verify_msixbundle.ps1 tool/verify_msixbundle_pipeline.rb tool/verify_msixbundle_pipeline_test.rb
 git commit -m "feat: add MSIXBundle bundler and verifier"
 ```
 
@@ -210,7 +216,7 @@ git commit -m "feat: add MSIXBundle bundler and verifier"
 
 - [ ] **Step 1: Add the architecture build matrix**
 
-Install Go, Rust, Flutter, and dependencies; run `dart setup.dart windows --targets msix`; assert exactly one `dist/FlClash-<architecture>.msix`; upload it as `windows-msix-<architecture>`.
+Install Go, Rust, Flutter, and dependencies; run `dart setup.dart windows --targets msix`; assert exactly one `dist/FlClash-<architecture>.msix`; run `tool/verify_msix.ps1` against the native package; upload it as `windows-msix-<architecture>`.
 
 - [ ] **Step 2: Add the bundle job**
 

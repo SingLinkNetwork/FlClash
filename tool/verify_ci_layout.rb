@@ -25,6 +25,8 @@ required_jobs = %w[
   macos-ip-forwarding
   custom-test-urls
   windows-core-callback
+  windows-msix
+  windows-msixbundle
   proxy-environment
   static-source
   linux-packaging
@@ -52,6 +54,7 @@ expected_scripts = %w[
   tool/verify_linux_tray_clipboard.rb
   tool/verify_windows_paste_fix.rb
   tool/verify_proxy_environment_menu.rb
+  tool/verify_msixbundle_pipeline.rb
   tool/verify_windows_search_close.rb
   tool/verify_linux_renderer_fallback.rb
   tool/verify_linux_cjk_font_fallback.rb
@@ -96,6 +99,7 @@ expected_build_needs = %w[
   macos-ip-forwarding
   custom-test-urls
   windows-core-callback
+  windows-msixbundle
   proxy-environment
   static-source
   linux-packaging

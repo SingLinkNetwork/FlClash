@@ -18,7 +18,7 @@ unless File.read(File.join(root, 'pubspec.yaml')).match?(/^\s+msix:\s+\^3\.18\.0
   errors << 'pubspec.yaml must pin msix ^3.18.0'
 end
 
-%w[bundle_msix.ps1 verify_msixbundle.ps1].each do |filename|
+%w[verify_msix.ps1 bundle_msix.ps1 verify_msixbundle.ps1].each do |filename|
   unless File.file?(File.join(root, 'tool', filename))
     errors << "missing tool/#{filename}"
   end
@@ -46,6 +46,9 @@ else
   unless steps.any? { |step| step['run'].to_s.include?('dart setup.dart windows --targets msix') }
     errors << 'windows-msix must invoke the repository MSIX setup target'
   end
+  unless steps.any? { |step| step['run'].to_s.include?('verify_msix.ps1') }
+    errors << 'windows-msix must verify each native MSIX package'
+  end
   upload_names = steps.each_with_object([]) do |step, names|
     next unless step['uses'] == 'actions/upload-artifact@v4'
 
@@ -60,6 +63,9 @@ bundle_job = jobs['windows-msixbundle']
 if bundle_job.nil?
   errors << 'workflow is missing windows-msixbundle'
 else
+  unless bundle_job['runs-on'] == 'windows-2022'
+    errors << 'windows-msixbundle must run on windows-2022'
+  end
   needs = Array(bundle_job['needs'])
   unless needs.include?('windows-msix')
     errors << 'windows-msixbundle must depend on windows-msix'
@@ -89,6 +95,14 @@ else
   end
   unless upload_names.include?('windows-msixbundle')
     errors << 'windows-msixbundle must upload the final bundle'
+  end
+end
+
+bundler_path = File.join(root, 'tool', 'bundle_msix.ps1')
+if File.file?(bundler_path)
+  bundler = File.read(bundler_path)
+  unless bundler.include?('makeappx.exe') && bundler.include?('bundle /v')
+    errors << 'bundle_msix.ps1 must invoke MakeAppx bundle'
   end
 end
 

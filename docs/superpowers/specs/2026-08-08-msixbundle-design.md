@@ -17,6 +17,8 @@ on a filename-only check.
   `windows-11-arm` runner.
 - A Windows SDK `MakeAppx.exe bundle` step creates a real `.msixbundle` from
   those two `.msix` files.
+- Each architecture-specific `.msix` is independently inspected before
+  bundling, including its manifest architecture and required package files.
 - A package verifier extracts the bundle and checks the nested package count,
   processor architectures, and shared identity/version/publisher fields.
 - The CI artifact is intentionally unsigned because a production certificate
@@ -97,6 +99,9 @@ artifact and is a prerequisite of the existing platform build rollup.
   reads the nested `AppxManifest.xml` files, and fails unless it finds exactly
   one `x64` and one `arm64` package with matching identity, version, and
   publisher values.
+- The same Windows job verifies each individual `.msix` before it is uploaded,
+  including `AppxManifest.xml`, `AppxBlockMap.xml`, `resources.pri`, and an
+  application executable.
 - The CI layout verifier requires the new job dependencies and static verifier
   entry, preventing the checks from disappearing during later workflow edits.
 

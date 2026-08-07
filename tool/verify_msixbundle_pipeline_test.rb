@@ -55,6 +55,7 @@ class VerifyMsixbundlePipelineTest < Minitest::Test
   def write_pipeline_files(root)
     tool_dir = File.join(root, 'tool')
     FileUtils.mkdir_p(tool_dir)
+    FileUtils.touch(File.join(tool_dir, 'verify_msix.ps1'))
     FileUtils.touch(File.join(tool_dir, 'bundle_msix.ps1'))
     FileUtils.touch(File.join(tool_dir, 'verify_msixbundle.ps1'))
     File.write(File.join(root, 'pubspec.yaml'), "dev_dependencies:\n  msix: ^3.18.0\n")

@@ -314,6 +314,125 @@ jobs:
       - name: Test portable data path policy
         run: flutter test test/common/path_test.dart --reporter expanded
 
+  windows-msix:
+    name: Windows MSIX (${{ matrix.architecture }})
+    needs:
+      - dart-format
+      - dart-analyze
+      - flutter-tests
+      - go-tests
+      - go-vet
+      - static-source
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x64
+            os: windows-2022
+          - architecture: arm64
+            os: windows-11-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Enable git long paths
+        run: git config --global core.longpaths true
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build native MSIX package
+        run: dart setup.dart windows --targets msix -v
+
+      - name: Verify native MSIX package
+        shell: pwsh
+        env:
+          EXPECTED_ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          $packages = @(Get-ChildItem -Path dist -Filter '*.msix' -File)
+          if ($packages.Count -ne 1) {
+            throw "Expected exactly one native MSIX package, found $($packages.Count)"
+          }
+          $expected = Join-Path (Get-Location) "dist\FlClash-$env:EXPECTED_ARCHITECTURE.msix"
+          if (-not (Test-Path -LiteralPath $expected -PathType Leaf)) {
+            throw "Expected package was not generated: $expected"
+          }
+          pwsh -NoProfile -File tool/verify_msix.ps1 `
+            -PackagePath $packages[0].FullName `
+            -ExpectedArchitecture $env:EXPECTED_ARCHITECTURE
+
+      - name: Upload native MSIX package
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix-${{ matrix.architecture }}
+          path: dist/FlClash-${{ matrix.architecture }}.msix
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-msixbundle:
+    name: Windows MSIXBundle
+    needs: windows-msix
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download x64 MSIX package
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-msix-x64
+          path: msix-input/x64
+
+      - name: Download ARM64 MSIX package
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-msix-arm64
+          path: msix-input/arm64
+
+      - name: Bundle x64 and ARM64 packages
+        shell: pwsh
+        run: |
+          $x64 = (Get-ChildItem -Path msix-input/x64 -Filter '*.msix' -File | Select-Object -First 1).FullName
+          $arm64 = (Get-ChildItem -Path msix-input/arm64 -Filter '*.msix' -File | Select-Object -First 1).FullName
+          if (-not $x64 -or -not $arm64) {
+            throw 'Both x64 and ARM64 MSIX packages are required'
+          }
+          pwsh -NoProfile -File tool/bundle_msix.ps1 `
+            -X64Package $x64 `
+            -Arm64Package $arm64 `
+            -OutputPath (Join-Path (Get-Location) 'dist\FlClash.msixbundle')
+
+      - name: Verify MSIXBundle contents
+        shell: pwsh
+        run: pwsh -NoProfile -File tool/verify_msixbundle.ps1 -BundlePath dist/FlClash.msixbundle
+
+      - name: Upload MSIXBundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msixbundle
+          path: dist/FlClash.msixbundle
+          if-no-files-found: error
+          retention-days: 7
+
   proxy-environment:
     name: Proxy environment menu
     runs-on: ubuntu-latest
@@ -357,6 +476,8 @@ jobs:
             script: tool/verify_windows_portable_data.rb
           - id: proxy-environment-menu
             script: tool/verify_proxy_environment_menu.rb
+          - id: windows-msixbundle
+            script: tool/verify_msixbundle_pipeline.rb
           - id: windows-search-close
             script: tool/verify_windows_search_close.rb
           - id: linux-renderer-fallback
@@ -488,6 +609,7 @@ jobs:
       - custom-test-urls
       - windows-core-callback
       - proxy-environment
+      - windows-msixbundle
       - static-source
       - linux-packaging
     runs-on: ${{ matrix.os }}
