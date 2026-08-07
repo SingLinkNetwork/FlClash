@@ -63,7 +63,7 @@ abort 'proxy plugin does not scope cleanup to the FlClash adapter' unless
   plugin.include?('FlClash') && plugin.include?('FriendlyName')
 
 abort 'proxy plugin does not include Winsock before Windows networking APIs' unless
-  plugin.include?('#include <winsock2.h>')
+  plugin.include?('#include <winsock2.h>') && plugin.include?('#include <ws2ipdef.h>')
 
 abort 'proxy plugin does not expose the method-channel cleanup method' unless
   plugin.include?('ResetTunInterface')

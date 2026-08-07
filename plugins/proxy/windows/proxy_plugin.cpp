@@ -6,6 +6,7 @@
 #define NTDDI_VERSION 0x06000000
 #endif
 #include <winsock2.h>
+#include <ws2ipdef.h>
 #include <windows.h>
 
 #include "proxy_plugin.h"
