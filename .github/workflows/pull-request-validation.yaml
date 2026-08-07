@@ -365,11 +365,19 @@ jobs:
         if: ${{ matrix.architecture == 'arm64' }}
         shell: pwsh
         run: |
-          $flutterRoot = "${{ steps.flutter.outputs['CACHE-PATH'] }}"
+          $flutterCachePath = "${{ steps.flutter.outputs['CACHE-PATH'] }}"
+          $flutterRoot = if (Test-Path -LiteralPath "$flutterCachePath\bin\flutter.bat") {
+            $flutterCachePath
+          } elseif (Test-Path -LiteralPath "$flutterCachePath\flutter\bin\flutter.bat") {
+            Join-Path $flutterCachePath 'flutter'
+          } else {
+            ''
+          }
           Write-Host "PROCESSOR_ARCHITECTURE=$env:PROCESSOR_ARCHITECTURE"
+          Write-Host "Flutter cache path: $flutterCachePath"
           Write-Host "Flutter root: $flutterRoot"
           if ([string]::IsNullOrWhiteSpace($flutterRoot) -or -not (Test-Path -LiteralPath $flutterRoot)) {
-            throw "Flutter action did not provide a valid CACHE-PATH: $flutterRoot"
+            throw "Flutter action did not provide a valid SDK root beneath CACHE-PATH: $flutterCachePath"
           }
           Remove-Item -Force "$flutterRoot\bin\cache\engine-dart-sdk.stamp" -ErrorAction SilentlyContinue
           & "$flutterRoot\bin\internal\update_dart_sdk.ps1"
