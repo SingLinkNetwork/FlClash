@@ -177,7 +177,7 @@ void main() {
         child: const _TestApp(
           child: ListInputPage(
             title: 'Bypass domain',
-            items: ['existing.example'],
+            items: ['Existing.example'],
             allowBatchAdd: true,
             titleBuilder: _textBuilder,
           ),
@@ -194,10 +194,18 @@ void main() {
     await tester.tap(find.text('Submit'));
     await tester.pumpAndSettle();
 
-    expect(find.text('existing.example'), findsOneWidget);
+    expect(find.text('Existing.example'), findsOneWidget);
     expect(find.text('New.example'), findsOneWidget);
     expect(find.text('second.example'), findsOneWidget);
     expect(find.text('new.example'), findsNothing);
+    expect(
+      _top(tester, 'Existing.example'),
+      lessThan(_top(tester, 'New.example')),
+    );
+    expect(
+      _top(tester, 'New.example'),
+      lessThan(_top(tester, 'second.example')),
+    );
   });
 }
 
