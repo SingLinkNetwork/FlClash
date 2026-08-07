@@ -138,6 +138,10 @@ jobs:
         if: matrix.platform == 'linux'
         run: flutter build linux --debug
 
+      - name: Verify Linux X11 thread initialization
+        if: matrix.platform == 'linux'
+        run: ruby tool/verify_linux_x11_thread_init.rb
+
       - name: Verify Linux QuickJS bundle
         if: matrix.platform == 'linux'
         run: ruby tool/verify_linux_quickjs_bundle.rb build/linux/x64/debug/bundle

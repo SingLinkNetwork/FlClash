@@ -135,6 +135,10 @@ jobs:
       - name: Setup
         run: dart setup.dart ${{ matrix.platform }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} -v
 
+      - name: Verify Linux X11 thread initialization
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_x11_thread_init.rb
+
       - name: Verify Windows proxy shutdown cleanup
         if: startsWith(matrix.platform, 'windows')
         run: ruby tool/verify_windows_proxy_shutdown.rb
