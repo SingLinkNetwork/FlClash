@@ -140,6 +140,26 @@ jobs:
           CGO_ENABLED: '0'
         run: go test . -run '^TestSocketPathFromArgs$' -count=1
 
+  linux-cli-start:
+    name: Linux CLI startup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test Linux CLI startup arguments
+        run: flutter test test/common/startup_test.dart --reporter expanded
+
   static-source:
     name: Static ${{ matrix.id }}
     runs-on: ubuntu-latest
@@ -191,6 +211,8 @@ jobs:
             script: tool/verify_macos_tray_destroy.rb
           - id: macos-wifi-ssid
             script: tool/verify_macos_wifi_ssid_plugin.rb
+          - id: linux-cli-start
+            script: tool/verify_linux_cli_start.rb
           - id: ci-layout
             script: tool/verify_ci_layout.rb
 
@@ -210,6 +232,7 @@ jobs:
       - go-tests
       - go-vet
       - core-cli-arguments
+      - linux-cli-start
       - static-source
     runs-on: ${{ matrix.os }}
     strategy:

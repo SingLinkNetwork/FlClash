@@ -45,6 +45,12 @@ on Mobile:
     sudo apt-get install libkeybinder-3.0-dev
    ```
 
+也可以在终端直接启动代理：
+
+```bash
+./FlClash --start
+```
+
 ### Android
 
 支持下列操作

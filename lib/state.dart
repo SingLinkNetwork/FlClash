@@ -32,6 +32,7 @@ class GlobalState {
   late CommonTheme theme;
   late Color accentColor;
   late ProviderContainer container;
+  bool startProxyFromCommandLine = false;
   bool needInitStatus = true;
 
   // ignore: deprecated_member_use
@@ -47,7 +48,11 @@ class GlobalState {
     return _instance!;
   }
 
-  Future<ProviderContainer> init(int version) async {
+  Future<ProviderContainer> init(
+    int version, {
+    bool startProxyFromCommandLine = false,
+  }) async {
+    this.startProxyFromCommandLine = startProxyFromCommandLine;
     coreSHA256 = const String.fromEnvironment('CORE_SHA256');
     isPre = const String.fromEnvironment('APP_ENV') != 'stable';
     await _initDynamicColor();
@@ -326,7 +331,9 @@ class GlobalState {
     await _showCrashlyticsTip();
     await container.read(coreActionProvider.notifier).connectCore();
     await container.read(coreActionProvider.notifier).initCore();
-    await container.read(setupActionProvider.notifier).initStatus();
+    await container
+        .read(setupActionProvider.notifier)
+        .initStatus(forceStart: startProxyFromCommandLine);
     container.read(initProvider.notifier).value = true;
     permissions.check();
   }

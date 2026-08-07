@@ -1,5 +1,11 @@
 import 'dart:async';
 
+const startProxyArgument = '--start';
+
+bool shouldStartProxyFromArguments(List<String> arguments) {
+  return arguments.contains(startProxyArgument);
+}
+
 Future<bool> startListenerBeforePublishingStatus({
   required Future<bool> Function() startListener,
   required void Function() updateRunTime,

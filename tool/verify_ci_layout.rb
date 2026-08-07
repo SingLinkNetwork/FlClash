@@ -14,6 +14,7 @@ required_jobs = %w[
   go-tests
   go-vet
   core-cli-arguments
+  linux-cli-start
   static-source
   build
 ]
@@ -46,6 +47,7 @@ expected_scripts = %w[
   tool/verify_macos_window_lifecycle.rb
   tool/verify_macos_tray_destroy.rb
   tool/verify_macos_wifi_ssid_plugin.rb
+  tool/verify_linux_cli_start.rb
   tool/verify_ci_layout.rb
 ]
 actual_scripts = static_entries.map { |entry| entry.fetch('script') }
@@ -59,6 +61,7 @@ expected_build_needs = %w[
   go-tests
   go-vet
   core-cli-arguments
+  linux-cli-start
   static-source
 ]
 build_needs = Array(jobs.fetch('build').fetch('needs'))

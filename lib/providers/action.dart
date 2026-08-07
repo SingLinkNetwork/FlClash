@@ -201,7 +201,7 @@ class SetupAction extends _$SetupAction {
     _clearStoppedState();
   }
 
-  Future<void> initStatus() async {
+  Future<void> initStatus({bool forceStart = false}) async {
     if (!globalState.needInitStatus) {
       commonPrint.log('init status cancel');
       return;
@@ -210,7 +210,7 @@ class SetupAction extends _$SetupAction {
     if (system.isAndroid) {
       await _updateStartTime();
     }
-    final status = isStart == true
+    final status = forceStart || isStart == true
         ? true
         : ref.read(appSettingProvider).autoRun;
     if (status == true) {
