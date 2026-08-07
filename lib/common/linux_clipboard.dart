@@ -85,11 +85,3 @@ Future<bool> _runCommand(
     return false;
   }
 }
-
-String buildProxyEnvironmentCommand({
-  required bool isWindows,
-  required int port,
-}) {
-  final url = 'http://127.0.0.1:$port';
-  return isWindows ? 'set \$env:all_proxy=$url' : 'export all_proxy=$url';
-}

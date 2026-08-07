@@ -35,6 +35,7 @@ export 'picker.dart';
 export 'preferences.dart';
 export 'print.dart';
 export 'protocol.dart';
+export 'proxy_environment.dart';
 export 'proxy.dart';
 export 'render.dart';
 export 'request.dart';
