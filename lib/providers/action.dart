@@ -177,11 +177,28 @@ class SetupAction extends _$SetupAction {
     startTime = await service?.getRunTime();
   }
 
-  Future handleStop() async {
+  void _resetStartState() {
     startTime = null;
     _updateTimer?.cancel();
     _updateTimer = null;
+  }
+
+  void _clearStoppedState() {
+    coreController.resetTraffic();
+    ref.read(trafficsProvider.notifier).clear();
+    ref.read(totalTrafficProvider.notifier).value = const Traffic();
+    ref.read(runTimeProvider.notifier).value = null;
+    ref.read(checkIpNumProvider.notifier).add();
+  }
+
+  Future<void> handleStop() async {
+    _resetStartState();
     await coreController.stopListener();
+  }
+
+  Future<void> syncStopped() async {
+    _resetStartState();
+    _clearStoppedState();
   }
 
   Future<void> initStatus() async {
@@ -228,11 +245,7 @@ class SetupAction extends _$SetupAction {
       }
     } else {
       await handleStop();
-      coreController.resetTraffic();
-      ref.read(trafficsProvider.notifier).clear();
-      ref.read(totalTrafficProvider.notifier).value = const Traffic();
-      ref.read(runTimeProvider.notifier).value = null;
-      ref.read(checkIpNumProvider.notifier).add();
+      _clearStoppedState();
     }
   }
 

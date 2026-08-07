@@ -84,11 +84,10 @@ object State {
                 return
             }
             tilePlugin?.handleStop()
-            if (flutterEngine != null) {
-                return
+            if (tilePlugin == null) {
+                GlobalState.application.showToast(sharedState.stopTip)
             }
-            GlobalState.application.showToast(sharedState.stopTip)
-            handleStopService()
+            stopServiceLocked()
         }
     }
 
@@ -184,22 +183,25 @@ object State {
     fun handleStopService() {
         GlobalState.launch {
             runLock.withLock {
-                if (runStateFlow.value != RunState.START) {
-                    return@launch
-                }
-                try {
-                    runStateFlow.tryEmit(RunState.PENDING)
-                    runTime = Service.stopService()
-                    runStateFlow.tryEmit(RunState.STOP)
-                } finally {
-                    if (runStateFlow.value == RunState.PENDING) {
-                        runStateFlow.tryEmit(RunState.START)
-                    }
-                }
+                stopServiceLocked()
+            }
+        }
+    }
+
+    private suspend fun stopServiceLocked() {
+        if (runStateFlow.value != RunState.START) {
+            return
+        }
+        try {
+            runStateFlow.tryEmit(RunState.PENDING)
+            runTime = Service.stopService()
+            runStateFlow.tryEmit(RunState.STOP)
+        } finally {
+            if (runStateFlow.value == RunState.PENDING) {
+                runStateFlow.tryEmit(RunState.START)
             }
         }
     }
 }
-
 
 

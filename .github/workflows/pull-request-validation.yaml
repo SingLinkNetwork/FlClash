@@ -148,6 +148,8 @@ jobs:
             script: tool/verify_android_background_location_permission.rb
           - id: android-tile-background
             script: tool/verify_android_tile_background_toggle.rb
+          - id: android-vpn-stop-cleanup
+            script: tool/verify_android_proxy_stop.rb
           - id: linux-x11-thread
             script: tool/verify_linux_x11_thread_init.rb
           - id: windows-maximize-work-area
