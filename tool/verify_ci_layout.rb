@@ -39,6 +39,9 @@ linux_packaging_steps = jobs.fetch('linux-packaging').fetch('steps')
 unless linux_packaging_steps.any? { |step| step['run'] == 'ruby tool/verify_linux_packages.rb dist' }
   abort 'Linux packaging job must inspect the generated package contents'
 end
+unless linux_packaging_steps.any? { |step| step['run'] == 'ruby tool/verify_linux_packages_test.rb' }
+  abort 'Linux packaging job must run the package verifier regression test'
+end
 
 expected_scripts = %w[
   tool/verify_lan_proxy_toggle.rb
@@ -104,5 +107,7 @@ end
 
 abort 'Linux package verifier does not exist' unless
   File.file?(File.join(root, 'tool/verify_linux_packages.rb'))
+abort 'Linux package verifier regression test does not exist' unless
+  File.file?(File.join(root, 'tool/verify_linux_packages_test.rb'))
 
 puts "CI layout verified: #{static_entries.length} independent static checks plus separate core and platform jobs"

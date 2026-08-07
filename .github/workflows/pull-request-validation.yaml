@@ -414,6 +414,9 @@ jobs:
       - name: Verify packaged desktop entries
         run: ruby tool/verify_linux_packages.rb dist
 
+      - name: Test package verifier
+        run: ruby tool/verify_linux_packages_test.rb
+
       - name: Upload Linux packages
         uses: actions/upload-artifact@v4
         with:

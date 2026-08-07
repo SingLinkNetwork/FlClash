@@ -19,7 +19,7 @@ abort "Unknown Linux package formats: #{unknown_formats.join(', ')}" unless unkn
 artifact_patterns = artifact_patterns.slice(*requested_formats)
 
 def run_pipeline!(commands, chdir:)
-  statuses = Open3.pipeline_r(*commands, chdir: chdir)
+  statuses = Open3.pipeline(*commands, chdir: chdir)
   failed = statuses.find { |status| !status.success? }
   abort "Linux package extraction failed: #{failed}" if failed
 end

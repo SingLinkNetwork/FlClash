@@ -64,6 +64,9 @@ jobs:
       - name: Verify Linux StartupWMClass packaging wiring
         run: ruby tool/verify_linux_startup_wm_class.rb
 
+      - name: Test Linux package verifier
+        run: ruby tool/verify_linux_packages_test.rb
+
   build:
     needs: [ test ]
     runs-on: ${{ matrix.os }}
