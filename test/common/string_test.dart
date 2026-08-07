@@ -60,6 +60,27 @@ void main() {
     });
   });
 
+  group('StringExtension.splitByBatchSeparators', () {
+    test('splits mixed input and removes empty entries', () {
+      expect(
+        ' alpha.example, beta.example;\n gamma.example '
+            .splitByBatchSeparators,
+        ['alpha.example', 'beta.example', 'gamma.example'],
+      );
+    });
+
+    test('deduplicates domains without changing first-seen spelling', () {
+      expect(
+        'Example.com, example.com; EXAMPLE.COM'.splitByBatchSeparators,
+        ['Example.com'],
+      );
+    });
+
+    test('returns an empty list for blank input', () {
+      expect(' \n, ; '.splitByBatchSeparators, isEmpty);
+    });
+  });
+
   group('StringExtension.compareToLower', () {
     test('case insensitive comparison', () {
       expect('abc'.compareToLower('ABC'), 0);
