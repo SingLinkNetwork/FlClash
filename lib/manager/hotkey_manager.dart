@@ -62,6 +62,7 @@ class _HotKeyManagerState extends ConsumerState<HotKeyManager> {
           final hotKey = HotKey(
             key: PhysicalKeyboardKey(hotKeyAction.key!),
             modifiers: modifiers,
+            scope: hotKeyAction.scope.hotKeyScope,
           );
           return hotKeyManager.register(
             hotKey,

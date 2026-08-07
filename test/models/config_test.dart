@@ -204,6 +204,31 @@ void main() {
     });
   });
 
+  group('HotKeyAction JSON', () {
+    test('legacy settings default to global triggering', () {
+      final restored = HotKeyAction.fromJson({
+        'action': 'start',
+        'key': 458977,
+        'modifiers': ['control'],
+      });
+
+      expect(restored.scope, HotKeyTriggerScope.global);
+    });
+
+    test('persists in-app triggering scope', () {
+      const action = HotKeyAction(
+        action: HotAction.start,
+        key: 458977,
+        modifiers: {KeyboardModifier.control},
+        scope: HotKeyTriggerScope.inApp,
+      );
+      final restored = HotKeyAction.fromJson(action.toJson());
+
+      expect(restored.scope, HotKeyTriggerScope.inApp);
+      expect(restored.toJson()['scope'], 'inApp');
+    });
+  });
+
   group('VpnProps JSON round-trip', () {
     test('default values', () {
       const props = VpnProps();

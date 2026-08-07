@@ -199,6 +199,9 @@ _HotKeyAction _$HotKeyActionFromJson(Map<String, dynamic> json) =>
               ?.map((e) => $enumDecode(_$KeyboardModifierEnumMap, e))
               .toSet() ??
           const {},
+      scope:
+          $enumDecodeNullable(_$HotKeyTriggerScopeEnumMap, json['scope']) ??
+          HotKeyTriggerScope.global,
     );
 
 Map<String, dynamic> _$HotKeyActionToJson(_HotKeyAction instance) =>
@@ -208,6 +211,7 @@ Map<String, dynamic> _$HotKeyActionToJson(_HotKeyAction instance) =>
       'modifiers': instance.modifiers
           .map((e) => _$KeyboardModifierEnumMap[e]!)
           .toList(),
+      'scope': _$HotKeyTriggerScopeEnumMap[instance.scope]!,
     };
 
 const _$HotActionEnumMap = {
@@ -225,6 +229,11 @@ const _$KeyboardModifierEnumMap = {
   KeyboardModifier.fn: 'fn',
   KeyboardModifier.meta: 'meta',
   KeyboardModifier.shift: 'shift',
+};
+
+const _$HotKeyTriggerScopeEnumMap = {
+  HotKeyTriggerScope.global: 'global',
+  HotKeyTriggerScope.inApp: 'inApp',
 };
 
 _Script _$ScriptFromJson(Map<String, dynamic> json) => _Script(

@@ -61,6 +61,13 @@ void main() {
     });
   });
 
+  group('HotKeyTriggerScopeExt', () {
+    test('maps global and in-app scopes to the plugin scopes', () {
+      expect(HotKeyTriggerScope.global.hotKeyScope, HotKeyScope.system);
+      expect(HotKeyTriggerScope.inApp.hotKeyScope, HotKeyScope.inapp);
+    });
+  });
+
   group('RuleAction', () {
     test('excludes actions that cannot be manually added', () {
       expect(RuleAction.addedRuleActions, isNot(contains(RuleAction.MATCH)));

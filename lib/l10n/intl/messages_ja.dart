@@ -347,9 +347,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "host": MessageLookupByLibrary.simpleMessage("ホスト"),
     "hostsDesc": MessageLookupByLibrary.simpleMessage("ホストを追加"),
     "hotkeyConflict": MessageLookupByLibrary.simpleMessage("ホットキー競合"),
+    "hotkeyGlobal": MessageLookupByLibrary.simpleMessage(
+      "グローバル（FlClash が非アクティブでも有効）",
+    ),
+    "hotkeyInApp": MessageLookupByLibrary.simpleMessage("FlClash がアクティブなときのみ"),
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage("ホットキー管理"),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "キーボードでアプリを制御",
+    ),
+    "hotkeyTriggerCondition": MessageLookupByLibrary.simpleMessage(
+      "ホットキーの発動条件",
     ),
     "hours": MessageLookupByLibrary.simpleMessage("時間"),
     "hoursAgo": m10,

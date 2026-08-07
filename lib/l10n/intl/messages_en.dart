@@ -439,11 +439,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "host": MessageLookupByLibrary.simpleMessage("Host"),
     "hostsDesc": MessageLookupByLibrary.simpleMessage("Add Hosts"),
     "hotkeyConflict": MessageLookupByLibrary.simpleMessage("Hotkey conflict"),
+    "hotkeyGlobal": MessageLookupByLibrary.simpleMessage(
+      "Global (works when FlClash is not focused)",
+    ),
+    "hotkeyInApp": MessageLookupByLibrary.simpleMessage(
+      "Only when FlClash is focused",
+    ),
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage(
       "Hotkey Management",
     ),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "Use keyboard to control applications",
+    ),
+    "hotkeyTriggerCondition": MessageLookupByLibrary.simpleMessage(
+      "Trigger condition",
     ),
     "hours": MessageLookupByLibrary.simpleMessage("hours"),
     "hoursAgo": m10,

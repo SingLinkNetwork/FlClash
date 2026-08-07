@@ -456,11 +456,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyConflict": MessageLookupByLibrary.simpleMessage(
       "Конфликт горячих клавиш",
     ),
+    "hotkeyGlobal": MessageLookupByLibrary.simpleMessage(
+      "Глобально (работает, когда FlClash не в фокусе)",
+    ),
+    "hotkeyInApp": MessageLookupByLibrary.simpleMessage(
+      "Только когда FlClash в фокусе",
+    ),
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage(
       "Управление горячими клавишами",
     ),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "Использование клавиатуры для управления приложением",
+    ),
+    "hotkeyTriggerCondition": MessageLookupByLibrary.simpleMessage(
+      "Условие срабатывания",
     ),
     "hours": MessageLookupByLibrary.simpleMessage("часов"),
     "hoursAgo": m10,

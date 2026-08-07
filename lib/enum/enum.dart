@@ -205,6 +205,17 @@ extension KeyboardModifierExt on KeyboardModifier {
 
 enum HotAction { start, view, mode, proxy, tun }
 
+enum HotKeyTriggerScope { global, inApp }
+
+extension HotKeyTriggerScopeExt on HotKeyTriggerScope {
+  HotKeyScope get hotKeyScope {
+    return switch (this) {
+      HotKeyTriggerScope.global => HotKeyScope.system,
+      HotKeyTriggerScope.inApp => HotKeyScope.inapp,
+    };
+  }
+}
+
 enum ProxiesIconStyle { none, standard, icon }
 
 enum FontFamily {

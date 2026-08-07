@@ -1889,6 +1889,36 @@ class AppLocalizations {
     );
   }
 
+  /// `Trigger condition`
+  String get hotkeyTriggerCondition {
+    return Intl.message(
+      'Trigger condition',
+      name: 'hotkeyTriggerCondition',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Global (works when FlClash is not focused)`
+  String get hotkeyGlobal {
+    return Intl.message(
+      'Global (works when FlClash is not focused)',
+      name: 'hotkeyGlobal',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Only when FlClash is focused`
+  String get hotkeyInApp {
+    return Intl.message(
+      'Only when FlClash is focused',
+      name: 'hotkeyInApp',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Please press the keyboard.`
   String get pressKeyboard {
     return Intl.message(
