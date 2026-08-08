@@ -127,7 +127,7 @@ begin
   begin
     DeleteFlClashUserData;
   end
-  else if not WizardSilent then
+  else if not UninstallSilent then
   begin
     if MsgBox(ExpandConstant('{cm:CleanupUserData}'), mbConfirmation, MB_YESNO) = IDYES then
       DeleteFlClashUserData;

@@ -15,6 +15,7 @@ required_script_fragments = [
   'ParamCount',
   'ParamStr(i)',
   "HasCmdLineParam('/CLEANUSERDATA')",
+  'UninstallSilent',
   "ExpandConstant('{userappdata}\\com.follow\\clash')",
   "ExpandConstant('{localappdata}\\com.follow\\clash')",
   "ExpandConstant('{app}\\data')",
