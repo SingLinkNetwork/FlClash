@@ -72,7 +72,7 @@ diff --git a/packages/flutter_app_packager/lib/src/makers/deb/app_package_maker_
      ProcessResult processResult = await $('dpkg-deb', [
        '--build',
        '--root-owner-group',
-+      '--compression=gzip',
++      '-Zgzip',
        packagingDirectory.path,
        makeConfig.outputFile.path,
      ]);

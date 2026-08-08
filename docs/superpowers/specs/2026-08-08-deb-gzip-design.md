@@ -19,7 +19,7 @@
 
 ## 設計
 
-在 `tool/flutter_distributor_startup_wm_class.patch` 中為 Debian maker 的 `dpkg-deb --build` 增加 `--compression=gzip`。這個補丁只作用於我們固定的打包器 checkout。
+在 `tool/flutter_distributor_startup_wm_class.patch` 中為 Debian maker 的 `dpkg-deb --build` 增加相容舊版 dpkg-deb 的 `-Zgzip`。長格式 `--compression=gzip` 直到 dpkg 1.22.9 才提供，因此不能依賴 Ubuntu runner 的新長選項。這個補丁只作用於我們固定的打包器 checkout。
 
 新增 `tool/verify_linux_deb_compression.rb`：
 

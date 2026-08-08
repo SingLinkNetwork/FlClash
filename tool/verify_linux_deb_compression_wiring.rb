@@ -13,7 +13,7 @@ checks = {
   'distributor patch targets the Debian maker' =>
     patch.include?('packages/flutter_app_packager/lib/src/makers/deb/app_package_maker_deb.dart'),
   'distributor patch forces gzip compression' =>
-    patch.include?("'--compression=gzip',"),
+    patch.include?("'-Zgzip',"),
   'setup applies the pinned distributor patch' =>
     setup.include?('flutter_distributor_startup_wm_class.patch') &&
       setup.include?("['apply', '--recount', patchPath]"),
