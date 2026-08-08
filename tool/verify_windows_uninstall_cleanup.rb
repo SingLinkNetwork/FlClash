@@ -24,6 +24,10 @@ required_script_fragments.each do |fragment|
   end
 end
 
+unless script.scan(/DelTree\(ExpandConstant\('[^']+'\), True, True, True\);/).length == 4
+  errors << 'Windows uninstaller must recursively delete all four known data directories'
+end
+
 unless workflow.include?('Verify Windows uninstaller cleans user data') &&
        workflow.include?('/CLEANUSERDATA') &&
        workflow.include?('Test-Path') &&

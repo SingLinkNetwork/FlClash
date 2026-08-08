@@ -98,10 +98,10 @@ end;
 
 procedure DeleteFlClashUserData;
 begin
-  DelTree(ExpandConstant('{userappdata}\com.follow\clash'), True, True);
-  DelTree(ExpandConstant('{localappdata}\com.follow\clash'), True, True);
-  DelTree(ExpandConstant('{app}\data'), True, True);
-  DelTree(ExpandConstant('{app}\cache'), True, True);
+  DelTree(ExpandConstant('{userappdata}\com.follow\clash'), True, True, True);
+  DelTree(ExpandConstant('{localappdata}\com.follow\clash'), True, True, True);
+  DelTree(ExpandConstant('{app}\data'), True, True, True);
+  DelTree(ExpandConstant('{app}\cache'), True, True, True);
 end;
 
 function InitializeUninstall(): Boolean;
