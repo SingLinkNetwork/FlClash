@@ -96,6 +96,29 @@ begin
   Result := True;
 end;
 
+procedure DeleteFlClashUserData;
+begin
+  DelTree(ExpandConstant('{userappdata}\com.follow\clash'), True, True);
+  DelTree(ExpandConstant('{localappdata}\com.follow\clash'), True, True);
+  DelTree(ExpandConstant('{app}\data'), True, True);
+  DelTree(ExpandConstant('{app}\cache'), True, True);
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  KillProcesses;
+  Result := True;
+  if CmdLineParamExists('/CLEANUSERDATA') then
+  begin
+    DeleteFlClashUserData;
+  end
+  else if not WizardSilent then
+  begin
+    if MsgBox(ExpandConstant('{cm:CleanupUserData}'), mbConfirmation, MB_YESNO) = IDYES then
+      DeleteFlClashUserData;
+  end;
+end;
+
 [Languages]
 {% for locale in LOCALES %}
 {% if locale.lang == 'en' %}Name: "english"; MessagesFile: "compiler:Default.isl"{% endif %}
@@ -136,5 +159,10 @@ Source: "{{SOURCE_DIR}}\\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdi
 [Icons]
 Name: "{autoprograms}\\{{DISPLAY_NAME}}"; Filename: "{app}\\{{EXECUTABLE_NAME}}"
 Name: "{autodesktop}\\{{DISPLAY_NAME}}"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; Tasks: desktopicon
+
+[CustomMessages]
+english.CleanupUserData=Also remove FlClash settings and cache from this computer? Select No to keep them for a future installation.
+chineseSimplified.CleanupUserData=是否同时删除本机上的 FlClash 设置和缓存？选择“否”可保留它们供以后安装使用。
+
 [Run]
 Filename: "{app}\\{{EXECUTABLE_NAME}}"; Description: "{cm:LaunchProgram,{{DISPLAY_NAME}}}"; Flags: {% if PRIVILEGES_REQUIRED == 'admin' %}runascurrentuser{% endif %} nowait postinstall skipifsilent

@@ -54,6 +54,7 @@ expected_scripts = %w[
   tool/verify_window_visibility_queue.rb
   tool/verify_linux_tray_clipboard.rb
   tool/verify_windows_paste_fix.rb
+  tool/verify_windows_uninstall_cleanup.rb
   tool/verify_proxy_environment_menu.rb
   tool/verify_msixbundle_pipeline.rb
   tool/verify_windows_search_close.rb

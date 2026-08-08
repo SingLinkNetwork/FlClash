@@ -511,6 +511,8 @@ jobs:
             script: tool/verify_windows_paste_fix.rb
           - id: windows-portable-data
             script: tool/verify_windows_portable_data.rb
+          - id: windows-uninstall-cleanup
+            script: tool/verify_windows_uninstall_cleanup.rb
           - id: proxy-environment-menu
             script: tool/verify_proxy_environment_menu.rb
           - id: windows-msixbundle
@@ -800,6 +802,107 @@ jobs:
           } finally {
             New-Item -Path $runtimeKey -Force | Out-Null
             New-ItemProperty -Path $runtimeKey -Name Installed -PropertyType DWord -Value 1 -Force | Out-Null
+          }
+
+      - name: Verify Windows uninstaller cleans user data
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -Path dist -Filter '*-setup.exe' -File | Select-Object -First 1
+          if (-not $installer) {
+            throw 'Windows installer artifact was not generated'
+          }
+          $installDir = Join-Path $env:RUNNER_TEMP 'FlClash-cleanup-test'
+          $roamingData = Join-Path $env:APPDATA 'com.follow\clash'
+          $localData = Join-Path $env:LOCALAPPDATA 'com.follow\clash'
+          Remove-Item -LiteralPath $installDir, $roamingData, $localData -Recurse -Force -ErrorAction SilentlyContinue
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART',
+            '/SP-',
+            "/DIR=`"$installDir`""
+          ) -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "Windows installer execution failed with exit code $($install.ExitCode)"
+          }
+          $shortcutRoots = @(
+            (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'),
+            (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs')
+          )
+          $shortcut = $shortcutRoots |
+            ForEach-Object { Get-ChildItem -LiteralPath $_ -Filter 'FlClash.lnk' -Recurse -File -ErrorAction SilentlyContinue } |
+            Select-Object -First 1
+          if (-not $shortcut -or -not (Test-Path -LiteralPath $shortcut.FullName)) {
+            throw 'Windows installer did not create a Start Menu shortcut from {autoprograms}'
+          }
+          $portableData = Join-Path $installDir 'data'
+          $portableCache = Join-Path $installDir 'cache'
+          New-Item -ItemType Directory -Force -Path $roamingData, $localData | Out-Null
+          Set-Content -LiteralPath (Join-Path $roamingData 'sentinel.txt') -Value 'test'
+          Set-Content -LiteralPath (Join-Path $localData 'sentinel.txt') -Value 'test'
+          $uninstaller = Join-Path $installDir 'unins000.exe'
+          if (-not (Test-Path -LiteralPath $uninstaller)) {
+            throw "Windows uninstaller not found: $uninstaller"
+          }
+          $preservingUninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART'
+          ) -Wait -PassThru
+          if ($preservingUninstall.ExitCode -ne 0) {
+            throw "Windows preserving uninstaller execution failed with exit code $($preservingUninstall.ExitCode)"
+          }
+          if (Test-Path -LiteralPath $installDir) {
+            throw "Windows uninstaller left the install directory behind: $installDir"
+          }
+          foreach ($path in @($roamingData, $localData)) {
+            if (-not (Test-Path -LiteralPath $path)) {
+              throw "Default Windows uninstall unexpectedly removed user data: $path"
+            }
+          }
+          if (Test-Path -LiteralPath $shortcut.FullName) {
+            throw "Windows uninstaller left Start Menu shortcut behind: $($shortcut.FullName)"
+          }
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART',
+            '/SP-',
+            "/DIR=`"$installDir`""
+          ) -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "Windows reinstall execution failed with exit code $($install.ExitCode)"
+          }
+          $shortcut = $shortcutRoots |
+            ForEach-Object { Get-ChildItem -LiteralPath $_ -Filter 'FlClash.lnk' -Recurse -File -ErrorAction SilentlyContinue } |
+            Select-Object -First 1
+          if (-not $shortcut -or -not (Test-Path -LiteralPath $shortcut.FullName)) {
+            throw 'Windows reinstall did not create a Start Menu shortcut'
+          }
+          New-Item -ItemType Directory -Force -Path $portableData, $portableCache | Out-Null
+          Set-Content -LiteralPath (Join-Path $portableData 'sentinel.txt') -Value 'test'
+          Set-Content -LiteralPath (Join-Path $portableCache 'sentinel.txt') -Value 'test'
+          $uninstaller = Join-Path $installDir 'unins000.exe'
+          if (-not (Test-Path -LiteralPath $uninstaller)) {
+            throw "Windows uninstaller not found after reinstall: $uninstaller"
+          }
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART',
+            '/CLEANUSERDATA'
+          ) -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "Windows uninstaller execution failed with exit code $($uninstall.ExitCode)"
+          }
+          foreach ($path in @($installDir, $roamingData, $localData)) {
+            if (Test-Path -LiteralPath $path) {
+              throw "Windows uninstaller left data behind: $path"
+            }
+          }
+          if (Test-Path -LiteralPath $shortcut.FullName) {
+            throw "Windows uninstaller left Start Menu shortcut behind: $($shortcut.FullName)"
           }
 
       - name: Build macOS
