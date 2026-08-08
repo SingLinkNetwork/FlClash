@@ -104,11 +104,26 @@ begin
   DelTree(ExpandConstant('{app}\cache'), True, True, True);
 end;
 
+function HasCmdLineParam(const Param: String): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 1 to ParamCount do
+  begin
+    if UpperCase(ParamStr(i)) = UpperCase(Param) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
 function InitializeUninstall(): Boolean;
 begin
   KillProcesses;
   Result := True;
-  if CmdLineParamExists('/CLEANUSERDATA') then
+  if HasCmdLineParam('/CLEANUSERDATA') then
   begin
     DeleteFlClashUserData;
   end
