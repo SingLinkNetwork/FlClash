@@ -91,7 +91,7 @@ Two independent jobs run in parallel:
 
 Each job uploads exactly one architecture-specific `.msix`. A third
 `windows-msixbundle` job downloads both artifacts, places only those packages
-in a clean directory, calls `MakeAppx.exe bundle`, and runs the PowerShell
+in a clean directory, calls `MakeAppx.exe bundle /bv <shared-version>`, and runs the PowerShell
 bundle verifier. The final `.msixbundle` is uploaded as a short-retention PR
 artifact and is a prerequisite of the existing platform build rollup. A final
 `ci-complete` job runs even when an upstream job fails and becomes the single

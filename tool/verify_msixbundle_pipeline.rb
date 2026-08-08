@@ -159,8 +159,13 @@ end
 bundler_path = File.join(root, 'tool', 'bundle_msix.ps1')
 if File.file?(bundler_path)
   bundler = File.read(bundler_path)
-  unless bundler.match?(/&\s*\$makeAppx\s+bundle\s+\/v\s+\/d\s+\$stageDirectory\s+\/p\s+\$resolvedOutput/)
-    errors << 'bundle_msix.ps1 must invoke MakeAppx bundle'
+  unless bundler.match?(/&\s*\$makeAppx\s+bundle\s+\/v\s+\/bv\s+\$x64Version\s+\/d\s+\$stageDirectory\s+\/p\s+\$resolvedOutput/)
+    errors << 'bundle_msix.ps1 must invoke MakeAppx bundle with the shared package version'
+  end
+  unless bundler.include?('Read-MsixVersion') &&
+         bundler.include?('$x64Version -ne $arm64Version') &&
+         bundler.include?("'^\\d+\\.\\d+\\.\\d+\\.\\d+$'")
+    errors << 'bundle_msix.ps1 must compare and validate the shared four-part package version'
   end
 end
 

@@ -171,7 +171,7 @@ Expected: failure identifying missing MSIX bundle CI wiring.
 
 - [ ] **Step 2: Implement the MakeAppx bundler**
 
-Resolve `makeappx.exe` from `PATH` first, then from `Program Files (x86)\Windows Kits\10\bin\*\x64`. Copy only the two supplied `.msix` files into a clean temporary directory, run `MakeAppx.exe bundle /v /d <stage> /p <output>.msixbundle`, and fail on any missing input or non-zero exit code.
+Resolve `makeappx.exe` from `PATH` first, then from `Program Files (x86)\Windows Kits\10\bin\*\x64`. Read both package manifests, require the same four-part version, copy only the two supplied `.msix` files into a clean temporary directory, run `MakeAppx.exe bundle /v /bv <shared-version> /d <stage> /p <output>.msixbundle`, and fail on any missing input or non-zero exit code.
 
 - [ ] **Step 3: Implement the single-package PowerShell verifier**
 
