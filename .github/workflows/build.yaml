@@ -67,6 +67,9 @@ jobs:
       - name: Test Linux package verifier
         run: ruby tool/verify_linux_packages_test.rb
 
+      - name: Test Linux DEB compression verifier
+        run: ruby tool/verify_linux_deb_compression_test.rb
+
   build:
     needs: [ test ]
     runs-on: ${{ matrix.os }}
@@ -181,6 +184,10 @@ jobs:
       - name: Verify Linux packaged desktop entries
         if: startsWith(matrix.platform, 'linux')
         run: ruby tool/verify_linux_packages.rb dist ${{ matrix.arch == 'amd64' && 'deb,appimage,rpm' || 'deb' }}
+
+      - name: Verify Linux DEB gzip compression
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_deb_compression.rb dist
 
       - name: Verify Windows proxy shutdown cleanup
         if: startsWith(matrix.platform, 'windows')

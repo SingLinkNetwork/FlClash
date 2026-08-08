@@ -79,6 +79,7 @@ expected_scripts = %w[
   tool/verify_macos_tray_click_action.rb
   tool/verify_desktop_tray_click_action.rb
   tool/verify_linux_startup_wm_class.rb
+  tool/verify_linux_deb_compression_wiring.rb
   tool/verify_custom_test_urls.rb
   tool/verify_core_callback_cleanup.rb
   tool/verify_ci_layout.rb
@@ -127,5 +128,9 @@ abort 'Linux package verifier does not exist' unless
   File.file?(File.join(root, 'tool/verify_linux_packages.rb'))
 abort 'Linux package verifier regression test does not exist' unless
   File.file?(File.join(root, 'tool/verify_linux_packages_test.rb'))
+abort 'Linux DEB compression verifier does not exist' unless
+  File.file?(File.join(root, 'tool/verify_linux_deb_compression.rb'))
+abort 'Linux DEB compression verifier regression test does not exist' unless
+  File.file?(File.join(root, 'tool/verify_linux_deb_compression_test.rb'))
 
 puts "CI layout verified: #{static_entries.length} independent static checks plus separate core and platform jobs"

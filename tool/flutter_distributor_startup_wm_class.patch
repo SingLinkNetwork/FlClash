@@ -64,6 +64,18 @@ diff --git a/packages/flutter_app_packager/lib/src/makers/deb/make_deb_config.da
        }..removeWhere((key, value) => value == null),
      };
    }
+
+diff --git a/packages/flutter_app_packager/lib/src/makers/deb/app_package_maker_deb.dart b/packages/flutter_app_packager/lib/src/makers/deb/app_package_maker_deb.dart
+--- a/packages/flutter_app_packager/lib/src/makers/deb/app_package_maker_deb.dart
++++ b/packages/flutter_app_packager/lib/src/makers/deb/app_package_maker_deb.dart
+@@ -118,6 +118,7 @@ class AppPackageMakerDeb extends AppPackageMaker {
+     ProcessResult processResult = await $('dpkg-deb', [
+       '--build',
+       '--root-owner-group',
++      '--compression=gzip',
+       packagingDirectory.path,
+       makeConfig.outputFile.path,
+     ]);
 diff --git a/packages/flutter_app_packager/lib/src/makers/rpm/make_rpm_config.dart b/packages/flutter_app_packager/lib/src/makers/rpm/make_rpm_config.dart
 --- a/packages/flutter_app_packager/lib/src/makers/rpm/make_rpm_config.dart
 +++ b/packages/flutter_app_packager/lib/src/makers/rpm/make_rpm_config.dart

@@ -561,6 +561,8 @@ jobs:
             script: tool/verify_desktop_tray_click_action.rb
           - id: linux-startup-wm-class
             script: tool/verify_linux_startup_wm_class.rb
+          - id: linux-deb-gzip
+            script: tool/verify_linux_deb_compression_wiring.rb
           - id: custom-test-urls
             script: tool/verify_custom_test_urls.rb
           - id: core-callback-cleanup
@@ -616,8 +618,14 @@ jobs:
       - name: Verify packaged desktop entries
         run: ruby tool/verify_linux_packages.rb dist
 
+      - name: Verify DEB gzip compression
+        run: ruby tool/verify_linux_deb_compression.rb dist
+
       - name: Test package verifier
         run: ruby tool/verify_linux_packages_test.rb
+
+      - name: Test DEB compression verifier
+        run: ruby tool/verify_linux_deb_compression_test.rb
 
       - name: Upload Linux packages
         uses: actions/upload-artifact@v4
