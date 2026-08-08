@@ -1040,13 +1040,14 @@ class ProfilesAction extends _$ProfilesAction {
   Future<void> updateProfile(
     Profile profile, {
     bool showLoading = false,
+    bool useProxy = true,
   }) async {
     try {
       if (showLoading) {
         ref.read(isUpdatingProvider(profile.updatingKey).notifier).value = true;
       }
       ref.read(profilesProvider.notifier).put(profile);
-      final newProfile = await profile.update();
+      final newProfile = await profile.update(useProxy: useProxy);
       ref.read(profilesProvider.notifier).put(newProfile);
       if (profile.id == ref.read(currentProfileIdProvider)) {
         ref

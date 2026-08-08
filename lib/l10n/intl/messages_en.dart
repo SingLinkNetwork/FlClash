@@ -994,6 +994,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("Submit"),
     "suspended": MessageLookupByLibrary.simpleMessage("Suspended..."),
     "sync": MessageLookupByLibrary.simpleMessage("Sync"),
+    "syncDirect": MessageLookupByLibrary.simpleMessage("Sync directly"),
+    "syncViaProxy": MessageLookupByLibrary.simpleMessage("Sync via proxy"),
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "systemApp": MessageLookupByLibrary.simpleMessage("System APP"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("System proxy"),

@@ -58,6 +58,9 @@ jobs:
       - name: Verify window visibility queue
         run: ruby tool/verify_window_visibility_queue.rb
 
+      - name: Verify subscription direct/proxy sync wiring
+        run: ruby tool/verify_subscription_sync_route.rb
+
       - name: Verify Linux CJK font fallback
         run: ruby tool/verify_linux_cjk_font_fallback.rb
 
@@ -69,6 +72,9 @@ jobs:
 
       - name: Test Linux DEB compression verifier
         run: ruby tool/verify_linux_deb_compression_test.rb
+
+      - name: Test subscription direct/proxy sync
+        run: flutter test test/common/request_test.dart
 
   build:
     needs: [ test ]

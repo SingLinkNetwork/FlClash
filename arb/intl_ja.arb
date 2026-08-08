@@ -166,6 +166,8 @@
   "testUrl": "URLテスト",
   "customTestUrls": "カスタム検査サイト",
   "sync": "同期",
+  "syncViaProxy": "プロキシ経由で同期",
+  "syncDirect": "直接同期",
   "exclude": "最近のタスクから非表示",
   "excludeDesc": "アプリがバックグラウンド時に最近のタスクから非表示",
   "expand": "標準",

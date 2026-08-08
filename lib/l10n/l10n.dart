@@ -1309,6 +1309,26 @@ class AppLocalizations {
     return Intl.message('Sync', name: 'sync', desc: '', args: []);
   }
 
+  /// `Sync via proxy`
+  String get syncViaProxy {
+    return Intl.message(
+      'Sync via proxy',
+      name: 'syncViaProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sync directly`
+  String get syncDirect {
+    return Intl.message(
+      'Sync directly',
+      name: 'syncDirect',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Hidden from recent tasks`
   String get exclude {
     return Intl.message(

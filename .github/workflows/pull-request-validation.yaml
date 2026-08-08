@@ -563,6 +563,8 @@ jobs:
             script: tool/verify_linux_startup_wm_class.rb
           - id: linux-deb-gzip
             script: tool/verify_linux_deb_compression_wiring.rb
+          - id: subscription-sync-route
+            script: tool/verify_subscription_sync_route.rb
           - id: custom-test-urls
             script: tool/verify_custom_test_urls.rb
           - id: core-callback-cleanup

@@ -197,8 +197,11 @@ extension ProfileExtension on Profile {
     return _getFile();
   }
 
-  Future<Profile> update() async {
-    final response = await request.getFileResponseForUrl(url);
+  Future<Profile> update({bool useProxy = true}) async {
+    final response = await request.getFileResponseForUrl(
+      url,
+      useProxy: useProxy,
+    );
     final disposition = response.headers.value('content-disposition');
     final userinfo = response.headers.value('subscription-userinfo');
     return copyWith(

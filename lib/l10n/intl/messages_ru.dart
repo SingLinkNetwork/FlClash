@@ -1047,6 +1047,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("Отправить"),
     "suspended": MessageLookupByLibrary.simpleMessage("Приостановлено..."),
     "sync": MessageLookupByLibrary.simpleMessage("Синхронизация"),
+    "syncDirect": MessageLookupByLibrary.simpleMessage("Прямая синхронизация"),
+    "syncViaProxy": MessageLookupByLibrary.simpleMessage(
+      "Синхронизация через прокси",
+    ),
     "system": MessageLookupByLibrary.simpleMessage("Система"),
     "systemApp": MessageLookupByLibrary.simpleMessage("Системное приложение"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("Системный прокси"),

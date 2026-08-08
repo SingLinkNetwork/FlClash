@@ -80,6 +80,7 @@ expected_scripts = %w[
   tool/verify_desktop_tray_click_action.rb
   tool/verify_linux_startup_wm_class.rb
   tool/verify_linux_deb_compression_wiring.rb
+  tool/verify_subscription_sync_route.rb
   tool/verify_custom_test_urls.rb
   tool/verify_core_callback_cleanup.rb
   tool/verify_ci_layout.rb
