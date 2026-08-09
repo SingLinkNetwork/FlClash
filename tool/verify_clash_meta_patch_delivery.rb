@@ -9,6 +9,7 @@ patch = read.call(
   'patches',
   '0001-android-disable-default-udp-listeners.patch',
 )
+attributes = read.call('.gitattributes')
 applier = read.call('tool', 'apply_clash_meta_patches.dart')
 patch_helper = read.call(
   'plugins',
@@ -36,6 +37,8 @@ checks = {
     patch.include?('diff --git a/listener/listener.go b/listener/listener.go'),
   'core patch includes a listener regression test' =>
     patch.include?('listener_security_test.go'),
+  'core patch is checked out with LF line endings on every platform' =>
+    attributes.include?('tool/patches/*.patch text eol=lf'),
   'command-line patch applier uses the build-tool helper' =>
     applier.include?('// ignore: avoid_relative_lib_imports') &&
       applier.include?('clash_meta_patches.dart'),
