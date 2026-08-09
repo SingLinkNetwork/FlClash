@@ -2,7 +2,6 @@ package com.follow.clash.service
 
 import android.content.Intent
 import android.net.ConnectivityManager
-import android.net.ProxyInfo
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -218,14 +217,6 @@ class VpnService : SystemVpnService(), IBaseService,
             }
             if (options.allowBypass) {
                 allowBypass()
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && options.systemProxy) {
-                GlobalState.log("Open http proxy")
-                setHttpProxy(
-                    ProxyInfo.buildDirectProxy(
-                        "127.0.0.1", options.port, options.bypassDomain
-                    )
-                )
             }
             establish()?.detachFd()
                 ?: throw NullPointerException("Establish VPN rejected by system")

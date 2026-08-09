@@ -32,6 +32,7 @@ class GlobalState {
   late CommonTheme theme;
   late Color accentColor;
   late ProviderContainer container;
+  final localProxyCredentials = LocalProxyCredentials.generate();
   bool startProxyFromCommandLine = false;
   bool needInitStatus = true;
 

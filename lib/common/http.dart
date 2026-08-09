@@ -1,9 +1,31 @@
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/common/local_proxy.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+void configureLocalProxyAuthentication(HttpClient client) {
+  if (!system.isAndroid) return;
+  client.authenticateProxy = (host, port, scheme, realm) async {
+    final mixedPort = globalState.container.read(
+      patchClashConfigProvider.select((state) => state.mixedPort),
+    );
+    if (!isLocalProxyEndpoint(host, port, mixedPort) ||
+        scheme.toLowerCase() != 'basic') {
+      return false;
+    }
+    final credentials = globalState.localProxyCredentials;
+    client.addProxyCredentials(
+      host,
+      port,
+      realm ?? '',
+      HttpClientBasicCredentials(credentials.username, credentials.password),
+    );
+    return true;
+  };
+}
 
 class FlClashHttpOverrides extends HttpOverrides {
   static String handleFindProxy(Uri url) {
@@ -26,6 +48,7 @@ class FlClashHttpOverrides extends HttpOverrides {
     final client = super.createHttpClient(context);
     client.badCertificateCallback = (_, _, _) => true;
     client.findProxy = handleFindProxy;
+    configureLocalProxyAuthentication(client);
     return client;
   }
 }

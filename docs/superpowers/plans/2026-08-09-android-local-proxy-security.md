@@ -4,7 +4,7 @@
 
 **Goal:** 修復上游 #2183，讓 Android 本機代理具備程序級隨機驗證，並移除無法攜帶帳密的預設 UDP 與系統 HTTP 代理入口。
 
-**Architecture:** Flutter 端在產生最終核心 YAML 前注入當前程序的隨機 `authentication`，並讓 App 內部 HttpClient 只對目前 mixed-port 自動完成 Basic proxy challenge。核心端沿用既有 `authStore.Default` 驗證 TCP；Android 有驗證時跳過預設 mixed/socks UDP listener，VPN 端不再設定 `ProxyInfo` 系統代理。
+**Architecture:** Flutter 端在產生最終核心 YAML 前注入當前程序的隨機 `authentication`，並讓 App 內部 HttpClient 只對目前 mixed-port 自動完成 Basic proxy challenge。核心端沿用既有 `authStore.Default` 驗證 TCP；Android 永遠跳過預設 mixed/socks UDP listener，VPN 端不再設定 `ProxyInfo` 系統代理。
 
 **Tech Stack:** Dart/Flutter、Go/Clash.Meta、Kotlin/Android VpnService、Ruby 靜態驗證、GitHub Actions。
 
@@ -117,8 +117,8 @@
 - Create: `core/Clash.Meta/listener/listener_security_test.go`
 
 **Interfaces:**
-- Consumes: planned `shouldDisableDefaultUDP(androidBuild bool, authenticated bool) bool` in package `listener`.
-- Produces: a Go regression test covering all Android/auth combinations.
+- Consumes: planned `shouldDisableDefaultUDP(androidBuild bool) bool` in package `listener`.
+- Produces: a Go regression test covering desktop and Android builds.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -127,21 +127,18 @@
   ```go
   func TestShouldDisableDefaultUDP(t *testing.T) {
       tests := []struct {
-          name          string
-          androidBuild  bool
-          authenticated bool
-          want          bool
+          name         string
+          androidBuild bool
+          want         bool
       }{
-          {name: "desktop without auth", androidBuild: false, authenticated: false, want: false},
-          {name: "desktop with auth", androidBuild: false, authenticated: true, want: false},
-          {name: "android without auth", androidBuild: true, authenticated: false, want: false},
-          {name: "android with auth", androidBuild: true, authenticated: true, want: true},
+          {name: "desktop", androidBuild: false, want: false},
+          {name: "android", androidBuild: true, want: true},
       }
 
       for _, test := range tests {
           t.Run(test.name, func(t *testing.T) {
-              if got := shouldDisableDefaultUDP(test.androidBuild, test.authenticated); got != test.want {
-                  t.Fatalf("shouldDisableDefaultUDP(%t, %t) = %t, want %t", test.androidBuild, test.authenticated, got, test.want)
+              if got := shouldDisableDefaultUDP(test.androidBuild); got != test.want {
+                  t.Fatalf("shouldDisableDefaultUDP(%t) = %t, want %t", test.androidBuild, got, test.want)
               }
           })
       }
@@ -326,11 +323,11 @@
 
 - [ ] **Step 2: Update `ReCreateSocks`**
 
-  Calculate `disableUDP := defaultUDPDisabled()`. Close an existing `socksUDPListener` when `disableUDP` is true. Return early when the TCP listener is already correct and either UDP is already correct or UDP is disabled. Create the TCP listener only when missing, and create `socks.NewUDP` only when `disableUDP` is false and the UDP listener is missing.
+  Calculate `disableUDP := defaultUDPDisabled()`. Close an existing `socksUDPListener` when `disableUDP` is true. Return early when the TCP listener is already correct and either UDP is already correct or UDP is disabled. Create the TCP listener only when missing, and create `socks.NewUDP` only when `disableUDP` is false and the UDP listener is missing. `defaultUDPDisabled()` must be true for every Android build, even if the current config has no `authentication` entry.
 
 - [ ] **Step 3: Update `ReCreateMixed`**
 
-  Apply the same lifecycle rules to `mixedUDPLister` and `mixed.New`. The existing mixed TCP listener must continue using `authStore.Default`; only the independent default UDP listener is skipped on Android with authentication.
+  Apply the same lifecycle rules to `mixedUDPLister` and `mixed.New`. The existing mixed TCP listener must continue using `authStore.Default`; the independent default UDP listener is skipped on every Android build.
 
 - [ ] **Step 4: Run Go targeted test and formatting**
 

@@ -529,6 +529,8 @@ jobs:
             script: tool/verify_android_tile_background_toggle.rb
           - id: android-vpn-stop-cleanup
             script: tool/verify_android_proxy_stop.rb
+          - id: android-local-proxy-security
+            script: tool/verify_android_local_proxy_security.rb
           - id: android-service-lifecycle
             script: tool/verify_android_service_lifecycle.rb
           - id: linux-x11-thread

@@ -382,6 +382,12 @@ class SetupAction extends _$SetupAction {
     if (scriptContent?.isNotEmpty == true) {
       rawConfig = await handleEvaluate(scriptContent!, rawConfig);
     }
+    if (system.isAndroid) {
+      rawConfig = applyAndroidLocalProxyAuthentication(
+        rawConfig: rawConfig,
+        credentials: globalState.localProxyCredentials,
+      );
+    }
     final directory = await appPath.profilesPath;
     final res = makeRealProfileTask(
       MakeRealProfileState(

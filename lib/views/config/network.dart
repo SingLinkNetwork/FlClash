@@ -103,30 +103,6 @@ class AllowBypassItem extends ConsumerWidget {
   }
 }
 
-class VpnSystemProxyItem extends ConsumerWidget {
-  const VpnSystemProxyItem({super.key});
-
-  @override
-  Widget build(BuildContext context, ref) {
-    final appLocalizations = context.appLocalizations;
-    final systemProxy = ref.watch(
-      vpnSettingProvider.select((state) => state.systemProxy),
-    );
-    return ListItem.switchItem(
-      title: Text(appLocalizations.systemProxy),
-      subtitle: Text(appLocalizations.systemProxyDesc),
-      delegate: SwitchDelegate(
-        value: systemProxy,
-        onChanged: (bool value) async {
-          ref
-              .read(vpnSettingProvider.notifier)
-              .update((state) => state.copyWith(systemProxy: value));
-        },
-      ),
-    );
-  }
-}
-
 class SystemProxyItem extends ConsumerWidget {
   const SystemProxyItem({super.key});
 
@@ -392,7 +368,6 @@ class NetworkListView extends StatelessWidget {
         ...generateSection(
           title: 'VPN',
           items: [
-            const VpnSystemProxyItem(),
             const BypassDomainItem(),
             const AllowBypassItem(),
             const Ipv6Item(),

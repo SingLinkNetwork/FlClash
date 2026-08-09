@@ -18,7 +18,7 @@
 - Android 每次 App 啟動產生新的本機代理密碼，不把密碼寫入使用者設定或日誌。
 - Android 產生的核心設定只使用這組隨機帳密，覆蓋匯入設定或腳本遺留的本機代理帳密。
 - Android mixed-port 與 socks-port 的 TCP HTTP/SOCKS 入口要求帳密。
-- Android 預設 mixed-port 與 socks-port 不再開放未驗證 UDP 入口。
+- Android 預設 mixed-port 與 socks-port 不再開放 UDP 入口；這個核心層保護不依賴帳密是否剛好注入。
 - FlClash 自己的 Dart 網路請求自動回應本機代理的 HTTP Basic 驗證。
 - Android 不再設定無法攜帶帳密的系統 HTTP 代理；VPN TUN 仍是 Android 的主要流量路徑。
 - 桌面版現有本機代理行為保持不變。
@@ -43,7 +43,7 @@ App 啟動
   -> 覆蓋 rawConfig.authentication
   -> 核心啟動
        -> TCP mixed/socks 使用 authStore.Default
-       -> Android + 已驗證時不建立預設 UDP listener
+       -> Android 永不建立預設 UDP listener
   -> App 內部 HttpClient 收到 407
        -> 僅對 localhost:本次 mixed-port 回應 Basic 帳密
   -> Android VPN 不設定 ProxyInfo 系統 HTTP 代理
@@ -57,7 +57,7 @@ App 啟動
 
 ### 為什麼 Android UDP 直接關閉
 
-目前預設 UDP listener 是獨立的 SOCKS5 UDP 封包入口，不走同一套 TCP HTTP/SOCKS 帳密握手。為了避免「TCP 有驗證但 UDP 仍可繞過」的假安全，Android 有核心帳密時不建立這兩個預設 UDP listener。VPN TUN 的 UDP 流量不受此變更影響。
+目前預設 UDP listener 是獨立的 SOCKS5 UDP 封包入口，不走同一套 TCP HTTP/SOCKS 帳密握手。為了避免「TCP 有驗證但 UDP 仍可繞過」的假安全，Android 核心永遠不建立這兩個預設 UDP listener；即使未來某條設定注入路徑漏掉帳密，UDP 也不會重新暴露。VPN TUN 的 UDP 流量不受此變更影響。
 
 ### 為什麼停用 Android 系統代理
 
@@ -86,7 +86,7 @@ App 啟動
 - [ ] Android 最終 YAML 含有唯一一組 `authentication`，值為本次程序產生的帳密。
 - [ ] Android 匯入設定原本的 `authentication` 和腳本改寫結果都不會覆蓋這組帳密。
 - [ ] Android mixed-port / socks-port 的 TCP HTTP 和 SOCKS 入口使用核心驗證。
-- [ ] Android 有核心驗證時，`ReCreateMixed` 和 `ReCreateSocks` 都不建立預設 UDP listener，且從有 UDP 切換到驗證狀態時會關閉舊 listener。
+- [ ] Android 的 `ReCreateMixed` 和 `ReCreateSocks` 都不建立預設 UDP listener，且從既有版本升級或重新載入時會關閉舊 listener。
 - [ ] App 內部 HTTP client 只在 host 為 `localhost`/`127.0.0.1` 且埠等於目前 mixed-port、scheme 為 Basic 時加入帳密。
 - [ ] 非本機、非 Basic 或其他埠的 proxy challenge 不會收到 FlClash 帳密。
 - [ ] Android `VpnService` 不再呼叫 `setHttpProxy` 或建立 `ProxyInfo`。
