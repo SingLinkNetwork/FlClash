@@ -63,10 +63,7 @@ NavigationItemsState navigationItemsState(Ref ref) {
     profilesProvider.select((state) => state.isNotEmpty),
   );
   return NavigationItemsState(
-    value: navigation.getItems(
-      openLogs: openLogs,
-      hasProfiles: hasProfiles,
-    ),
+    value: navigation.getItems(openLogs: openLogs, hasProfiles: hasProfiles),
   );
 }
 

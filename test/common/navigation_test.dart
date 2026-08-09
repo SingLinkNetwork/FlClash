@@ -11,10 +11,7 @@ void main() {
 
     expect(
       proxyItem.modes,
-      containsAll([
-        NavigationItemMode.mobile,
-        NavigationItemMode.desktop,
-      ]),
+      containsAll([NavigationItemMode.mobile, NavigationItemMode.desktop]),
     );
   });
 
