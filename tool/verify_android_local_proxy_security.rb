@@ -21,15 +21,13 @@ vpn_service = read.call(
   'service',
   'VpnService.kt',
 )
-listener = read.call('core', 'Clash.Meta', 'listener', 'listener.go')
-dart_test = File.join(root, 'test', 'common', 'local_proxy_test.dart')
-go_test = File.join(
-  root,
-  'core',
-  'Clash.Meta',
-  'listener',
-  'listener_security_test.go',
+core_patch = read.call(
+  'tool',
+  'patches',
+  '0001-android-disable-default-udp-listeners.patch',
 )
+patch_applier = read.call('tool', 'apply_clash_meta_patches.dart')
+dart_test = File.join(root, 'test', 'common', 'local_proxy_test.dart')
 workflow = read.call('.github', 'workflows', 'pull-request-validation.yaml')
 
 abort 'Android local proxy helper is missing secure random credentials' unless
@@ -56,16 +54,24 @@ abort 'Android UI still exposes the unsupported VPN system proxy switch' if
 abort 'Android service still creates an unauthenticated system HTTP proxy' if
   vpn_service.include?('ProxyInfo') || vpn_service.include?('setHttpProxy')
 
-abort 'Core does not gate default UDP on Android authentication' unless
-  listener.include?('shouldDisableDefaultUDP') &&
-    listener.include?('features.Android') &&
-    listener.scan('socks.NewUDP').length == 2 &&
-    listener.scan('if disableUDP || shouldUDPIgnore').length == 2
+abort 'Core patch does not gate default UDP on Android' unless
+  core_patch.include?('shouldDisableDefaultUDP') &&
+    core_patch.include?('features.Android') &&
+    core_patch.scan('disableUDP := defaultUDPDisabled()').length == 2 &&
+    core_patch.include?('if disableUDP || socksUDPListener.RawAddress() != addr') &&
+    core_patch.include?('if disableUDP || mixedUDPLister.RawAddress() != addr') &&
+    core_patch.scan('if disableUDP || shouldUDPIgnore').length == 2
 
 abort 'Dart local proxy regression test is missing' unless File.file?(dart_test)
-abort 'Go local proxy regression test is missing' unless File.file?(go_test)
+abort 'Core patch does not contain the Go local proxy regression test' unless
+  core_patch.include?('listener_security_test.go') &&
+    core_patch.include?('TestShouldDisableDefaultUDP')
+
+abort 'Core patch applier is missing' unless
+  patch_applier.include?('applyClashMetaPatches')
 
 abort 'Android local proxy security verifier is not wired into CI' unless
-  workflow.include?('script: tool/verify_android_local_proxy_security.rb')
+  workflow.include?('script: tool/verify_android_local_proxy_security.rb') &&
+    workflow.include?("go test ./listener -run '^TestShouldDisableDefaultUDP$' -count=1")
 
 puts 'Android local proxy security wiring verified'

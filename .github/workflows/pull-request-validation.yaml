@@ -86,6 +86,16 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Apply Clash.Meta patches
+        run: dart tool/apply_clash_meta_patches.dart
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -97,6 +107,10 @@ jobs:
         env:
           CGO_ENABLED: '0'
         run: go test .
+
+      - name: Test Android local proxy UDP security
+        working-directory: core/Clash.Meta
+        run: go test ./listener -run '^TestShouldDisableDefaultUDP$' -count=1
 
   go-vet:
     name: Go vet
@@ -531,6 +545,8 @@ jobs:
             script: tool/verify_android_proxy_stop.rb
           - id: android-local-proxy-security
             script: tool/verify_android_local_proxy_security.rb
+          - id: clash-meta-patch-delivery
+            script: tool/verify_clash_meta_patch_delivery.rb
           - id: android-service-lifecycle
             script: tool/verify_android_service_lifecycle.rb
           - id: linux-x11-thread

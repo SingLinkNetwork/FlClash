@@ -17,11 +17,11 @@ void main() {
   test(
     'Android authentication replaces imported authentication without mutating input',
     () {
-      final credentials = const LocalProxyCredentials(
+      const credentials = LocalProxyCredentials(
         username: 'flclash-android',
         password: 'test-password',
       );
-      final rawConfig = <String, dynamic>{
+      const rawConfig = <String, dynamic>{
         'authentication': ['old-user:old-password'],
         'mixed-port': 7890,
       };

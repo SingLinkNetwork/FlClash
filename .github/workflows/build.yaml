@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Apply Clash.Meta patches
+        run: dart tool/apply_clash_meta_patches.dart
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -45,6 +48,10 @@ jobs:
         env:
           CGO_ENABLED: '0'
         run: go test .
+
+      - name: Test Android local proxy UDP security
+        working-directory: core/Clash.Meta
+        run: go test ./listener -run '^TestShouldDisableDefaultUDP$' -count=1
 
       - name: Verify delay test concurrency alignment
         run: ruby tool/verify_delay_test_concurrency.rb
