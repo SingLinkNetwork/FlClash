@@ -15,9 +15,10 @@ class LocalProxyCredentials {
     final random = Random.secure();
     final password = List.generate(
       _localProxyPasswordLength,
-      (_) => _localProxyPasswordAlphabet[
-        random.nextInt(_localProxyPasswordAlphabet.length)
-      ],
+      (_) =>
+          _localProxyPasswordAlphabet[random.nextInt(
+            _localProxyPasswordAlphabet.length,
+          )],
     ).join();
     return LocalProxyCredentials(
       username: _localProxyUsername,
@@ -37,10 +38,7 @@ Map<String, dynamic> applyAndroidLocalProxyAuthentication({
   return patchedConfig;
 }
 
-bool shouldUseSystemProxy({
-  required bool isAndroid,
-  required bool requested,
-}) {
+bool shouldUseSystemProxy({required bool isAndroid, required bool requested}) {
   return requested && !isAndroid;
 }
 
