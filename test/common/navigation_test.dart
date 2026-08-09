@@ -9,10 +9,13 @@ void main() {
       (item) => item.label == PageLabel.proxies,
     );
 
-    expect(proxyItem.modes, containsAll([
-      NavigationItemMode.mobile,
-      NavigationItemMode.desktop,
-    ]));
+    expect(
+      proxyItem.modes,
+      containsAll([
+        NavigationItemMode.mobile,
+        NavigationItemMode.desktop,
+      ]),
+    );
   });
 
   test('hides proxy navigation when no profile exists', () {
