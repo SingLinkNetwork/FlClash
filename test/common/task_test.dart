@@ -47,6 +47,63 @@ void main() {
     expect(result.stdout, isNot(contains(backupFile.path)));
   });
 
+  test('rejects a backup archive before an unsafe entry can escape', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'fl_clash_zip_slip_test_',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final backupFile = File(p.join(directory.path, 'backup.zip'));
+    final restoreDir = Directory(p.join(directory.path, 'restore'));
+    final archive = Archive()
+      ..addFile(ArchiveFile.string('safe.txt', 'safe backup content'))
+      ..addFile(ArchiveFile.string('../escaped.txt', 'escaped backup content'));
+    final zipBytes = ZipEncoder().encodeBytes(archive);
+    await backupFile.writeAsBytes(zipBytes);
+
+    Object? restoreError;
+    try {
+      await restoreBackupArchive(backupFile.path, restoreDir.path);
+    } catch (error) {
+      restoreError = error;
+    }
+
+    expect(
+      [
+        File(p.join(restoreDir.path, 'safe.txt')).existsSync(),
+        File(p.join(directory.path, 'escaped.txt')).existsSync(),
+      ],
+      [false, false],
+    );
+    expect(restoreError, isA<FileSystemException>());
+  });
+
+  test(
+    'restores a nested backup entry beneath the restore directory',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'fl_clash_restore_nested_test_',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final backupFile = File(p.join(directory.path, 'backup.zip'));
+      final restoreDir = Directory(p.join(directory.path, 'restore'));
+      final archive = Archive()
+        ..addFile(
+          ArchiveFile.string('profiles/nested.yaml', 'profile: nested\n'),
+        );
+      final zipBytes = ZipEncoder().encodeBytes(archive);
+      await backupFile.writeAsBytes(zipBytes);
+
+      await restoreBackupArchive(backupFile.path, restoreDir.path);
+
+      expect(
+        await File(
+          p.join(restoreDir.path, 'profiles', 'nested.yaml'),
+        ).readAsString(),
+        'profile: nested\n',
+      );
+    },
+  );
+
   test('profile ipv6 value wins over the client fallback', () {
     final result = applyCorePatchConfig(
       rawConfig: {'ipv6': true, 'ip-version': 'ipv6-prefer'},
