@@ -377,4 +377,53 @@ void main() {
     expect(urls['geoip'], defaultGeoXUrl[GeoResource.GEOIP]);
     expect(urls['geosite'], defaultGeoXUrl[GeoResource.GEOSITE]);
   });
+
+  test('DNS override preserves direct nameservers', () async {
+    final profile = await makeRealProfileTask(
+      const MakeRealProfileState(
+        profilesPath: '/tmp/flclash-direct-nameserver-test',
+        profileId: 12,
+        rawConfig: {
+          'dns': {
+            'enable': true,
+            'direct-nameserver': ['223.5.5.5', '119.29.29.29'],
+          },
+        },
+        realPatchConfig: PatchClashConfig(
+          dns: Dns(directNameserver: ['223.5.5.5', '119.29.29.29']),
+        ),
+        overrideDns: true,
+        appendSystemDns: false,
+        proxyGroups: [],
+        rules: [],
+        addedRules: [],
+        defaultUA: 'FlClash-Test',
+      ),
+    );
+
+    expect(profile.a, contains('direct-nameserver:'));
+    expect(profile.a, contains('- "223.5.5.5"'));
+    expect(profile.a, contains('- "119.29.29.29"'));
+  });
+
+  test('DNS override does not add an unset direct nameserver', () async {
+    final profile = await makeRealProfileTask(
+      const MakeRealProfileState(
+        profilesPath: '/tmp/flclash-direct-nameserver-test',
+        profileId: 13,
+        rawConfig: {
+          'dns': {'enable': true},
+        },
+        realPatchConfig: PatchClashConfig(),
+        overrideDns: true,
+        appendSystemDns: false,
+        proxyGroups: [],
+        rules: [],
+        addedRules: [],
+        defaultUA: 'FlClash-Test',
+      ),
+    );
+
+    expect(profile.a, isNot(contains('direct-nameserver:')));
+  });
 }

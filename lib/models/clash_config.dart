@@ -300,6 +300,8 @@ abstract class Dns with _$Dns {
     Map<String, String> nameserverPolicy,
     @Default(['https://doh.pub/dns-query', 'https://dns.alidns.com/dns-query'])
     List<String> nameserver,
+    @JsonKey(name: 'direct-nameserver', includeIfNull: false)
+    List<String>? directNameserver,
     @Default(['tls://8.8.4.4', 'tls://1.1.1.1']) List<String> fallback,
     @Default(['https://doh.pub/dns-query'])
     @JsonKey(name: 'proxy-server-nameserver')
