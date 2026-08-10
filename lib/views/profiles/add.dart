@@ -16,10 +16,10 @@ class AddProfileView extends StatelessWidget {
         .addProfileFormFile();
   }
 
-  Future<void> _handleAddProfileFormURL(String url) async {
+  Future<void> _handleAddProfileFormURL(URLImportResult result) async {
     globalState.container
         .read(profilesActionProvider.notifier)
-        .addProfileFormURL(url);
+        .addProfileFormURL(result.url, useProxy: result.useProxy);
   }
 
   Future<void> _toScan() async {
@@ -32,33 +32,17 @@ class AddProfileView extends StatelessWidget {
     final url = await BaseNavigator.push(context, const ScanPage());
     if (url != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _handleAddProfileFormURL(url);
+        _handleAddProfileFormURL(URLImportResult(url: url));
       });
     }
   }
 
   Future<void> _toAdd() async {
-    final appLocalizations = context.appLocalizations;
-    final url = await globalState.showCommonDialog<String>(
-      child: InputDialog(
-        autovalidateMode: AutovalidateMode.onUnfocus,
-        title: appLocalizations.importFromURL,
-        labelText: appLocalizations.url,
-        value: '',
-        inputFormatters: TextInputLimits.limit(TextInputLimits.url),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return appLocalizations.emptyTip('').trim();
-          }
-          if (!value.isUrl) {
-            return appLocalizations.urlTip('').trim();
-          }
-          return null;
-        },
-      ),
+    final result = await globalState.showCommonDialog<URLImportResult>(
+      child: const URLFormDialog(),
     );
-    if (url != null) {
-      _handleAddProfileFormURL(url);
+    if (result != null) {
+      _handleAddProfileFormURL(result);
     }
   }
 
@@ -90,6 +74,13 @@ class AddProfileView extends StatelessWidget {
   }
 }
 
+class URLImportResult {
+  final String url;
+  final bool useProxy;
+
+  const URLImportResult({required this.url, this.useProxy = true});
+}
+
 class URLFormDialog extends StatefulWidget {
   const URLFormDialog({super.key});
 
@@ -98,12 +89,15 @@ class URLFormDialog extends StatefulWidget {
 }
 
 class _URLFormDialogState extends State<URLFormDialog> {
+  final _formKey = GlobalKey<FormState>();
   final _urlController = TextEditingController();
+  var _useProxy = true;
 
   Future<void> _handleAddProfileFormURL() async {
-    final url = _urlController.value.text;
-    if (url.isEmpty) return;
-    Navigator.of(context).pop<String>(url);
+    if (_formKey.currentState?.validate() == false) return;
+    Navigator.of(
+      context,
+    ).pop(URLImportResult(url: _urlController.value.text, useProxy: _useProxy));
   }
 
   @override
@@ -119,31 +113,68 @@ class _URLFormDialogState extends State<URLFormDialog> {
       title: appLocalizations.importFromURL,
       actions: [
         TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+        TextButton(
           onPressed: _handleAddProfileFormURL,
           child: Text(appLocalizations.submit),
         ),
       ],
       child: SizedBox(
         width: 300,
-        child: Wrap(
-          runSpacing: 16,
-          children: [
-            TextField(
-              keyboardType: TextInputType.url,
-              minLines: 1,
-              maxLines: 5,
-              inputFormatters: TextInputLimits.limit(TextInputLimits.url),
-              onSubmitted: (_) {
-                _handleAddProfileFormURL();
-              },
-              onEditingComplete: _handleAddProfileFormURL,
-              controller: _urlController,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: appLocalizations.url,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                keyboardType: TextInputType.url,
+                minLines: 1,
+                maxLines: 5,
+                inputFormatters: TextInputLimits.limit(TextInputLimits.url),
+                onFieldSubmitted: (_) {
+                  _handleAddProfileFormURL();
+                },
+                onEditingComplete: _handleAddProfileFormURL,
+                controller: _urlController,
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: appLocalizations.url,
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return appLocalizations.emptyTip('').trim();
+                  }
+                  if (!value.isUrl) {
+                    return appLocalizations.urlTip('').trim();
+                  }
+                  return null;
+                },
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              RadioGroup<bool>(
+                groupValue: _useProxy,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _useProxy = value);
+                  }
+                },
+                child: Column(
+                  children: [
+                    RadioListTile<bool>(
+                      value: true,
+                      title: Text(appLocalizations.syncViaProxy),
+                    ),
+                    RadioListTile<bool>(
+                      value: false,
+                      title: Text(appLocalizations.syncDirect),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
