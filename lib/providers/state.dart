@@ -664,7 +664,10 @@ SharedState sharedState(Ref ref) {
     vpnOptions: VpnOptions(
       enable: vpnSetting.enable,
       stack: stack,
-      systemProxy: vpnSetting.systemProxy,
+      systemProxy: shouldUseSystemProxy(
+        isAndroid: system.isAndroid,
+        requested: vpnSetting.systemProxy,
+      ),
       port: port,
       ipv6: vpnSetting.ipv6,
       dnsHijacking: vpnSetting.dnsHijacking,

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import 'environment.dart';
 import 'error.dart';
+import 'clash_meta_patches.dart';
 import 'go_builder.dart';
 import 'logging.dart';
 import 'options.dart';
@@ -112,8 +113,9 @@ class BuildLinuxCommand extends BuildCommand {
     final config = BuildConfig.load(rootDir: _rootDir);
 
     final arch = archName ?? await _hostGoArch();
-    final targets =
-        Target.forPlatform('linux').where((t) => t.goarch == arch).toList();
+    final targets = Target.forPlatform(
+      'linux',
+    ).where((t) => t.goarch == arch).toList();
 
     if (targets.isEmpty) {
       throw BuildException('Invalid arch: $arch');
@@ -148,8 +150,9 @@ class BuildWindowsCommand extends BuildCommand {
     final config = BuildConfig.load(rootDir: _rootDir);
 
     final arch = archName ?? await _hostGoArch();
-    final targets =
-        Target.forPlatform('windows').where((t) => t.goarch == arch).toList();
+    final targets = Target.forPlatform(
+      'windows',
+    ).where((t) => t.goarch == arch).toList();
 
     if (targets.isEmpty) {
       throw BuildException('Invalid arch: $arch');
@@ -172,8 +175,9 @@ class BuildWindowsCommand extends BuildCommand {
       final coreSha256 = await calcSha256(corePaths.first);
       final rustBuilder = RustBuilder(rootDir: _rootDir, config: config);
       await rustBuilder.build(targets.first, coreSha256);
-      await File(p.join(_rootDir, 'core_sha256.json'))
-          .writeAsString(jsonEncode({'CORE_SHA256': coreSha256}));
+      await File(
+        p.join(_rootDir, 'core_sha256.json'),
+      ).writeAsString(jsonEncode({'CORE_SHA256': coreSha256}));
     }
 
     _log.info('Build complete: $corePaths');
@@ -201,8 +205,9 @@ class BuildMacosCommand extends BuildCommand {
     final config = BuildConfig.load(rootDir: _rootDir);
 
     final arch = archName ?? await _hostGoArch();
-    final targets =
-        Target.forPlatform('darwin').where((t) => t.goarch == arch).toList();
+    final targets = Target.forPlatform(
+      'darwin',
+    ).where((t) => t.goarch == arch).toList();
 
     if (targets.isEmpty) {
       throw BuildException('Invalid arch: $arch');
@@ -232,6 +237,7 @@ Future<void> runMain(List<String> args) async {
 
     final topResults = runner.parse(args);
     _rootDir = (topResults['root-dir'] as String?) ?? _findProjectRoot();
+    await applyClashMetaPatches(_rootDir);
     await runner.run(args);
   } on BuildException catch (e) {
     _log.severe(e.toString());

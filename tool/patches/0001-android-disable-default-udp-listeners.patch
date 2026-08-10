@@ -1,0 +1,183 @@
+diff --git a/listener/listener.go b/listener/listener.go
+index 7d751c924e32935371878abb40f57d1f623ee96d..b86b90495b1d05360a69b10fb3a130cc5c9e6578 100644
+--- a/listener/listener.go
++++ b/listener/listener.go
+@@ -8,6 +8,7 @@ import (
+ 	"sync"
+ 
+ 	C "github.com/metacubex/mihomo/constant"
++	"github.com/metacubex/mihomo/constant/features"
+ 	LC "github.com/metacubex/mihomo/listener/config"
+ 	"github.com/metacubex/mihomo/listener/http"
+ 	"github.com/metacubex/mihomo/listener/mixed"
+@@ -73,6 +74,14 @@ type Ports struct {
+ 	VmessConfig       string `json:"vmess-config"`
+ }
+ 
++func shouldDisableDefaultUDP(androidBuild bool) bool {
++	return androidBuild
++}
++
++func defaultUDPDisabled() bool {
++	return shouldDisableDefaultUDP(features.Android)
++}
++
+ func GetTunConf() LC.Tun {
+ 	if tunLister == nil {
+ 		return LastTunConf
+@@ -149,6 +158,7 @@ func ReCreateSocks(port int, tunnel C.Tunnel) {
+ 	}()
+ 
+ 	addr := genAddr(bindAddress, port, allowLan)
++	disableUDP := defaultUDPDisabled()
+ 
+ 	shouldTCPIgnore := false
+ 	shouldUDPIgnore := false
+@@ -163,7 +173,7 @@ func ReCreateSocks(port int, tunnel C.Tunnel) {
+ 	}
+ 
+ 	if socksUDPListener != nil {
+-		if socksUDPListener.RawAddress() != addr {
++		if disableUDP || socksUDPListener.RawAddress() != addr {
+ 			socksUDPListener.Close()
+ 			socksUDPListener = nil
+ 		} else {
+@@ -171,7 +181,7 @@ func ReCreateSocks(port int, tunnel C.Tunnel) {
+ 		}
+ 	}
+ 
+-	if shouldTCPIgnore && shouldUDPIgnore {
++	if shouldTCPIgnore && (shouldUDPIgnore || disableUDP) {
+ 		return
+ 	}
+ 
+@@ -179,20 +189,27 @@ func ReCreateSocks(port int, tunnel C.Tunnel) {
+ 		return
+ 	}
+ 
+-	tcpListener, err := socks.New(addr, tunnel)
+-	if err != nil {
++	if !shouldTCPIgnore {
++		socksListener, err = socks.New(addr, tunnel)
++		if err != nil {
++			return
++		}
++	}
++
++	if disableUDP || shouldUDPIgnore {
++		log.Infoln("SOCKS proxy listening at: %s", socksListener.Address())
+ 		return
+ 	}
+ 
+-	udpListener, err := socks.NewUDP(addr, tunnel)
++	socksUDPListener, err = socks.NewUDP(addr, tunnel)
+ 	if err != nil {
+-		tcpListener.Close()
++		if !shouldTCPIgnore {
++			socksListener.Close()
++			socksListener = nil
++		}
+ 		return
+ 	}
+ 
+-	socksListener = tcpListener
+-	socksUDPListener = udpListener
+-
+ 	log.Infoln("SOCKS proxy listening at: %s", socksListener.Address())
+ }
+ 
+@@ -451,6 +468,7 @@ func ReCreateMixed(port int, tunnel C.Tunnel) {
+ 	}()
+ 
+ 	addr := genAddr(bindAddress, port, allowLan)
++	disableUDP := defaultUDPDisabled()
+ 
+ 	shouldTCPIgnore := false
+ 	shouldUDPIgnore := false
+@@ -464,7 +482,7 @@ func ReCreateMixed(port int, tunnel C.Tunnel) {
+ 		}
+ 	}
+ 	if mixedUDPLister != nil {
+-		if mixedUDPLister.RawAddress() != addr {
++		if disableUDP || mixedUDPLister.RawAddress() != addr {
+ 			mixedUDPLister.Close()
+ 			mixedUDPLister = nil
+ 		} else {
+@@ -472,7 +490,7 @@ func ReCreateMixed(port int, tunnel C.Tunnel) {
+ 		}
+ 	}
+ 
+-	if shouldTCPIgnore && shouldUDPIgnore {
++	if shouldTCPIgnore && (shouldUDPIgnore || disableUDP) {
+ 		return
+ 	}
+ 
+@@ -480,14 +498,24 @@ func ReCreateMixed(port int, tunnel C.Tunnel) {
+ 		return
+ 	}
+ 
+-	mixedListener, err = mixed.New(addr, tunnel)
+-	if err != nil {
++	if !shouldTCPIgnore {
++		mixedListener, err = mixed.New(addr, tunnel)
++		if err != nil {
++			return
++		}
++	}
++
++	if disableUDP || shouldUDPIgnore {
++		log.Infoln("Mixed(http+socks) proxy listening at: %s", mixedListener.Address())
+ 		return
+ 	}
+ 
+ 	mixedUDPLister, err = socks.NewUDP(addr, tunnel)
+ 	if err != nil {
+-		mixedListener.Close()
++		if !shouldTCPIgnore {
++			mixedListener.Close()
++			mixedListener = nil
++		}
+ 		return
+ 	}
+ 
+diff --git a/listener/listener_security_test.go b/listener/listener_security_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e5109dd3bb7fbb5d95a8a98a7cf76e44b8b634e
+--- /dev/null
++++ b/listener/listener_security_test.go
+@@ -0,0 +1,35 @@
++package listener
++
++import "testing"
++
++func TestShouldDisableDefaultUDP(t *testing.T) {
++	tests := []struct {
++		name         string
++		androidBuild bool
++		want         bool
++	}{
++		{
++			name:         "desktop",
++			androidBuild: false,
++			want:         false,
++		},
++		{
++			name:         "android",
++			androidBuild: true,
++			want:         true,
++		},
++	}
++
++	for _, test := range tests {
++		t.Run(test.name, func(t *testing.T) {
++			if got := shouldDisableDefaultUDP(test.androidBuild); got != test.want {
++				t.Fatalf(
++					"shouldDisableDefaultUDP(%t) = %t, want %t",
++					test.androidBuild,
++					got,
++					test.want,
++				)
++			}
++		})
++	}
++}

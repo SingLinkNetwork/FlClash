@@ -1,0 +1,2 @@
+# Stored Git patches contain source-context whitespace by design.
+tool/patches/*.patch text eol=lf whitespace=-trailing-space,-space-before-tab
