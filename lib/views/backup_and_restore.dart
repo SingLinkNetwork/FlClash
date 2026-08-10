@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/common/dav_client.dart';
@@ -139,9 +137,8 @@ class _BackupAndRestoreState extends ConsumerState<BackupAndRestore>
   Future<void> _restoreOnLocal(RestoreOption option) async {
     final appLocalizations = context.appLocalizations;
     final file = await picker.pickerFile();
-    final path = file?.path;
-    if (path == null) return;
-    await File(path).safeCopy(await appPath.backupFilePath);
+    if (file == null) return;
+    await copyPickedFileToPath(file, await appPath.backupFilePath);
     final res = await globalState.loadingRun<bool>(
       () async {
         await globalState.container
