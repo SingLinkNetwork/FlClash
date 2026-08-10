@@ -6,6 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
+bool shouldRestoreWindowSize(WindowProps props) {
+  return props.width > 0 && props.height > 0;
+}
+
 class Window {
   static Window? _instance;
 
@@ -40,6 +44,9 @@ class Window {
     await windowManager.setMaximizable(true);
     await _windowPosition(props);
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      if (shouldRestoreWindowSize(props)) {
+        await windowManager.setSize(props.size);
+      }
       await windowManager.setPreventClose(true);
     });
   }
