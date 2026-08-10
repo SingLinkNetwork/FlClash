@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fl_clash/common/task.dart';
+import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,6 +40,58 @@ void main() {
     expect(result['ipv6'], true);
     expect(result['ip-version'], 'ipv6-prefer');
   });
+
+  test(
+    'proxy providers with the same URL receive separate cache files',
+    () async {
+      const url = 'https://subscription.example/providers';
+      final rawConfig = <String, dynamic>{
+        'proxy-providers': {
+          'provider-one': {
+            'type': 'http',
+            'url': url,
+            'header': {
+              'Id': ['file-one'],
+            },
+          },
+          'provider-two': {
+            'type': 'http',
+            'url': url,
+            'header': {
+              'Id': ['file-two'],
+            },
+          },
+        },
+      };
+      final profile = await makeRealProfileTask(
+        MakeRealProfileState(
+          profilesPath: '/tmp/flclash-provider-cache-test',
+          profileId: 15,
+          rawConfig: rawConfig,
+          realPatchConfig: const PatchClashConfig(),
+          overrideDns: false,
+          appendSystemDns: false,
+          proxyGroups: const [],
+          rules: const [],
+          addedRules: const [],
+          defaultUA: 'FlClash-Test',
+        ),
+      );
+
+      expect(
+        profile.a,
+        contains(
+          'providers/15/proxies/${'provider-one'.toMd5()}-${url.toMd5()}',
+        ),
+      );
+      expect(
+        profile.a,
+        contains(
+          'providers/15/proxies/${'provider-two'.toMd5()}-${url.toMd5()}',
+        ),
+      );
+    },
+  );
 
   test('profile ipv6 false also wins over the client fallback', () {
     final result = applyCorePatchConfig(
