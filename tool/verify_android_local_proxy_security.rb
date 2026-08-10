@@ -42,7 +42,13 @@ abort 'Dart proxy client does not handle authenticated local proxy challenges' u
   http.include?('authenticateProxy') &&
     http.include?('addProxyCredentials') &&
     http.include?('HttpClientBasicCredentials') &&
-    http.include?('isLocalProxyEndpoint')
+    http.include?('shouldAuthenticateLocalProxy')
+
+abort 'Dart proxy authentication helper does not restrict local Basic challenges' unless
+  local_proxy.include?('bool shouldAuthenticateLocalProxy') &&
+    local_proxy.include?("host == 'localhost'") &&
+    local_proxy.include?("host == '127.0.0.1'") &&
+    local_proxy.include?("scheme.toLowerCase() == 'basic'")
 
 abort 'Android shared VPN state can still request the system proxy' unless
   state.include?('shouldUseSystemProxy') &&
@@ -63,9 +69,14 @@ abort 'Core patch does not gate default UDP on Android' unless
     core_patch.scan('if disableUDP || shouldUDPIgnore').length == 2
 
 abort 'Dart local proxy regression test is missing' unless File.file?(dart_test)
+abort 'Dart local proxy authentication regression test is missing' unless
+  File.read(dart_test).include?(
+    'Android proxy authentication only accepts a local Basic challenge',
+  )
+
 abort 'Core patch does not contain the Go local proxy regression test' unless
   core_patch.include?('listener_security_test.go') &&
-    core_patch.include?('TestShouldDisableDefaultUDP')
+  core_patch.include?('TestShouldDisableDefaultUDP')
 
 abort 'Core patch applier is missing' unless
   patch_applier.include?('applyClashMetaPatches')
