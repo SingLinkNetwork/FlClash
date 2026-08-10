@@ -261,6 +261,44 @@ void main() {
     }
   });
 
+  test('profile output preserves an explicit interface name', () async {
+    final profile = await makeRealProfileTask(
+      const MakeRealProfileState(
+        profilesPath: '/tmp/flclash-interface-name-test',
+        profileId: 14,
+        rawConfig: {'interface-name': 'Campus PPPoE'},
+        realPatchConfig: PatchClashConfig(),
+        overrideDns: false,
+        appendSystemDns: false,
+        proxyGroups: [],
+        rules: [],
+        addedRules: [],
+        defaultUA: 'FlClash-Test',
+      ),
+    );
+
+    expect(profile.a, contains('interface-name: "Campus PPPoE"'));
+  });
+
+  test('profile output keeps an unset interface name empty', () async {
+    final profile = await makeRealProfileTask(
+      const MakeRealProfileState(
+        profilesPath: '/tmp/flclash-interface-name-test',
+        profileId: 15,
+        rawConfig: {},
+        realPatchConfig: PatchClashConfig(),
+        overrideDns: false,
+        appendSystemDns: false,
+        proxyGroups: [],
+        rules: [],
+        addedRules: [],
+        defaultUA: 'FlClash-Test',
+      ),
+    );
+
+    expect(profile.a, contains('interface-name: ""'));
+  });
+
   test(
     'DNS overwrite does not append system DNS when the setting is disabled',
     () async {
