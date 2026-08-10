@@ -141,13 +141,17 @@ Future<VM2<String, String>> _makeRealProfileTask(
   final addedRules = data.addedRules;
   final appendSystemDns = data.appendSystemDns;
   final defaultUA = data.defaultUA;
-  String getProvidersFilePathInner(String type, String url) {
+  String getProvidersFilePathInner(
+    String type,
+    String providerName,
+    String url,
+  ) {
     return join(
       profilesPath,
       'providers',
       profileId.toString(),
       type,
-      url.toMd5(),
+      '${providerName.toMd5()}-${url.toMd5()}',
     );
   }
 
@@ -203,6 +207,7 @@ Future<VM2<String, String>> _makeRealProfileTask(
       if (proxyProvider['url'] != null) {
         proxyProvider['path'] = getProvidersFilePathInner(
           'proxies',
+          key.toString(),
           proxyProvider['url'],
         );
       }
@@ -218,6 +223,7 @@ Future<VM2<String, String>> _makeRealProfileTask(
       if (ruleProvider['url'] != null) {
         ruleProvider['path'] = getProvidersFilePathInner(
           'rules',
+          key.toString(),
           ruleProvider['url'],
         );
       }
