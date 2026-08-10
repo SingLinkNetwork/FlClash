@@ -60,13 +60,21 @@ void main() {
     final zipBytes = ZipEncoder().encodeBytes(archive);
     await backupFile.writeAsBytes(zipBytes);
 
-    await expectLater(
-      restoreBackupArchive(backupFile.path, restoreDir.path),
-      throwsA(isA<FileSystemException>()),
-    );
+    Object? restoreError;
+    try {
+      await restoreBackupArchive(backupFile.path, restoreDir.path);
+    } catch (error) {
+      restoreError = error;
+    }
 
-    expect(File(p.join(restoreDir.path, 'safe.txt')).existsSync(), isFalse);
-    expect(File(p.join(directory.path, 'escaped.txt')).existsSync(), isFalse);
+    expect(
+      [
+        File(p.join(restoreDir.path, 'safe.txt')).existsSync(),
+        File(p.join(directory.path, 'escaped.txt')).existsSync(),
+      ],
+      [false, false],
+    );
+    expect(restoreError, isA<FileSystemException>());
   });
 
   test(
