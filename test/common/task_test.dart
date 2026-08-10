@@ -74,6 +74,53 @@ void main() {
   });
 
   test(
+    'DNS overwrite does not append system DNS when the setting is disabled',
+    () async {
+      final profile = await makeRealProfileTask(
+        const MakeRealProfileState(
+          profilesPath: '/tmp/flclash-dns-overwrite-test',
+          profileId: 13,
+          rawConfig: {},
+          realPatchConfig: PatchClashConfig(
+            dns: Dns(nameserver: ['https://resolver.example/dns-query']),
+          ),
+          overrideDns: true,
+          appendSystemDns: false,
+          proxyGroups: [],
+          rules: [],
+          addedRules: [],
+          defaultUA: 'FlClash-Test',
+        ),
+      );
+
+      expect(profile.a, contains('https://resolver.example/dns-query'));
+      expect(profile.a, isNot(contains('system://')));
+    },
+  );
+
+  test('DNS appends system DNS only when the setting is enabled', () async {
+    final profile = await makeRealProfileTask(
+      const MakeRealProfileState(
+        profilesPath: '/tmp/flclash-dns-system-test',
+        profileId: 14,
+        rawConfig: {},
+        realPatchConfig: PatchClashConfig(
+          dns: Dns(nameserver: ['https://resolver.example/dns-query']),
+        ),
+        overrideDns: true,
+        appendSystemDns: true,
+        proxyGroups: [],
+        rules: [],
+        addedRules: [],
+        defaultUA: 'FlClash-Test',
+      ),
+    );
+
+    expect(profile.a, contains('https://resolver.example/dns-query'));
+    expect(profile.a, contains('system://'));
+  });
+
+  test(
     'profile GEO URLs survive when the app has no custom GEO URL override',
     () async {
       const profileGeoIpUrl = 'https://profile.example/geoip.dat';
