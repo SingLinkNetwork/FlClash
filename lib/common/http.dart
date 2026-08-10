@@ -11,8 +11,12 @@ void configureLocalProxyAuthentication(HttpClient client) {
     final mixedPort = globalState.container.read(
       patchClashConfigProvider.select((state) => state.mixedPort),
     );
-    if (!isLocalProxyEndpoint(host, port, mixedPort) ||
-        scheme.toLowerCase() != 'basic') {
+    if (!shouldAuthenticateLocalProxy(
+      host: host,
+      port: port,
+      scheme: scheme,
+      expectedPort: mixedPort,
+    )) {
       return false;
     }
     final credentials = globalState.localProxyCredentials;

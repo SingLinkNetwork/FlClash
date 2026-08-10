@@ -50,4 +50,52 @@ void main() {
     expect(isLocalProxyEndpoint('10.0.0.2', 7890, 7890), isFalse);
     expect(isLocalProxyEndpoint('localhost', 7891, 7890), isFalse);
   });
+
+  test('Android proxy authentication only accepts a local Basic challenge', () {
+    expect(
+      shouldAuthenticateLocalProxy(
+        host: 'localhost',
+        port: 7890,
+        scheme: 'Basic',
+        expectedPort: 7890,
+      ),
+      isTrue,
+    );
+    expect(
+      shouldAuthenticateLocalProxy(
+        host: '127.0.0.1',
+        port: 7890,
+        scheme: 'BASIC',
+        expectedPort: 7890,
+      ),
+      isTrue,
+    );
+    expect(
+      shouldAuthenticateLocalProxy(
+        host: 'example.com',
+        port: 7890,
+        scheme: 'Basic',
+        expectedPort: 7890,
+      ),
+      isFalse,
+    );
+    expect(
+      shouldAuthenticateLocalProxy(
+        host: 'localhost',
+        port: 7891,
+        scheme: 'Basic',
+        expectedPort: 7890,
+      ),
+      isFalse,
+    );
+    expect(
+      shouldAuthenticateLocalProxy(
+        host: 'localhost',
+        port: 7890,
+        scheme: 'Digest',
+        expectedPort: 7890,
+      ),
+      isFalse,
+    );
+  });
 }

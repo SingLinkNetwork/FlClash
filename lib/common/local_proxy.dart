@@ -45,3 +45,13 @@ bool shouldUseSystemProxy({required bool isAndroid, required bool requested}) {
 bool isLocalProxyEndpoint(String host, int port, int expectedPort) {
   return (host == 'localhost' || host == '127.0.0.1') && port == expectedPort;
 }
+
+bool shouldAuthenticateLocalProxy({
+  required String host,
+  required int port,
+  required String scheme,
+  required int expectedPort,
+}) {
+  return isLocalProxyEndpoint(host, port, expectedPort) &&
+      scheme.toLowerCase() == 'basic';
+}
