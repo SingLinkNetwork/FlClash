@@ -199,6 +199,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "basicInfo": MessageLookupByLibrary.simpleMessage("Основная информация"),
     "basicStrategy": MessageLookupByLibrary.simpleMessage("Базовая стратегия"),
+    "batchAdd": MessageLookupByLibrary.simpleMessage("Массовое добавление"),
+    "batchAddHint": MessageLookupByLibrary.simpleMessage(
+      "Введите по одному домену в строке или разделяйте домены запятыми или точками с запятой.",
+    ),
     "batteryOptimizationDesc": MessageLookupByLibrary.simpleMessage(
       "To ensure background operation, please disable battery optimization for this app. Tap to go to settings.",
     ),
@@ -288,6 +292,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "createProfile": MessageLookupByLibrary.simpleMessage("Create Profile"),
     "creationTime": MessageLookupByLibrary.simpleMessage("Время создания"),
     "custom": MessageLookupByLibrary.simpleMessage("Пользовательский"),
+    "customTestUrls": MessageLookupByLibrary.simpleMessage(
+      "Пользовательские сайты для проверки",
+    ),
     "cut": MessageLookupByLibrary.simpleMessage("Вырезать"),
     "dark": MessageLookupByLibrary.simpleMessage("Темный"),
     "dashboard": MessageLookupByLibrary.simpleMessage("Панель управления"),
@@ -456,11 +463,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyConflict": MessageLookupByLibrary.simpleMessage(
       "Конфликт горячих клавиш",
     ),
+    "hotkeyGlobal": MessageLookupByLibrary.simpleMessage(
+      "Глобально (работает, когда FlClash не в фокусе)",
+    ),
+    "hotkeyInApp": MessageLookupByLibrary.simpleMessage(
+      "Только когда FlClash в фокусе",
+    ),
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage(
       "Управление горячими клавишами",
     ),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "Использование клавиатуры для управления приложением",
+    ),
+    "hotkeyTriggerCondition": MessageLookupByLibrary.simpleMessage(
+      "Условие срабатывания",
     ),
     "hours": MessageLookupByLibrary.simpleMessage("часов"),
     "hoursAgo": m10,
@@ -567,6 +583,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Используется для разблокировки Loopback UWP",
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Свободный"),
+    "macOSIpForwarding": MessageLookupByLibrary.simpleMessage(
+      "Шлюз локальной сети",
+    ),
+    "macOSIpForwardingDesc": MessageLookupByLibrary.simpleMessage(
+      "Перенаправлять трафик локальной сети через этот Mac при работе TUN",
+    ),
     "matchSourceIp": MessageLookupByLibrary.simpleMessage(
       "Сопоставить исходный IP",
     ),
@@ -1025,6 +1047,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("Отправить"),
     "suspended": MessageLookupByLibrary.simpleMessage("Приостановлено..."),
     "sync": MessageLookupByLibrary.simpleMessage("Синхронизация"),
+    "syncDirect": MessageLookupByLibrary.simpleMessage("Прямая синхронизация"),
+    "syncViaProxy": MessageLookupByLibrary.simpleMessage(
+      "Синхронизация через прокси",
+    ),
     "system": MessageLookupByLibrary.simpleMessage("Система"),
     "systemApp": MessageLookupByLibrary.simpleMessage("Системное приложение"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("Системный прокси"),
@@ -1068,9 +1094,28 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficUsage": MessageLookupByLibrary.simpleMessage(
       "Использование трафика",
     ),
+    "trayClickAction": MessageLookupByLibrary.simpleMessage(
+      "Действие при нажатии на значок трея",
+    ),
+    "trayClickActionDesc": MessageLookupByLibrary.simpleMessage(
+      "Выберите действие для нажатия левой кнопкой по значку трея",
+    ),
+    "trayClickAction_showMainWindow": MessageLookupByLibrary.simpleMessage(
+      "Показать главное окно",
+    ),
+    "trayClickAction_showTrayMenu": MessageLookupByLibrary.simpleMessage(
+      "Показать меню трея",
+    ),
+    "trayClickAction_toggleProxy": MessageLookupByLibrary.simpleMessage(
+      "Запустить/остановить прокси",
+    ),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunDesc": MessageLookupByLibrary.simpleMessage(
       "действительно только в режиме администратора",
+    ),
+    "tunRecvMsgX": MessageLookupByLibrary.simpleMessage("TUN recvmsgx"),
+    "tunRecvMsgXDesc": MessageLookupByLibrary.simpleMessage(
+      "Использовать recvmsgx macOS для повышения производительности TUN; отключите при нестабильности",
     ),
     "turnOff": MessageLookupByLibrary.simpleMessage("Выключить"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Включить"),

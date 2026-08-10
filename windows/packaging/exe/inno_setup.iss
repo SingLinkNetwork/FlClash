@@ -19,6 +19,63 @@ ArchitecturesAllowed={{ARCH}}
 ArchitecturesInstallIn64BitMode={{ARCH}}
 
 [Code]
+const
+  VCRedistUrl = '{% if ARCH == 'arm64' %}https://aka.ms/vc14/vc_redist.arm64.exe{% else %}https://aka.ms/vc14/vc_redist.x64.exe{% endif %}';
+  VCRedistFileName = '{% if ARCH == 'arm64' %}vc_redist.arm64.exe{% else %}vc_redist.x64.exe{% endif %}';
+  VCRedistRegistryArch = '{% if ARCH == 'arm64' %}arm64{% else %}x64{% endif %}';
+
+function IsVCRedistInstalled: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := RegQueryDWordValue(
+    HKLM64,
+    'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\' + VCRedistRegistryArch,
+    'Installed',
+    Installed) and (Installed = 1);
+end;
+
+function InstallVCRedist: Boolean;
+var
+  RedistPath: String;
+  ResultCode: Integer;
+begin
+  if IsVCRedistInstalled then
+  begin
+    Log('Microsoft Visual C++ Redistributable is already installed.');
+    Result := True;
+    Exit;
+  end;
+
+  RedistPath := ExpandConstant('{tmp}\' + VCRedistFileName);
+  try
+    Log('Downloading Microsoft Visual C++ Redistributable from ' + VCRedistUrl + '.');
+    DownloadTemporaryFile(VCRedistUrl, VCRedistFileName, '', nil);
+    Result := Exec(
+      RedistPath,
+      '/install /quiet /norestart',
+      '',
+      SW_HIDE,
+      ewWaitUntilTerminated,
+      ResultCode) and ((ResultCode = 0) or (ResultCode = 3010));
+    Log('Microsoft Visual C++ Redistributable installer returned ' + IntToStr(ResultCode));
+    if not Result then
+      Log('Microsoft Visual C++ Redistributable installer returned ' + IntToStr(ResultCode));
+  except
+    Log(GetExceptionMessage);
+    Result := False;
+  end;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  NeedsRestart := False;
+  if InstallVCRedist then
+    Result := ''
+  else
+    Result := 'Microsoft Visual C++ Redistributable could not be installed.';
+end;
+
 procedure KillProcesses;
 var
   Processes: TArrayOfString;
@@ -37,6 +94,44 @@ function InitializeSetup(): Boolean;
 begin
   KillProcesses;
   Result := True;
+end;
+
+procedure DeleteFlClashUserData;
+begin
+  DelTree(ExpandConstant('{userappdata}\com.follow\clash'), True, True, True);
+  DelTree(ExpandConstant('{localappdata}\com.follow\clash'), True, True, True);
+  DelTree(ExpandConstant('{app}\data'), True, True, True);
+  DelTree(ExpandConstant('{app}\cache'), True, True, True);
+end;
+
+function HasCmdLineParam(const Param: String): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 1 to ParamCount do
+  begin
+    if UpperCase(ParamStr(i)) = UpperCase(Param) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  KillProcesses;
+  Result := True;
+  if HasCmdLineParam('/CLEANUSERDATA') then
+  begin
+    DeleteFlClashUserData;
+  end
+  else if not UninstallSilent then
+  begin
+    if MsgBox(ExpandConstant('{cm:CleanupUserData}'), mbConfirmation, MB_YESNO) = IDYES then
+      DeleteFlClashUserData;
+  end;
 end;
 
 [Languages]
@@ -79,5 +174,10 @@ Source: "{{SOURCE_DIR}}\\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdi
 [Icons]
 Name: "{autoprograms}\\{{DISPLAY_NAME}}"; Filename: "{app}\\{{EXECUTABLE_NAME}}"
 Name: "{autodesktop}\\{{DISPLAY_NAME}}"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; Tasks: desktopicon
+
+[CustomMessages]
+english.CleanupUserData=Also remove FlClash settings and cache from this computer? Select No to keep them for a future installation.
+chineseSimplified.CleanupUserData=是否同时删除本机上的 FlClash 设置和缓存？选择“否”可保留它们供以后安装使用。
+
 [Run]
 Filename: "{app}\\{{EXECUTABLE_NAME}}"; Description: "{cm:LaunchProgram,{{DISPLAY_NAME}}}"; Flags: {% if PRIVILEGES_REQUIRED == 'admin' %}runascurrentuser{% endif %} nowait postinstall skipifsilent

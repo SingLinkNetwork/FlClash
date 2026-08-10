@@ -4,6 +4,7 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/clash_config.dart';
 import 'package:fl_clash/models/common.dart';
+import 'package:fl_clash/models/config.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/widgets.dart';
@@ -62,7 +63,8 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
   Future<void> delayTestCurrentGroup() async {
     final currentGroupName = getCurrentGroupName();
     final currentState = _keyMap[currentGroupName]?.currentState;
-    await delayTest(currentState?.currentProxies ?? [], currentState?.testUrl);
+    final testUrls = globalState.container.read(appSettingProvider).allTestUrls;
+    await delayTestUrls(currentState?.currentProxies ?? [], testUrls);
   }
 
   Widget _buildMoreButton() {
@@ -328,7 +330,13 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
   Widget build(BuildContext context) {
     final group = widget.group;
     final proxies = group.all;
-    testUrl = group.testUrl;
+    final configuredTestUrls = ref.watch(
+      appSettingProvider.select((state) => state.allTestUrls),
+    );
+    final selectedTestUrl = ref.watch(selectedTestUrlProvider);
+    testUrl = configuredTestUrls.contains(selectedTestUrl)
+        ? selectedTestUrl
+        : group.testUrl;
     currentProxies = proxies;
     return CommonScrollBar(
       controller: _controller,
@@ -351,7 +359,7 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
         itemBuilder: (_, index) {
           final proxy = currentProxies[index];
           return ProxyCard(
-            testUrl: group.testUrl,
+            testUrl: testUrl,
             groupType: group.type,
             type: widget.cardType,
             proxy: proxy,

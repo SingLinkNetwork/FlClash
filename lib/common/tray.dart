@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fl_clash/enum/enum.dart';
@@ -10,13 +11,66 @@ import 'package:tray_manager/tray_manager.dart';
 
 import 'app_localizations.dart';
 import 'constant.dart';
+import 'linux_clipboard.dart';
+import 'proxy_environment.dart';
 import 'system.dart';
+import 'tray_title.dart';
 import 'window.dart';
+
+MenuItem buildTrayStartMenuItem({
+  required bool isStart,
+  required String startLabel,
+  required String stopLabel,
+  required void Function(MenuItem menuItem) onClick,
+}) {
+  return MenuItem.checkbox(
+    label: isStart ? stopLabel : startLabel,
+    onClick: onClick,
+    checked: isStart,
+  );
+}
+
+Future<void> handleTrayIconMouseDown({
+  required bool isMacOS,
+  required TrayClickAction action,
+  required Future<void> Function() showWindow,
+  required Future<void> Function() showMenu,
+  required void Function() toggleProxy,
+}) {
+  switch (action) {
+    case TrayClickAction.showMainWindow:
+      return showWindow();
+    case TrayClickAction.showTrayMenu:
+      return isMacOS ? showMenu() : showWindow();
+    case TrayClickAction.toggleProxy:
+      toggleProxy();
+      return Future.value();
+  }
+}
+
+List<TrayClickAction> supportedTrayClickActions({required bool isMacOS}) => [
+  TrayClickAction.showMainWindow,
+  if (isMacOS) TrayClickAction.showTrayMenu,
+  TrayClickAction.toggleProxy,
+];
+
+List<MenuItem> buildProxyEnvironmentMenuItems({
+  required void Function(ProxyEnvironmentShell shell) onCopy,
+}) {
+  return [
+    for (final shell in ProxyEnvironmentShell.values)
+      MenuItem(label: shell.label, onClick: (_) => onCopy(shell)),
+  ];
+}
+
+bool shouldDestroyTrayOnExit({required bool isMacOS}) => !isMacOS;
 
 class Tray {
   static Tray? _instance;
 
   Tray._internal();
+
+  final TrayTitleCache _trayTitleCache = TrayTitleCache();
 
   factory Tray() {
     _instance ??= Tray._internal();
@@ -28,7 +82,11 @@ class Tray {
   }
 
   Future<void> destroy() async {
+    if (!shouldDestroyTrayOnExit(isMacOS: system.isMacOS)) {
+      return;
+    }
     await trayManager.destroy();
+    _trayTitleCache.reset();
   }
 
   String getTryIcon({required bool isStart, required bool tunEnable}) {
@@ -83,12 +141,13 @@ class Tray {
       },
     );
     menuItems.add(showMenuItem);
-    final startMenuItem = MenuItem.checkbox(
-      label: trayState.isStart ? appLocalizations.stop : appLocalizations.start,
-      onClick: (_) async {
+    final startMenuItem = buildTrayStartMenuItem(
+      isStart: trayState.isStart,
+      startLabel: appLocalizations.start,
+      stopLabel: appLocalizations.stop,
+      onClick: (_) {
         commonAction.updateStart();
       },
-      checked: false,
     );
     menuItems.add(startMenuItem);
     if (system.isMacOS) {
@@ -123,13 +182,14 @@ class Tray {
               label: proxy.name,
               checked:
                   ref.read(selectedProxyNameProvider(group.name)) == proxy.name,
-              onClick: (_) {
+              onClick: (_) async {
+                final changed = await ref
+                    .read(proxiesActionProvider.notifier)
+                    .changeProxy(groupName: group.name, proxyName: proxy.name);
+                if (!changed) return;
                 ref
                     .read(profilesActionProvider.notifier)
                     .updateCurrentSelectedMap(group.name, proxy.name);
-                ref
-                    .read(proxiesActionProvider.notifier)
-                    .changeProxy(groupName: group.name, proxyName: proxy.name);
               },
             ),
           );
@@ -173,11 +233,14 @@ class Tray {
       },
       checked: trayState.autoLaunch,
     );
-    final copyEnvVarMenuItem = MenuItem(
+    final copyEnvVarMenuItem = MenuItem.submenu(
       label: appLocalizations.copyEnvVar,
-      onClick: (_) async {
-        await _copyEnv(trayState.port);
-      },
+      submenu: Menu(
+        items: buildProxyEnvironmentMenuItems(
+          onCopy: (shell) =>
+              unawaited(_copyEnv(port: trayState.port, shell: shell)),
+        ),
+      ),
     );
     menuItems.add(autoStartMenuItem);
     menuItems.add(copyEnvVarMenuItem);
@@ -207,22 +270,29 @@ class Tray {
     if (!system.isMacOS) {
       return;
     }
-    if (!showTrayTitle) {
-      await trayManager.setTitle('');
-    } else {
-      await trayManager.setTitle(traffic.trayTitle);
+    final title = _trayTitleCache.next(
+      show: showTrayTitle,
+      trafficTitle: traffic.trayTitle,
+    );
+    if (title == null) {
+      return;
     }
+    await trayManager.setTitle(title);
   }
 
-  Future<void> _copyEnv(int port) async {
-    final url = 'http://127.0.0.1:$port';
+  Future<void> _copyEnv({
+    required int port,
+    required ProxyEnvironmentShell shell,
+  }) async {
+    final cmdline = buildProxyEnvironmentShellCommand(shell: shell, port: port);
 
-    final cmdline = system.isWindows
-        ? 'set \$env:all_proxy=$url'
-        : 'export all_proxy=$url';
+    if (system.isLinux && await (linuxClipboard?.copy(cmdline) ?? false)) {
+      return;
+    }
 
     await Clipboard.setData(ClipboardData(text: cmdline));
   }
 }
 
+final linuxClipboard = system.isLinux ? LinuxClipboard() : null;
 final tray = system.isDesktop ? Tray() : null;

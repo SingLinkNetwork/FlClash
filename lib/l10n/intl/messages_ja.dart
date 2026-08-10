@@ -150,6 +150,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage("基本設定をグローバルに変更"),
     "basicInfo": MessageLookupByLibrary.simpleMessage("基本情報"),
     "basicStrategy": MessageLookupByLibrary.simpleMessage("基本戦略"),
+    "batchAdd": MessageLookupByLibrary.simpleMessage("一括追加"),
+    "batchAddHint": MessageLookupByLibrary.simpleMessage(
+      "1行に1ドメイン、またはカンマ・セミコロンで区切ってください。",
+    ),
     "batteryOptimizationDesc": MessageLookupByLibrary.simpleMessage(
       "To ensure background operation, please disable battery optimization for this app. Tap to go to settings.",
     ),
@@ -221,6 +225,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "createProfile": MessageLookupByLibrary.simpleMessage("Create Profile"),
     "creationTime": MessageLookupByLibrary.simpleMessage("作成時間"),
     "custom": MessageLookupByLibrary.simpleMessage("カスタム"),
+    "customTestUrls": MessageLookupByLibrary.simpleMessage("カスタム検査サイト"),
     "cut": MessageLookupByLibrary.simpleMessage("切り取り"),
     "dark": MessageLookupByLibrary.simpleMessage("ダーク"),
     "dashboard": MessageLookupByLibrary.simpleMessage("ダッシュボード"),
@@ -347,9 +352,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "host": MessageLookupByLibrary.simpleMessage("ホスト"),
     "hostsDesc": MessageLookupByLibrary.simpleMessage("ホストを追加"),
     "hotkeyConflict": MessageLookupByLibrary.simpleMessage("ホットキー競合"),
+    "hotkeyGlobal": MessageLookupByLibrary.simpleMessage(
+      "グローバル（FlClash が非アクティブでも有効）",
+    ),
+    "hotkeyInApp": MessageLookupByLibrary.simpleMessage("FlClash がアクティブなときのみ"),
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage("ホットキー管理"),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "キーボードでアプリを制御",
+    ),
+    "hotkeyTriggerCondition": MessageLookupByLibrary.simpleMessage(
+      "ホットキーの発動条件",
     ),
     "hours": MessageLookupByLibrary.simpleMessage("時間"),
     "hoursAgo": m10,
@@ -430,6 +442,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopback": MessageLookupByLibrary.simpleMessage("ループバック解除ツール"),
     "loopbackDesc": MessageLookupByLibrary.simpleMessage("UWPループバック解除用"),
     "loose": MessageLookupByLibrary.simpleMessage("疎"),
+    "macOSIpForwarding": MessageLookupByLibrary.simpleMessage("LANゲートウェイ"),
+    "macOSIpForwardingDesc": MessageLookupByLibrary.simpleMessage(
+      "TUN 実行中に他のLANデバイスをこのMac経由で接続",
+    ),
     "matchSourceIp": MessageLookupByLibrary.simpleMessage("送信元IPをマッチング"),
     "maxFailedTimes": MessageLookupByLibrary.simpleMessage("最大失敗回数"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("メモリ情報"),
@@ -790,6 +806,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("送信"),
     "suspended": MessageLookupByLibrary.simpleMessage("一時停止中..."),
     "sync": MessageLookupByLibrary.simpleMessage("同期"),
+    "syncDirect": MessageLookupByLibrary.simpleMessage("直接同期"),
+    "syncViaProxy": MessageLookupByLibrary.simpleMessage("プロキシ経由で同期"),
     "system": MessageLookupByLibrary.simpleMessage("システム"),
     "systemApp": MessageLookupByLibrary.simpleMessage("システムアプリ"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("システムプロキシ"),
@@ -819,8 +837,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "tools": MessageLookupByLibrary.simpleMessage("ツール"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxyポート"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("トラフィック使用量"),
+    "trayClickAction": MessageLookupByLibrary.simpleMessage("トレイアイコンのクリック動作"),
+    "trayClickActionDesc": MessageLookupByLibrary.simpleMessage(
+      "トレイアイコンを左クリックしたときの動作を選択",
+    ),
+    "trayClickAction_showMainWindow": MessageLookupByLibrary.simpleMessage(
+      "メインウィンドウを表示",
+    ),
+    "trayClickAction_showTrayMenu": MessageLookupByLibrary.simpleMessage(
+      "トレイメニューを表示",
+    ),
+    "trayClickAction_toggleProxy": MessageLookupByLibrary.simpleMessage(
+      "プロキシを起動/停止",
+    ),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("管理者モードでのみ有効"),
+    "tunRecvMsgX": MessageLookupByLibrary.simpleMessage("TUN recvmsgx"),
+    "tunRecvMsgXDesc": MessageLookupByLibrary.simpleMessage(
+      "macOS の TUN 受信性能を高めます。不安定な場合はオフにしてください",
+    ),
     "turnOff": MessageLookupByLibrary.simpleMessage("オフ"),
     "turnOn": MessageLookupByLibrary.simpleMessage("オン"),
     "undo": MessageLookupByLibrary.simpleMessage("元に戻す"),

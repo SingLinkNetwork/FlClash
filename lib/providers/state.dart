@@ -15,6 +15,19 @@ import 'database.dart';
 
 part 'generated/state.g.dart';
 
+final selectedTestUrlProvider = NotifierProvider<SelectedTestUrl, String?>(
+  SelectedTestUrl.new,
+);
+
+class SelectedTestUrl extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void set(String? value) {
+    state = value;
+  }
+}
+
 @riverpod
 GroupsState currentGroupsState(Ref ref) {
   final mode = ref.watch(
@@ -49,15 +62,8 @@ NavigationItemsState navigationItemsState(Ref ref) {
   final hasProfiles = ref.watch(
     profilesProvider.select((state) => state.isNotEmpty),
   );
-  final hasProxies = ref.watch(
-    currentGroupsStateProvider.select((state) => state.value.isNotEmpty),
-  );
-  final isInit = ref.watch(initProvider);
   return NavigationItemsState(
-    value: navigation.getItems(
-      openLogs: openLogs,
-      hasProxies: !isInit ? hasProfiles : hasProxies,
-    ),
+    value: navigation.getItems(openLogs: openLogs, hasProfiles: hasProfiles),
   );
 }
 
@@ -161,6 +167,9 @@ TrayTitleState trayTitleState(Ref ref) {
   final showTrayTitle = ref.watch(
     appSettingProvider.select((state) => state.showTrayTitle),
   );
+  if (!showTrayTitle) {
+    return const TrayTitleState(showTrayTitle: false, traffic: Traffic());
+  }
   final traffic = ref.watch(
     trafficsProvider.select((state) => state.list.safeLast(const Traffic())),
   );
@@ -306,6 +315,29 @@ bool isStart(Ref ref) {
   return ref.watch(runTimeProvider.select((state) => state != null));
 }
 
+bool isMacOSIpForwardingEligible({
+  required bool isMacOS,
+  required bool configured,
+  required bool tunEnabled,
+  required bool isStarted,
+  required bool coreConnected,
+}) {
+  return isMacOS && configured && tunEnabled && isStarted && coreConnected;
+}
+
+@riverpod
+bool shouldEnableMacOSIpForwarding(Ref ref) {
+  return isMacOSIpForwardingEligible(
+    isMacOS: system.isMacOS,
+    configured: ref.watch(
+      appSettingProvider.select((state) => state.macOSIpForwarding),
+    ),
+    tunEnabled: ref.watch(realTunEnableProvider),
+    isStarted: ref.watch(isStartProvider),
+    coreConnected: ref.watch(coreStatusProvider) == CoreStatus.connected,
+  );
+}
+
 @riverpod
 VM2<List<String>, String?> proxiesTabControllerState(Ref ref) {
   return ref.watch(
@@ -414,7 +446,9 @@ String realTestUrl(Ref ref, [String? testUrl]) {
 int? delay(Ref ref, {required String proxyName, String? testUrl}) {
   final currentTestUrl = ref.watch(realTestUrlProvider(testUrl));
   final proxyState = ref.watch(realSelectedProxyStateProvider(proxyName));
-  final effectiveTestUrl = proxyState.testUrl.takeFirstValid([currentTestUrl]);
+  final effectiveTestUrl = testUrl?.trim().isNotEmpty == true
+      ? testUrl!.trim()
+      : proxyState.testUrl.takeFirstValid([currentTestUrl]);
   final effectiveProxyName = proxyState.proxyName;
   return ref.watch(
     delayDataSourceProvider.select(

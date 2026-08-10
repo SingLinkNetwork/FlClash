@@ -45,6 +45,12 @@ on Mobile:
     sudo apt-get install libkeybinder-3.0-dev
    ```
 
+To start the proxy directly from a terminal, run:
+
+```bash
+./FlClash --start
+```
+
 ### Android
 
 Support the following actions

@@ -59,6 +59,12 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       }
     });
     if (system.isMacOS) {
+      ref.listenManual(shouldEnableMacOSIpForwardingProvider, (prev, next) {
+        if (prev == next) {
+          return;
+        }
+        unawaited(ref.read(coreActionProvider.notifier).setIpForwarding(next));
+      }, fireImmediately: true);
       ref.listenManual(autoSetSystemDnsStateProvider, (prev, next) async {
         if (prev == next) {
           return;

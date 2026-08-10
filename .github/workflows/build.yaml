@@ -28,11 +28,53 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
       - name: Run tests
         run: flutter test --reporter expanded
+
+      - name: Test Go core scheduler
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go test .
+
+      - name: Verify delay test concurrency alignment
+        run: ruby tool/verify_delay_test_concurrency.rb
+
+      - name: Verify Android resolve_process JNI guard
+        run: ruby tool/verify_android_jni_resolve_guard.rb
+
+      - name: Verify LAN proxy runtime update
+        run: ruby tool/verify_lan_proxy_toggle.rb
+
+      - name: Verify window visibility queue
+        run: ruby tool/verify_window_visibility_queue.rb
+
+      - name: Verify subscription direct/proxy sync wiring
+        run: ruby tool/verify_subscription_sync_route.rb
+
+      - name: Verify Linux CJK font fallback
+        run: ruby tool/verify_linux_cjk_font_fallback.rb
+
+      - name: Verify Linux StartupWMClass packaging wiring
+        run: ruby tool/verify_linux_startup_wm_class.rb
+
+      - name: Test Linux package verifier
+        run: ruby tool/verify_linux_packages_test.rb
+
+      - name: Test Linux DEB compression verifier
+        run: ruby tool/verify_linux_deb_compression_test.rb
+
+      - name: Test subscription direct/proxy sync
+        run: flutter test test/common/request_test.dart
 
   build:
     needs: [ test ]
@@ -51,9 +93,11 @@ jobs:
           - platform: macos
             os: macos-15-intel
             arch: amd64
+            sqlite_arch: x86_64
           - platform: macos
             os: macos-latest
             arch: arm64
+            sqlite_arch: arm64
           - platform: windows
             os: windows-11-arm
             arch: arm64
@@ -126,6 +170,54 @@ jobs:
 
       - name: Setup
         run: dart setup.dart ${{ matrix.platform }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} -v
+
+      - name: Verify Linux X11 thread initialization
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_x11_thread_init.rb
+
+      - name: Verify Linux renderer fallback
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_renderer_fallback.rb
+
+      - name: Verify Linux CJK font fallback
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_cjk_font_fallback.rb
+
+      - name: Verify Linux tray clipboard fallback
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_tray_clipboard.rb
+
+      - name: Verify Linux packaged desktop entries
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_packages.rb dist ${{ matrix.arch == 'amd64' && 'deb,appimage,rpm' || 'deb' }}
+
+      - name: Verify Linux DEB gzip compression
+        if: startsWith(matrix.platform, 'linux')
+        run: ruby tool/verify_linux_deb_compression.rb dist
+
+      - name: Verify Windows proxy shutdown cleanup
+        if: startsWith(matrix.platform, 'windows')
+        run: ruby tool/verify_windows_proxy_shutdown.rb
+
+      - name: Verify Windows TUN route and metric cleanup
+        if: startsWith(matrix.platform, 'windows')
+        run: ruby tool/verify_windows_tun_metric_cleanup.rb
+
+      - name: Verify Windows maximize work area
+        if: startsWith(matrix.platform, 'windows')
+        run: ruby tool/verify_windows_maximize_work_area.rb
+
+      - name: Verify macOS window lifecycle
+        if: startsWith(matrix.platform, 'macos')
+        run: ruby tool/verify_macos_window_lifecycle.rb
+
+      - name: Verify macOS tray position preservation
+        if: startsWith(matrix.platform, 'macos')
+        run: ruby tool/verify_macos_tray_destroy.rb
+
+      - name: Verify macOS SQLite bundle and loader
+        if: startsWith(matrix.platform, 'macos')
+        run: ruby tool/verify_macos_sqlite_bundle.rb build/macos/Build/Products/Release/FlClash.app lib/common/sqlite.dart ${{ matrix.sqlite_arch }}
 
       - name: Upload
         uses: actions/upload-artifact@v4

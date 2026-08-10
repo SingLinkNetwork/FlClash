@@ -3,6 +3,7 @@ package com.follow.clash.service
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.os.Build
 import com.follow.clash.common.GlobalState
 import com.follow.clash.common.ServiceDelegate
 import com.follow.clash.common.chunkedForAidl
@@ -27,14 +28,31 @@ class RemoteService : Service(),
     private fun handleStopService(result: IResultInterface) {
         launch {
             runLock.withLock {
+                val currentIntent = intent
                 delegate?.useService { service ->
                     service.stop()
                     delegate?.unbind()
                 }
+                if (currentIntent != null) {
+                    stopManagedService(currentIntent)
+                }
+                intent = null
                 State.runTime = 0
                 result.onResult(0)
             }
         }
+    }
+
+    private fun startManagedService(serviceIntent: Intent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
+    }
+
+    private fun stopManagedService(serviceIntent: Intent) {
+        GlobalState.application.stopService(serviceIntent)
     }
 
     private fun handleServiceDisconnected(message: String) {
@@ -51,7 +69,15 @@ class RemoteService : Service(),
                     false -> CommonService::class.intent
                 }
                 if (intent != nextIntent) {
+                    val currentIntent = intent
+                    delegate?.useService { service ->
+                        service.stop()
+                    }
                     delegate?.unbind()
+                    if (currentIntent != null) {
+                        stopManagedService(currentIntent)
+                    }
+                    startManagedService(nextIntent)
                     delegate = ServiceDelegate(nextIntent, ::handleServiceDisconnected) { binder ->
                         when (binder) {
                             is VpnService.LocalBinder -> binder.getService()

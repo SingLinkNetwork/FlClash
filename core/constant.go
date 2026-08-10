@@ -45,6 +45,7 @@ type tunSchema struct {
 	DNSHijack    *[]string          `yaml:"dns-hijack" json:"dns-hijack"`
 	AutoRoute    *bool              `yaml:"auto-route" json:"auto-route"`
 	RouteAddress *[]netip.Prefix    `yaml:"route-address" json:"route-address,omitempty"`
+	RecvMsgX     *bool              `yaml:"recvmsgx" json:"recvmsgx,omitempty"`
 }
 
 type ChangeProxyParams struct {
@@ -103,6 +104,7 @@ const (
 	startListenerMethod            Method = "startListener"
 	stopListenerMethod             Method = "stopListener"
 	updateDnsMethod                Method = "updateDns"
+	setIPForwardingMethod          Method = "setIpForwarding"
 	crashMethod                    Method = "crash"
 	setupConfigMethod              Method = "setupConfig"
 	getConfigMethod                Method = "getConfig"

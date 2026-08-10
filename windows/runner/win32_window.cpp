@@ -197,6 +197,30 @@ Win32Window::MessageHandler(HWND hwnd,
 
       return 0;
     }
+
+    case WM_GETMINMAXINFO: {
+      auto min_max_info = reinterpret_cast<MINMAXINFO*>(lparam);
+      if (min_max_info == nullptr) {
+        return 0;
+      }
+
+      HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+      MONITORINFO monitor_info{};
+      monitor_info.cbSize = sizeof(monitor_info);
+      if (GetMonitorInfo(monitor, &monitor_info)) {
+        min_max_info->ptMaxPosition.x =
+            monitor_info.rcWork.left - monitor_info.rcMonitor.left;
+        min_max_info->ptMaxPosition.y =
+            monitor_info.rcWork.top - monitor_info.rcMonitor.top;
+        min_max_info->ptMaxSize.x =
+            monitor_info.rcWork.right - monitor_info.rcWork.left;
+        min_max_info->ptMaxSize.y =
+            monitor_info.rcWork.bottom - monitor_info.rcWork.top;
+      }
+
+      return 0;
+    }
+
     case WM_SIZE: {
       RECT rect = GetClientArea();
       if (child_content_ != nullptr) {

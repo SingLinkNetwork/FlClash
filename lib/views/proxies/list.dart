@@ -5,6 +5,7 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/state.dart';
+import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,6 +119,7 @@ class _ProxiesListViewState extends State<ProxiesListView> {
     required int columns,
     required Set<String> currentUnfoldSet,
     required ProxyCardType cardType,
+    required String? selectedTestUrl,
   }) {
     final items = <Widget>[];
     for (final group in groups) {
@@ -145,7 +147,7 @@ class _ProxiesListViewState extends State<ProxiesListView> {
                       child: SizedBox(
                         height: getItemHeight(cardType),
                         child: ProxyCard(
-                          testUrl: group.testUrl,
+                          testUrl: selectedTestUrl ?? group.testUrl,
                           type: cardType,
                           groupType: group.type,
                           key: ValueKey('$groupName.${proxy.name}'),
@@ -287,6 +289,14 @@ class _ProxiesListViewState extends State<ProxiesListView> {
     return Consumer(
       builder: (_, ref, _) {
         final state = ref.watch(proxiesListStateProvider);
+        final configuredTestUrls = ref.watch(
+          appSettingProvider.select((state) => state.allTestUrls),
+        );
+        final selectedTestUrl = ref.watch(selectedTestUrlProvider);
+        final effectiveSelectedTestUrl =
+            configuredTestUrls.contains(selectedTestUrl)
+            ? selectedTestUrl
+            : null;
         ref.watch(themeSettingProvider.select((state) => state.textScale));
         if (state.groups.isEmpty) {
           return NullStatus(
@@ -300,6 +310,7 @@ class _ProxiesListViewState extends State<ProxiesListView> {
           currentUnfoldSet: state.currentUnfoldSet,
           columns: state.columns,
           cardType: state.proxyCardType,
+          selectedTestUrl: effectiveSelectedTestUrl,
         );
         final itemsOffset = _getItemHeightList(items, state.proxyCardType);
         return CommonScrollBar(
@@ -411,7 +422,8 @@ class _ListHeaderState extends State<ListHeader> {
   Future<void> _delayTest() async {
     if (isLock) return;
     isLock = true;
-    await delayTest(widget.group.all, widget.group.testUrl);
+    final testUrls = globalState.container.read(appSettingProvider).allTestUrls;
+    await delayTestUrls(widget.group.all, testUrls);
     isLock = false;
   }
 

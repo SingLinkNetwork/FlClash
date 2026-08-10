@@ -14,26 +14,50 @@ import 'package:flutter/foundation.dart';
 class Request {
   late final Dio dio;
   late final Dio _clashDio;
+  late final Dio _directDio;
   String? userAgent;
 
-  Request() {
-    dio = Dio(BaseOptions(headers: {'User-Agent': browserUa}));
-    _clashDio = Dio();
-    _clashDio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = HttpClient();
-        client.findProxy = (Uri uri) {
-          client.userAgent = globalState.ua;
-          return FlClashHttpOverrides.handleFindProxy(uri);
-        };
-        return client;
-      },
-    );
+  Request({Dio? defaultDio, Dio? proxiedDio, Dio? directDio}) {
+    dio = defaultDio ?? Dio(BaseOptions(headers: {'User-Agent': browserUa}));
+    _clashDio = proxiedDio ?? _createProxiedDio();
+    _directDio = directDio ?? _createDirectDio();
   }
 
-  Future<Response<Uint8List>> getFileResponseForUrl(String url) async {
+  Dio _createProxiedDio() {
+    final client = Dio();
+    client.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final httpClient = HttpClient();
+        httpClient.findProxy = (Uri uri) {
+          httpClient.userAgent = globalState.ua;
+          return FlClashHttpOverrides.handleFindProxy(uri);
+        };
+        return httpClient;
+      },
+    );
+    return client;
+  }
+
+  Dio _createDirectDio() {
+    final client = Dio();
+    client.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final httpClient = HttpClient();
+        httpClient.userAgent = globalState.ua;
+        httpClient.findProxy = (_) => 'DIRECT';
+        return httpClient;
+      },
+    );
+    return client;
+  }
+
+  Future<Response<Uint8List>> getFileResponseForUrl(
+    String url, {
+    bool useProxy = true,
+  }) async {
     try {
-      return await _clashDio.get<Uint8List>(
+      final client = useProxy ? _clashDio : _directDio;
+      return await client.get<Uint8List>(
         url,
         options: Options(responseType: ResponseType.bytes),
       );

@@ -69,6 +69,14 @@ class Proxy extends ProxyPlatform {
     };
   }
 
+  @override
+  Future<bool?> resetTunInterface() async {
+    return switch (Platform.operatingSystem) {
+      'windows' => await ProxyPlatform.instance.resetTunInterface(),
+      String() => true,
+    };
+  }
+
   Future<bool> _startProxyWithLinux(int port, List<String> bypassDomain) async {
     final homeDir = Platform.environment['HOME'];
     if (homeDir == null || homeDir.isEmpty) {

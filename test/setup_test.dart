@@ -32,5 +32,55 @@ void main() {
         'split-per-abi',
       ]);
     });
+
+    test('maps supported Windows host architectures to MSIX values', () {
+      expect(setup.windowsMsixArchitecture('amd64'), 'x64');
+      expect(setup.windowsMsixArchitecture('x64'), 'x64');
+      expect(setup.windowsMsixArchitecture('ARM64'), 'arm64');
+    });
+
+    test('rejects unsupported Windows host architectures', () {
+      expect(
+        () => setup.windowsMsixArchitecture('ia32'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('creates release Windows build arguments from env.json', () {
+      expect(setup.createWindowsMsixBuildArgs(verbose: false), [
+        'build',
+        'windows',
+        '--release',
+        '--dart-define-from-file=env.json',
+      ]);
+    });
+
+    test('creates unsigned MSIX arguments with shared identity metadata', () {
+      final args = setup.createMsixCreateArgs(
+        architecture: 'arm64',
+        outputDirectory: r'C:\workspace\dist',
+      );
+
+      expect(
+        args,
+        containsAllInOrder([
+          'run',
+          'msix:create',
+          '--release',
+          '--build-windows',
+          'false',
+          '--architecture',
+          'arm64',
+          '--output-path',
+          r'C:\workspace\dist',
+          '--identity-name',
+          'com.singlinknetwork.flclash',
+          '--publisher',
+          'CN=SingLinkNetwork',
+          '--sign-msix',
+          'false',
+        ]),
+      );
+    });
   });
 }

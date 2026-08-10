@@ -11,6 +11,8 @@ class Window {
 
   Window._internal();
 
+  final WindowVisibilityQueue _visibilityQueue = WindowVisibilityQueue();
+
   factory Window() {
     _instance ??= Window._internal();
     return _instance!;
@@ -69,11 +71,13 @@ class Window {
     }
   }
 
-  Future<void> show() async {
-    render?.resume();
-    await windowManager.show();
-    await windowManager.focus();
-    await windowManager.setSkipTaskbar(false);
+  Future<void> show() {
+    return _visibilityQueue.enqueue(() async {
+      render?.resume();
+      await windowManager.show();
+      await windowManager.focus();
+      await windowManager.setSkipTaskbar(false);
+    });
   }
 
   Future<bool> get isVisible async {
@@ -90,10 +94,12 @@ class Window {
     exit(0);
   }
 
-  Future<void> hide() async {
-    render?.pause();
-    await windowManager.hide();
-    await windowManager.setSkipTaskbar(true);
+  Future<void> hide() {
+    return _visibilityQueue.enqueue(() async {
+      render?.pause();
+      await windowManager.hide();
+      await windowManager.setSkipTaskbar(true);
+    });
   }
 }
 

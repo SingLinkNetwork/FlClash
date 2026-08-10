@@ -289,6 +289,96 @@ class AppLocalizations {
     );
   }
 
+  /// `LAN gateway`
+  String get macOSIpForwarding {
+    return Intl.message(
+      'LAN gateway',
+      name: 'macOSIpForwarding',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Forward LAN traffic through this Mac while TUN is running`
+  String get macOSIpForwardingDesc {
+    return Intl.message(
+      'Forward LAN traffic through this Mac while TUN is running',
+      name: 'macOSIpForwardingDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tray icon click`
+  String get trayClickAction {
+    return Intl.message(
+      'Tray icon click',
+      name: 'trayClickAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose what a left click on the tray icon does`
+  String get trayClickActionDesc {
+    return Intl.message(
+      'Choose what a left click on the tray icon does',
+      name: 'trayClickActionDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show main window`
+  String get trayClickAction_showMainWindow {
+    return Intl.message(
+      'Show main window',
+      name: 'trayClickAction_showMainWindow',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show tray menu`
+  String get trayClickAction_showTrayMenu {
+    return Intl.message(
+      'Show tray menu',
+      name: 'trayClickAction_showTrayMenu',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Start/stop proxy`
+  String get trayClickAction_toggleProxy {
+    return Intl.message(
+      'Start/stop proxy',
+      name: 'trayClickAction_toggleProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `TUN recvmsgx`
+  String get tunRecvMsgX {
+    return Intl.message(
+      'TUN recvmsgx',
+      name: 'tunRecvMsgX',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use macOS recvmsgx for better TUN receive performance; turn it off if it causes instability`
+  String get tunRecvMsgXDesc {
+    return Intl.message(
+      'Use macOS recvmsgx for better TUN receive performance; turn it off if it causes instability',
+      name: 'tunRecvMsgXDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Minimize on exit`
   String get minimizeOnExit {
     return Intl.message(
@@ -447,6 +537,21 @@ class AppLocalizations {
   /// `Add`
   String get add {
     return Intl.message('Add', name: 'add', desc: '', args: []);
+  }
+
+  /// `Batch add`
+  String get batchAdd {
+    return Intl.message('Batch add', name: 'batchAdd', desc: '', args: []);
+  }
+
+  /// `Paste one domain per line, or separate domains with commas or semicolons.`
+  String get batchAddHint {
+    return Intl.message(
+      'Paste one domain per line, or separate domains with commas or semicolons.',
+      name: 'batchAddHint',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Save`
@@ -1189,9 +1294,39 @@ class AppLocalizations {
     return Intl.message('Test url', name: 'testUrl', desc: '', args: []);
   }
 
+  /// `Custom test websites`
+  String get customTestUrls {
+    return Intl.message(
+      'Custom test websites',
+      name: 'customTestUrls',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Sync`
   String get sync {
     return Intl.message('Sync', name: 'sync', desc: '', args: []);
+  }
+
+  /// `Sync via proxy`
+  String get syncViaProxy {
+    return Intl.message(
+      'Sync via proxy',
+      name: 'syncViaProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sync directly`
+  String get syncDirect {
+    return Intl.message(
+      'Sync directly',
+      name: 'syncDirect',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Hidden from recent tasks`
@@ -1864,6 +1999,36 @@ class AppLocalizations {
     return Intl.message(
       'Use keyboard to control applications',
       name: 'hotkeyManagementDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Trigger condition`
+  String get hotkeyTriggerCondition {
+    return Intl.message(
+      'Trigger condition',
+      name: 'hotkeyTriggerCondition',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Global (works when FlClash is not focused)`
+  String get hotkeyGlobal {
+    return Intl.message(
+      'Global (works when FlClash is not focused)',
+      name: 'hotkeyGlobal',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Only when FlClash is focused`
+  String get hotkeyInApp {
+    return Intl.message(
+      'Only when FlClash is focused',
+      name: 'hotkeyInApp',
       desc: '',
       args: [],
     );

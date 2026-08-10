@@ -75,12 +75,14 @@ class Utils {
     return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}';
   }
 
-  String getTimeDifference(DateTime dateTime) {
-    final currentDateTime = DateTime.now();
-    final difference = currentDateTime.difference(dateTime);
+  String getTimeDifference(DateTime dateTime, {DateTime? now}) {
+    final difference = (now ?? DateTime.now()).difference(dateTime);
     final inHours = difference.inHours;
-    final inMinutes = difference.inMinutes;
-    final inSeconds = difference.inSeconds;
+    if (inHours >= 100) {
+      return '99:59:59';
+    }
+    final inMinutes = difference.inMinutes % 60;
+    final inSeconds = difference.inSeconds % 60;
 
     return '${getDateStringLast2(inHours)}:${getDateStringLast2(inMinutes)}:${getDateStringLast2(inSeconds)}';
   }
@@ -91,13 +93,10 @@ class Utils {
     }
     final diff = timeStamp / 1000;
     final inHours = (diff / 3600).floor();
-    if (inHours > 99) {
-      return '99:59:59';
-    }
     final inMinutes = (diff / 60 % 60).floor();
     final inSeconds = (diff % 60).floor();
 
-    return '${getDateStringLast2(inHours)}:${getDateStringLast2(inMinutes)}:${getDateStringLast2(inSeconds)}';
+    return '${inHours.toString().padLeft(2, '0')}:${getDateStringLast2(inMinutes)}:${getDateStringLast2(inSeconds)}';
   }
 
   Locale? getLocaleForString(String? localString) {

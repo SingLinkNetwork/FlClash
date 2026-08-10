@@ -338,4 +338,96 @@ void main() {
       expect(group.getCurrentSelectedName(''), '');
     });
   });
+
+  group('hasComputedProxyChanged', () {
+    test('detects an automatic group switching its active proxy', () {
+      const previousGroups = [
+        Group(
+          name: 'auto',
+          type: GroupType.URLTest,
+          now: 'Germany',
+          all: [
+            Proxy(name: 'Germany', type: 'ss'),
+            Proxy(name: 'Japan', type: 'ss'),
+          ],
+        ),
+      ];
+      const nextGroups = [
+        Group(
+          name: 'auto',
+          type: GroupType.URLTest,
+          now: 'Japan',
+          all: [
+            Proxy(name: 'Germany', type: 'ss'),
+            Proxy(name: 'Japan', type: 'ss'),
+          ],
+        ),
+      ];
+
+      expect(
+        hasComputedProxyChanged(
+          previousGroups: previousGroups,
+          nextGroups: nextGroups,
+          selectedMap: {},
+        ),
+        isTrue,
+      );
+    });
+
+    test('ignores a proxy list refresh when the active proxy is unchanged', () {
+      const previousGroups = [
+        Group(
+          name: 'auto',
+          type: GroupType.URLTest,
+          now: 'Germany',
+          all: [
+            Proxy(name: 'Germany', type: 'ss'),
+            Proxy(name: 'Japan', type: 'ss'),
+          ],
+        ),
+      ];
+      const nextGroups = [
+        Group(
+          name: 'auto',
+          type: GroupType.URLTest,
+          now: 'Germany',
+          all: [
+            Proxy(name: 'Japan', type: 'ss'),
+            Proxy(name: 'Germany', type: 'ss'),
+          ],
+        ),
+      ];
+
+      expect(
+        hasComputedProxyChanged(
+          previousGroups: previousGroups,
+          nextGroups: nextGroups,
+          selectedMap: {},
+        ),
+        isFalse,
+      );
+    });
+
+    test('ignores selector changes handled by the manual change path', () {
+      const groups = [
+        Group(
+          name: 'manual',
+          type: GroupType.Selector,
+          all: [
+            Proxy(name: 'Germany', type: 'ss'),
+            Proxy(name: 'Japan', type: 'ss'),
+          ],
+        ),
+      ];
+
+      expect(
+        hasComputedProxyChanged(
+          previousGroups: groups,
+          nextGroups: groups,
+          selectedMap: {'manual': 'Japan'},
+        ),
+        isFalse,
+      );
+    });
+  });
 }

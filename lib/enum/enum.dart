@@ -205,6 +205,19 @@ extension KeyboardModifierExt on KeyboardModifier {
 
 enum HotAction { start, view, mode, proxy, tun }
 
+enum HotKeyTriggerScope { global, inApp }
+
+enum TrayClickAction { showMainWindow, showTrayMenu, toggleProxy }
+
+extension HotKeyTriggerScopeExt on HotKeyTriggerScope {
+  HotKeyScope get hotKeyScope {
+    return switch (this) {
+      HotKeyTriggerScope.global => HotKeyScope.system,
+      HotKeyTriggerScope.inApp => HotKeyScope.inapp,
+    };
+  }
+}
+
 enum ProxiesIconStyle { none, standard, icon }
 
 enum FontFamily {
@@ -247,6 +260,7 @@ enum ActionMethod {
   stopLog,
   startListener,
   stopListener,
+  setIpForwarding,
   getCountryCode,
   getMemory,
   crash,

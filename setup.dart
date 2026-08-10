@@ -23,6 +23,11 @@ const _hostPlatform = {
   'windows': 'windows',
 };
 
+const _flutterDistributorRepository =
+    'https://github.com/chen08209/flutter_distributor.git';
+const _flutterDistributorRef = 'cdeeef2d8f8325bb6ae0bc86b39f56e4325d1a58';
+const _flutterDistributorPackagePath = 'packages/flutter_distributor';
+
 Future<void> main(List<String> args) async {
   final parser = createSetupArgParser();
 
@@ -80,7 +85,7 @@ ArgParser createSetupArgParser() {
     )
     ..addOption(
       'targets',
-      valueHelp: 'exe,zip,dmg,apk,...',
+      valueHelp: 'exe,zip,msix,dmg,apk,...',
       help: 'Package targets (default: all for platform)',
     )
     ..addOption(
@@ -95,6 +100,65 @@ ArgParser createSetupArgParser() {
       negatable: false,
       help: 'Enable verbose Flutter build output',
     );
+}
+
+String windowsMsixArchitecture(String hostArch) {
+  switch (hostArch.toLowerCase()) {
+    case 'amd64':
+    case 'x64':
+      return 'x64';
+    case 'arm64':
+      return 'arm64';
+    default:
+      throw ArgumentError.value(
+        hostArch,
+        'hostArch',
+        'Windows MSIX supports only amd64/x64 and arm64 hosts',
+      );
+  }
+}
+
+List<String> createWindowsMsixBuildArgs({required bool verbose}) {
+  return [
+    'build',
+    'windows',
+    '--release',
+    if (verbose) '--verbose',
+    '--dart-define-from-file=env.json',
+  ];
+}
+
+List<String> createMsixCreateArgs({
+  required String architecture,
+  required String outputDirectory,
+}) {
+  return [
+    'run',
+    'msix:create',
+    '--release',
+    '--build-windows',
+    'false',
+    '--architecture',
+    architecture,
+    '--output-path',
+    outputDirectory,
+    '--output-name',
+    'FlClash-$architecture',
+    '--display-name',
+    'FlClash',
+    '--publisher-display-name',
+    'SingLinkNetwork',
+    '--identity-name',
+    'com.singlinknetwork.flclash',
+    '--publisher',
+    'CN=SingLinkNetwork',
+    '--capabilities',
+    'internetClient',
+    '--sign-msix',
+    'false',
+    '--install-certificate',
+    'false',
+  ];
 }
 
 List<String> createFlutterBuildArgs({
@@ -156,22 +220,15 @@ Future<int> _package(
   final depExit = await _ensureDependencies(platform, arch);
   if (depExit != 0) return depExit;
 
-  final activateResult = await Process.run('dart', [
-    'pub',
-    'global',
-    'activate',
-    '-s',
-    'git',
-    'https://github.com/chen08209/flutter_distributor.git',
-    '--git-ref',
-    'FlClash',
-    '--git-path',
-    'packages/flutter_distributor',
-  ]);
-  if (activateResult.exitCode != 0) {
-    stderr.write(activateResult.stderr);
-    return activateResult.exitCode;
+  if (platform == 'windows' && _isMsixOnlyTarget(targets)) {
+    return _packageWindowsMsix(rootDir: rootDir, arch: arch, verbose: verbose);
   }
+
+  final activateExit = await _activateFlutterDistributor(
+    rootDir: rootDir,
+    platform: platform,
+  );
+  if (activateExit != 0) return activateExit;
 
   final process = await Process.start(
     'flutter_distributor',
@@ -201,6 +258,152 @@ Future<int> _package(
   });
   final exitCode = await process.exitCode;
   return exitCode;
+}
+
+bool _isMsixOnlyTarget(String targets) {
+  final targetList = targets
+      .split(',')
+      .map((target) => target.trim())
+      .where((target) => target.isNotEmpty)
+      .toList();
+  return targetList.length == 1 && targetList.single == 'msix';
+}
+
+Future<int> _packageWindowsMsix({
+  required String rootDir,
+  required String arch,
+  required bool verbose,
+}) async {
+  final architecture = windowsMsixArchitecture(arch);
+  final buildExit = await _runStreamingProcess(
+    'flutter',
+    createWindowsMsixBuildArgs(verbose: verbose),
+    workingDirectory: rootDir,
+  );
+  if (buildExit != 0) return buildExit;
+
+  return _runStreamingProcess(
+    'dart',
+    createMsixCreateArgs(
+      architecture: architecture,
+      outputDirectory: p.join(rootDir, 'dist'),
+    ),
+    workingDirectory: rootDir,
+  );
+}
+
+Future<int> _runStreamingProcess(
+  String executable,
+  List<String> args, {
+  required String workingDirectory,
+}) async {
+  final process = await Process.start(
+    executable,
+    args,
+    workingDirectory: workingDirectory,
+    includeParentEnvironment: true,
+    runInShell: Platform.isWindows,
+  );
+  process.stdout.listen((data) {
+    stdout.write(utf8.decode(data));
+  });
+  process.stderr.listen((data) {
+    stderr.write(utf8.decode(data));
+  });
+  return process.exitCode;
+}
+
+Future<int> _activateFlutterDistributor({
+  required String rootDir,
+  required String platform,
+}) async {
+  if (platform != 'linux') {
+    final result = await Process.run('dart', [
+      'pub',
+      'global',
+      'activate',
+      '-s',
+      'git',
+      _flutterDistributorRepository,
+      '--git-ref',
+      _flutterDistributorRef,
+      '--git-path',
+      _flutterDistributorPackagePath,
+    ]);
+    if (result.exitCode != 0) stderr.write(result.stderr);
+    return result.exitCode;
+  }
+
+  final checkout = Directory(
+    p.join(rootDir, '.dart_tool', 'flutter_distributor'),
+  );
+  if (checkout.existsSync()) {
+    checkout.deleteSync(recursive: true);
+  }
+
+  final cloneResult = await Process.run('git', [
+    'clone',
+    '--filter=blob:none',
+    '--no-checkout',
+    _flutterDistributorRepository,
+    checkout.path,
+  ]);
+  if (cloneResult.exitCode != 0) {
+    stderr.write(cloneResult.stderr);
+    return cloneResult.exitCode;
+  }
+
+  final fetchResult = await Process.run('git', [
+    'fetch',
+    '--depth=1',
+    'origin',
+    _flutterDistributorRef,
+  ], workingDirectory: checkout.path);
+  if (fetchResult.exitCode != 0) {
+    stderr.write(fetchResult.stderr);
+    return fetchResult.exitCode;
+  }
+
+  final checkoutResult = await Process.run('git', [
+    'checkout',
+    '--detach',
+    'FETCH_HEAD',
+  ], workingDirectory: checkout.path);
+  if (checkoutResult.exitCode != 0) {
+    stderr.write(checkoutResult.stderr);
+    return checkoutResult.exitCode;
+  }
+
+  final patchPath = p.join(
+    rootDir,
+    'tool',
+    'flutter_distributor_startup_wm_class.patch',
+  );
+  for (final args in [
+    ['apply', '--recount', '--check', patchPath],
+    ['apply', '--recount', patchPath],
+  ]) {
+    final patchResult = await Process.run(
+      'git',
+      args,
+      workingDirectory: checkout.path,
+    );
+    if (patchResult.exitCode != 0) {
+      stderr.write(patchResult.stderr);
+      return patchResult.exitCode;
+    }
+  }
+
+  final activateResult = await Process.run('dart', [
+    'pub',
+    'global',
+    'activate',
+    '-s',
+    'path',
+    p.join(checkout.path, _flutterDistributorPackagePath),
+  ]);
+  if (activateResult.exitCode != 0) stderr.write(activateResult.stderr);
+  return activateResult.exitCode;
 }
 
 Future<String?> _buildGoCore(String rootDir) async {

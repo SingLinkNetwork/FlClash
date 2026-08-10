@@ -10,12 +10,71 @@
 #include <memory>
 #include <string>
 
-#pragma comment(lib, "wlanapi.lib")
 #pragma comment(lib, "ole32.lib")
 
 namespace wifi_ssid {
 
 namespace {
+
+using WlanOpenHandleFunction = decltype(&WlanOpenHandle);
+using WlanEnumInterfacesFunction = decltype(&WlanEnumInterfaces);
+using WlanQueryInterfaceFunction = decltype(&WlanQueryInterface);
+using WlanFreeMemoryFunction = decltype(&WlanFreeMemory);
+using WlanCloseHandleFunction = decltype(&WlanCloseHandle);
+
+class WlanApi {
+ public:
+  WlanApi() : module_(LoadLibraryW(L"wlanapi.dll")) {
+    if (module_ == nullptr) {
+      return;
+    }
+
+    open_handle = reinterpret_cast<WlanOpenHandleFunction>(
+        GetProcAddress(module_, "WlanOpenHandle"));
+    enum_interfaces = reinterpret_cast<WlanEnumInterfacesFunction>(
+        GetProcAddress(module_, "WlanEnumInterfaces"));
+    query_interface = reinterpret_cast<WlanQueryInterfaceFunction>(
+        GetProcAddress(module_, "WlanQueryInterface"));
+    free_memory = reinterpret_cast<WlanFreeMemoryFunction>(
+        GetProcAddress(module_, "WlanFreeMemory"));
+    close_handle = reinterpret_cast<WlanCloseHandleFunction>(
+        GetProcAddress(module_, "WlanCloseHandle"));
+
+    if (!IsAvailable()) {
+      FreeLibrary(module_);
+      module_ = nullptr;
+      open_handle = nullptr;
+      enum_interfaces = nullptr;
+      query_interface = nullptr;
+      free_memory = nullptr;
+      close_handle = nullptr;
+    }
+  }
+
+  ~WlanApi() {
+    if (module_ != nullptr) {
+      FreeLibrary(module_);
+    }
+  }
+
+  WlanApi(const WlanApi &) = delete;
+  WlanApi &operator=(const WlanApi &) = delete;
+
+  bool IsAvailable() const {
+    return module_ != nullptr && open_handle != nullptr &&
+           enum_interfaces != nullptr && query_interface != nullptr &&
+           free_memory != nullptr && close_handle != nullptr;
+  }
+
+  WlanOpenHandleFunction open_handle = nullptr;
+  WlanEnumInterfacesFunction enum_interfaces = nullptr;
+  WlanQueryInterfaceFunction query_interface = nullptr;
+  WlanFreeMemoryFunction free_memory = nullptr;
+  WlanCloseHandleFunction close_handle = nullptr;
+
+ private:
+  HMODULE module_ = nullptr;
+};
 
 std::unique_ptr<
     flutter::MethodChannel<flutter::EncodableValue>,
@@ -62,11 +121,20 @@ void WifiSsidPlugin::HandleMethodCall(
 
 void WifiSsidPlugin::GetSsid(
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+  // Windows Server installations may omit the WLAN feature and its optional
+  // wlanapi.dll module. SSID detection is best-effort and must not prevent
+  // the main application from starting in that environment.
+  WlanApi wlan_api;
+  if (!wlan_api.IsAvailable()) {
+    result->Success(flutter::EncodableValue());
+    return;
+  }
+
   HANDLE hClient = nullptr;
   DWORD dwMaxClient = 2;
   DWORD dwCurVersion = 0;
-  DWORD dwResult =
-      WlanOpenHandle(dwMaxClient, nullptr, &dwCurVersion, &hClient);
+  DWORD dwResult = wlan_api.open_handle(dwMaxClient, nullptr, &dwCurVersion,
+                                        &hClient);
   if (dwResult == ERROR_ACCESS_DENIED) {
     result->Success(flutter::EncodableValue());
     return;
@@ -78,14 +146,14 @@ void WifiSsidPlugin::GetSsid(
   }
 
   PWLAN_INTERFACE_INFO_LIST pIfList = nullptr;
-  dwResult = WlanEnumInterfaces(hClient, nullptr, &pIfList);
+  dwResult = wlan_api.enum_interfaces(hClient, nullptr, &pIfList);
   if (dwResult == ERROR_ACCESS_DENIED) {
-    WlanCloseHandle(hClient, nullptr);
+    wlan_api.close_handle(hClient, nullptr);
     result->Success(flutter::EncodableValue());
     return;
   }
   if (dwResult != ERROR_SUCCESS) {
-    WlanCloseHandle(hClient, nullptr);
+    wlan_api.close_handle(hClient, nullptr);
     result->Error("WLAN_ERROR", "Failed to enumerate WLAN interfaces",
                   flutter::EncodableValue(static_cast<int>(dwResult)));
     return;
@@ -98,7 +166,7 @@ void WifiSsidPlugin::GetSsid(
     DWORD dwDataSize = sizeof(WLAN_CONNECTION_ATTRIBUTES);
     WLAN_INTF_OPCODE opCode = wlan_intf_opcode_current_connection;
 
-    dwResult = WlanQueryInterface(
+    dwResult = wlan_api.query_interface(
         hClient, &pIfList->InterfaceInfo[i].InterfaceGuid, opCode, nullptr,
         &dwDataSize, (PVOID *)&pConnAttrib, nullptr);
 
@@ -112,10 +180,10 @@ void WifiSsidPlugin::GetSsid(
                   pConnAttrib->wlanAssociationAttributes.dot11Ssid.ucSSID),
               ssidLen);
         }
-        WlanFreeMemory(pConnAttrib);
+        wlan_api.free_memory(pConnAttrib);
         break;
       }
-      WlanFreeMemory(pConnAttrib);
+      wlan_api.free_memory(pConnAttrib);
     } else if (dwResult == ERROR_ACCESS_DENIED) {
       query_error = dwResult;
       break;
@@ -124,8 +192,8 @@ void WifiSsidPlugin::GetSsid(
     }
   }
 
-  WlanFreeMemory(pIfList);
-  WlanCloseHandle(hClient, nullptr);
+  wlan_api.free_memory(pIfList);
+  wlan_api.close_handle(hClient, nullptr);
 
   if (query_error == ERROR_ACCESS_DENIED || ssid.empty()) {
     result->Success(flutter::EncodableValue());

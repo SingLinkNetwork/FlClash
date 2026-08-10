@@ -22,6 +22,15 @@ extension StringExtension on String {
     return parts.length > 1 ? parts : this;
   }
 
+  List<String> get splitByBatchSeparators {
+    final seen = <String>{};
+    return split(RegExp(r'[\s,;]+'))
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .where((part) => seen.add(part.toLowerCase()))
+        .toList();
+  }
+
   int compareToLower(String other) {
     return toLowerCase().compareTo(other.toLowerCase());
   }
@@ -62,6 +71,10 @@ extension StringExtension on String {
 
   bool get isSvg {
     return endsWith('.svg');
+  }
+
+  String get yamlFileName {
+    return toLowerCase().endsWith('.yaml') ? this : '$this.yaml';
   }
 
   bool get isRegex {

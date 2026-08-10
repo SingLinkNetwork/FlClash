@@ -75,8 +75,7 @@ class Permissions {
         globalState.container.read(locationPermissionsProvider.notifier).value =
             res;
         if (res != WifiSsidPermission.granted) {
-          final ssid = await WifiSsidManager.instance.getSsid();
-          globalState.container.read(currentSSIDProvider.notifier).value = ssid;
+          globalState.container.read(currentSSIDProvider.notifier).value = null;
         }
       } finally {
         _isRequestingLocation = false;

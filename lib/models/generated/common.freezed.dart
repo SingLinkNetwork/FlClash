@@ -4166,7 +4166,7 @@ as String,
 /// @nodoc
 mixin _$HotKeyAction {
 
- HotAction get action; int? get key; Set<KeyboardModifier> get modifiers;
+ HotAction get action; int? get key; Set<KeyboardModifier> get modifiers; HotKeyTriggerScope get scope;
 /// Create a copy of HotKeyAction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -4179,16 +4179,16 @@ $HotKeyActionCopyWith<HotKeyAction> get copyWith => _$HotKeyActionCopyWithImpl<H
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HotKeyAction&&(identical(other.action, action) || other.action == action)&&(identical(other.key, key) || other.key == key)&&const DeepCollectionEquality().equals(other.modifiers, modifiers));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HotKeyAction&&(identical(other.action, action) || other.action == action)&&(identical(other.key, key) || other.key == key)&&const DeepCollectionEquality().equals(other.modifiers, modifiers)&&(identical(other.scope, scope) || other.scope == scope));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,action,key,const DeepCollectionEquality().hash(modifiers));
+int get hashCode => Object.hash(runtimeType,action,key,const DeepCollectionEquality().hash(modifiers),scope);
 
 @override
 String toString() {
-  return 'HotKeyAction(action: $action, key: $key, modifiers: $modifiers)';
+  return 'HotKeyAction(action: $action, key: $key, modifiers: $modifiers, scope: $scope)';
 }
 
 
@@ -4199,7 +4199,7 @@ abstract mixin class $HotKeyActionCopyWith<$Res>  {
   factory $HotKeyActionCopyWith(HotKeyAction value, $Res Function(HotKeyAction) _then) = _$HotKeyActionCopyWithImpl;
 @useResult
 $Res call({
- HotAction action, int? key, Set<KeyboardModifier> modifiers
+ HotAction action, int? key, Set<KeyboardModifier> modifiers, HotKeyTriggerScope scope
 });
 
 
@@ -4216,12 +4216,13 @@ class _$HotKeyActionCopyWithImpl<$Res>
 
 /// Create a copy of HotKeyAction
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? action = null,Object? key = freezed,Object? modifiers = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? action = null,Object? key = freezed,Object? modifiers = null,Object? scope = null,}) {
   return _then(_self.copyWith(
 action: null == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
 as HotAction,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as int?,modifiers: null == modifiers ? _self.modifiers : modifiers // ignore: cast_nullable_to_non_nullable
-as Set<KeyboardModifier>,
+as Set<KeyboardModifier>,scope: null == scope ? _self.scope : scope // ignore: cast_nullable_to_non_nullable
+as HotKeyTriggerScope,
   ));
 }
 
@@ -4306,10 +4307,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( HotAction action,  int? key,  Set<KeyboardModifier> modifiers)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( HotAction action,  int? key,  Set<KeyboardModifier> modifiers,  HotKeyTriggerScope scope)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HotKeyAction() when $default != null:
-return $default(_that.action,_that.key,_that.modifiers);case _:
+return $default(_that.action,_that.key,_that.modifiers,_that.scope);case _:
   return orElse();
 
 }
@@ -4327,10 +4328,10 @@ return $default(_that.action,_that.key,_that.modifiers);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( HotAction action,  int? key,  Set<KeyboardModifier> modifiers)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( HotAction action,  int? key,  Set<KeyboardModifier> modifiers,  HotKeyTriggerScope scope)  $default,) {final _that = this;
 switch (_that) {
 case _HotKeyAction():
-return $default(_that.action,_that.key,_that.modifiers);case _:
+return $default(_that.action,_that.key,_that.modifiers,_that.scope);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -4347,10 +4348,10 @@ return $default(_that.action,_that.key,_that.modifiers);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( HotAction action,  int? key,  Set<KeyboardModifier> modifiers)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( HotAction action,  int? key,  Set<KeyboardModifier> modifiers,  HotKeyTriggerScope scope)?  $default,) {final _that = this;
 switch (_that) {
 case _HotKeyAction() when $default != null:
-return $default(_that.action,_that.key,_that.modifiers);case _:
+return $default(_that.action,_that.key,_that.modifiers,_that.scope);case _:
   return null;
 
 }
@@ -4362,7 +4363,7 @@ return $default(_that.action,_that.key,_that.modifiers);case _:
 @JsonSerializable()
 
 class _HotKeyAction implements HotKeyAction {
-  const _HotKeyAction({required this.action, this.key, final  Set<KeyboardModifier> modifiers = const {}}): _modifiers = modifiers;
+  const _HotKeyAction({required this.action, this.key, final  Set<KeyboardModifier> modifiers = const {}, this.scope = HotKeyTriggerScope.global}): _modifiers = modifiers;
   factory _HotKeyAction.fromJson(Map<String, dynamic> json) => _$HotKeyActionFromJson(json);
 
 @override final  HotAction action;
@@ -4374,6 +4375,7 @@ class _HotKeyAction implements HotKeyAction {
   return EqualUnmodifiableSetView(_modifiers);
 }
 
+@override@JsonKey() final  HotKeyTriggerScope scope;
 
 /// Create a copy of HotKeyAction
 /// with the given fields replaced by the non-null parameter values.
@@ -4388,16 +4390,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HotKeyAction&&(identical(other.action, action) || other.action == action)&&(identical(other.key, key) || other.key == key)&&const DeepCollectionEquality().equals(other._modifiers, _modifiers));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HotKeyAction&&(identical(other.action, action) || other.action == action)&&(identical(other.key, key) || other.key == key)&&const DeepCollectionEquality().equals(other._modifiers, _modifiers)&&(identical(other.scope, scope) || other.scope == scope));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,action,key,const DeepCollectionEquality().hash(_modifiers));
+int get hashCode => Object.hash(runtimeType,action,key,const DeepCollectionEquality().hash(_modifiers),scope);
 
 @override
 String toString() {
-  return 'HotKeyAction(action: $action, key: $key, modifiers: $modifiers)';
+  return 'HotKeyAction(action: $action, key: $key, modifiers: $modifiers, scope: $scope)';
 }
 
 
@@ -4408,7 +4410,7 @@ abstract mixin class _$HotKeyActionCopyWith<$Res> implements $HotKeyActionCopyWi
   factory _$HotKeyActionCopyWith(_HotKeyAction value, $Res Function(_HotKeyAction) _then) = __$HotKeyActionCopyWithImpl;
 @override @useResult
 $Res call({
- HotAction action, int? key, Set<KeyboardModifier> modifiers
+ HotAction action, int? key, Set<KeyboardModifier> modifiers, HotKeyTriggerScope scope
 });
 
 
@@ -4425,12 +4427,13 @@ class __$HotKeyActionCopyWithImpl<$Res>
 
 /// Create a copy of HotKeyAction
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? action = null,Object? key = freezed,Object? modifiers = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? action = null,Object? key = freezed,Object? modifiers = null,Object? scope = null,}) {
   return _then(_HotKeyAction(
 action: null == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
 as HotAction,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as int?,modifiers: null == modifiers ? _self._modifiers : modifiers // ignore: cast_nullable_to_non_nullable
-as Set<KeyboardModifier>,
+as Set<KeyboardModifier>,scope: null == scope ? _self.scope : scope // ignore: cast_nullable_to_non_nullable
+as HotKeyTriggerScope,
   ));
 }
 

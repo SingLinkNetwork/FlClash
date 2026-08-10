@@ -348,6 +348,146 @@ class TestUrlItem extends ConsumerWidget {
   }
 }
 
+class CustomTestUrlsItem extends ConsumerWidget {
+  const CustomTestUrlsItem({super.key});
+
+  Future<void> _handleEdit(WidgetRef ref) async {
+    final urls = ref.read(appSettingProvider).customTestUrls;
+    final value = await globalState.showCommonDialog<List<String>>(
+      child: _CustomTestUrlsDialog(urls: urls),
+    );
+    if (value == null) {
+      return;
+    }
+    ref
+        .read(appSettingProvider.notifier)
+        .update((state) => state.copyWith(customTestUrls: value));
+  }
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final appLocalizations = context.appLocalizations;
+    final urls = ref.watch(
+      appSettingProvider.select((state) => state.customTestUrls),
+    );
+    return ListItem(
+      leading: const Icon(Icons.public),
+      title: Text(appLocalizations.customTestUrls),
+      subtitle: Text(
+        urls.isEmpty ? appLocalizations.defaultText : '${urls.length}',
+      ),
+      onTap: () => _handleEdit(ref),
+    );
+  }
+}
+
+class _CustomTestUrlsDialog extends StatefulWidget {
+  final List<String> urls;
+
+  const _CustomTestUrlsDialog({required this.urls});
+
+  @override
+  State<_CustomTestUrlsDialog> createState() => _CustomTestUrlsDialogState();
+}
+
+class _CustomTestUrlsDialogState extends State<_CustomTestUrlsDialog> {
+  late final List<String> _urls;
+
+  @override
+  void initState() {
+    super.initState();
+    _urls = [...widget.urls];
+  }
+
+  Future<void> _handleAdd([int? index]) async {
+    final appLocalizations = context.appLocalizations;
+    final value = await globalState.showCommonDialog<String>(
+      child: InputDialog(
+        title: appLocalizations.testUrl,
+        value: index == null ? '' : _urls[index],
+        keyboardType: TextInputType.url,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return appLocalizations.emptyTip(appLocalizations.testUrl);
+          }
+          if (!value.trim().isUrl) {
+            return appLocalizations.urlTip(appLocalizations.testUrl);
+          }
+          return null;
+        },
+      ),
+    );
+    final url = value?.trim();
+    if (url == null || !url.isUrl || !mounted) {
+      return;
+    }
+    if (_urls.asMap().entries.any(
+      (entry) => entry.key != index && entry.value.trim() == url,
+    )) {
+      return;
+    }
+    setState(() {
+      if (index == null) {
+        _urls.add(url);
+      } else {
+        _urls[index] = url;
+      }
+    });
+  }
+
+  void _handleDelete(int index) {
+    setState(() {
+      _urls.removeAt(index);
+    });
+  }
+
+  void _handleSubmit() {
+    Navigator.of(context).pop(_urls);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appLocalizations = context.appLocalizations;
+    return CommonDialog(
+      title: appLocalizations.customTestUrls,
+      overrideScroll: true,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+        TextButton(
+          onPressed: _handleSubmit,
+          child: Text(appLocalizations.submit),
+        ),
+      ],
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          for (final entry in _urls.asMap().entries)
+            ListTile(
+              title: Text(testUrlLabel(entry.value)),
+              subtitle: Text(entry.value),
+              contentPadding: EdgeInsets.zero,
+              onTap: () => _handleAdd(entry.key),
+              trailing: IconButton(
+                tooltip: appLocalizations.delete,
+                onPressed: () => _handleDelete(entry.key),
+                icon: const Icon(Icons.delete_outline),
+              ),
+            ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.add),
+            title: Text(appLocalizations.add),
+            onTap: _handleAdd,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class PortItem extends ConsumerWidget {
   const PortItem({super.key});
 
@@ -666,6 +806,7 @@ final generalItems = <Widget>[
   const UaItem(),
   if (system.isDesktop) const KeepAliveIntervalItem(),
   const TestUrlItem(),
+  const CustomTestUrlsItem(),
   const PortItem(),
   const HostsItem(),
   const Ipv6Item(),

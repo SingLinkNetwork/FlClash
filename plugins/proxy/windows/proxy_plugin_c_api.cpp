@@ -10,3 +10,11 @@ void ProxyPluginCApiRegisterWithRegistrar(
       flutter::PluginRegistrarManager::GetInstance()
           ->GetRegistrar<flutter::PluginRegistrarWindows>(registrar));
 }
+
+void ProxyPluginStopForSessionEnd() {
+  proxy::stopProxyForSessionEnd();
+}
+
+void ProxyPluginResetTunInterface() {
+  proxy::resetTunInterface();
+}

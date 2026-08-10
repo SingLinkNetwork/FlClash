@@ -23,4 +23,9 @@ class MethodChannelProxy extends ProxyPlatform {
   Future<bool?> stopProxy() async {
     return await methodChannel.invokeMethod<bool>("StopProxy");
   }
+
+  @override
+  Future<bool?> resetTunInterface() async {
+    return await methodChannel.invokeMethod<bool>("ResetTunInterface");
+  }
 }

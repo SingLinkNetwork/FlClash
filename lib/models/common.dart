@@ -433,6 +433,7 @@ abstract class HotKeyAction with _$HotKeyAction {
     required HotAction action,
     int? key,
     @Default({}) Set<KeyboardModifier> modifiers,
+    @Default(HotKeyTriggerScope.global) HotKeyTriggerScope scope,
   }) = _HotKeyAction;
 
   factory HotKeyAction.fromJson(Map<String, Object?> json) =>

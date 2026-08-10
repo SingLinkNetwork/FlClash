@@ -60,6 +60,25 @@ void main() {
     });
   });
 
+  group('StringExtension.splitByBatchSeparators', () {
+    test('splits mixed input and removes empty entries', () {
+      expect(
+        ' alpha.example, beta.example;\n gamma.example '.splitByBatchSeparators,
+        ['alpha.example', 'beta.example', 'gamma.example'],
+      );
+    });
+
+    test('deduplicates domains without changing first-seen spelling', () {
+      expect('Example.com, example.com; EXAMPLE.COM'.splitByBatchSeparators, [
+        'Example.com',
+      ]);
+    });
+
+    test('returns an empty list for blank input', () {
+      expect(' \n, ; '.splitByBatchSeparators, isEmpty);
+    });
+  });
+
   group('StringExtension.compareToLower', () {
     test('case insensitive comparison', () {
       expect('abc'.compareToLower('ABC'), 0);
@@ -112,6 +131,20 @@ void main() {
       expect('icon.svg'.isSvg, isTrue);
       expect('icon.PNG'.isSvg, isFalse);
       expect('icon.svg.bak'.isSvg, isFalse);
+    });
+  });
+
+  group('StringExtension.yamlFileName', () {
+    test('adds the yaml extension when it is missing', () {
+      expect('profile'.yamlFileName, 'profile.yaml');
+    });
+
+    test('does not duplicate an existing yaml extension', () {
+      expect('profile.yaml'.yamlFileName, 'profile.yaml');
+    });
+
+    test('recognizes an uppercase yaml extension', () {
+      expect('profile.YAML'.yamlFileName, 'profile.YAML');
     });
   });
 

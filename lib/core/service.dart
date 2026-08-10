@@ -10,6 +10,31 @@ import 'package:fl_clash/models/core.dart';
 import 'interface.dart';
 import 'transport.dart';
 
+class CoreCallbackRegistry {
+  final Map<String, Completer> _callbacks = {};
+
+  int get length => _callbacks.length;
+
+  void add(String id, Completer completer) {
+    _callbacks[id] = completer;
+  }
+
+  Completer? take(String? id) {
+    if (id == null || id.isEmpty) {
+      return null;
+    }
+    return _callbacks.remove(id);
+  }
+
+  void clear() {
+    final callbacks = List<Completer>.of(_callbacks.values);
+    _callbacks.clear();
+    for (final completer in callbacks) {
+      completer.safeCompleter(null);
+    }
+  }
+}
+
 class CoreService extends CoreHandlerInterface {
   static CoreService? _instance;
 
@@ -17,7 +42,7 @@ class CoreService extends CoreHandlerInterface {
 
   Completer<bool> _shutdownCompleter = Completer();
 
-  final Map<String, Completer> _callbackCompleterMap = {};
+  final _callbackCompleterMap = CoreCallbackRegistry();
 
   Process? _process;
 
@@ -34,7 +59,7 @@ class CoreService extends CoreHandlerInterface {
   }
 
   Future<void> handleResult(ActionResult result) async {
-    final completer = _callbackCompleterMap[result.id];
+    final completer = _callbackCompleterMap.take(result.id);
     final data = await parasResult(result);
     if (result.id?.isEmpty == true) {
       coreEventManager.sendEvent(CoreEvent.fromJson(result.data));
@@ -146,9 +171,7 @@ class CoreService extends CoreHandlerInterface {
   }
 
   void _clearCompleter() {
-    for (final completer in _callbackCompleterMap.values) {
-      completer.safeCompleter(null);
-    }
+    _callbackCompleterMap.clear();
   }
 
   @override
@@ -164,14 +187,14 @@ class CoreService extends CoreHandlerInterface {
     Duration? timeout,
   }) async {
     final id = '${method.name}#${utils.id}';
-    _callbackCompleterMap[id] = Completer<T?>();
+    final completer = Completer<T?>();
+    _callbackCompleterMap.add(id, completer);
     sendMessage(json.encode(Action(id: id, method: method, data: data)));
-    return (_callbackCompleterMap[id] as Completer<T?>).future.withTimeout(
+    return completer.future.withTimeout(
       timeout: timeout,
       onLast: () {
-        final completer = _callbackCompleterMap[id];
-        completer?.safeCompleter(null);
-        _callbackCompleterMap.remove(id);
+        final pending = _callbackCompleterMap.take(id);
+        pending?.safeCompleter(null);
       },
       tag: id,
       onTimeout: () => null,

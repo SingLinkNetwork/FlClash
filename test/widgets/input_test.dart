@@ -6,6 +6,7 @@ import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -45,6 +46,90 @@ void main() {
     expect(changedValue, '12345');
   });
 
+  testWidgets('InputDialog pastes plain clipboard text', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.getData') {
+            return <String, dynamic>{'text': 'https://tv.example/sub.yaml'};
+          }
+          return null;
+        });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          viewSizeProvider.overrideWithBuild((_, _) => const Size(1200, 1000)),
+        ],
+        child: const _TestApp(
+          child: Scaffold(
+            body: InputDialog(title: 'Import URL', value: '', labelText: 'URL'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('input-dialog-paste')));
+    await tester.pump();
+
+    expect(
+      tester.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
+      'https://tv.example/sub.yaml',
+    );
+  });
+
+  testWidgets('InputDialog preserves text when clipboard is empty', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.getData') {
+            return <String, dynamic>{'text': ''};
+          }
+          return null;
+        });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          viewSizeProvider.overrideWithBuild((_, _) => const Size(1200, 1000)),
+        ],
+        child: const _TestApp(
+          child: Scaffold(
+            body: InputDialog(
+              title: 'Import URL',
+              value: 'https://existing.example',
+              labelText: 'URL',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('input-dialog-paste')));
+    await tester.pump();
+
+    expect(
+      tester.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
+      'https://existing.example',
+    );
+  });
+
   testWidgets('ListInputPage reorders using final insertion index', (
     tester,
   ) async {
@@ -74,6 +159,53 @@ void main() {
 
     expect(_top(tester, 'b'), lessThan(_top(tester, 'c')));
     expect(_top(tester, 'c'), lessThan(_top(tester, 'a')));
+  });
+
+  testWidgets('ListInputPage batch adds normalized unique items', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          viewSizeProvider.overrideWithBuild((_, _) => const Size(1200, 1000)),
+        ],
+        child: const _TestApp(
+          child: ListInputPage(
+            title: 'Bypass domain',
+            items: ['Existing.example'],
+            allowBatchAdd: true,
+            titleBuilder: _textBuilder,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Batch add'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextFormField),
+      'existing.example, New.example;\nnew.example second.example',
+    );
+    await tester.tap(find.text('Submit'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Existing.example'), findsOneWidget);
+    expect(find.text('New.example'), findsOneWidget);
+    expect(find.text('second.example'), findsOneWidget);
+    expect(find.text('new.example'), findsNothing);
+    expect(
+      _top(tester, 'Existing.example'),
+      lessThan(_top(tester, 'New.example')),
+    );
+    expect(
+      _top(tester, 'New.example'),
+      lessThan(_top(tester, 'second.example')),
+    );
   });
 }
 

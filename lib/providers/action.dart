@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/common/ip_forwarding.dart';
 import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/database/database.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -138,13 +139,36 @@ class SetupAction extends _$SetupAction {
 
   Future<void> _handleStart() async {
     startTime ??= DateTime.now();
-    //The local status must be updated when performing the run task
-    ref.read(commonActionProvider.notifier).updateRunTime();
-    ref.read(commonActionProvider.notifier).updateTraffic();
-    if (!ref.read(suspendProvider)) {
-      await coreController.startListener();
+    try {
+      final started = await startListenerBeforePublishingStatus(
+        startListener: () async {
+          if (ref.read(suspendProvider)) return true;
+          return coreController.startListener();
+        },
+        updateRunTime: () {
+          ref.read(commonActionProvider.notifier).updateRunTime();
+        },
+        updateTraffic: () {
+          return ref.read(commonActionProvider.notifier).updateTraffic();
+        },
+      );
+      if (!started) {
+        startTime = null;
+        ref.read(commonActionProvider.notifier).updateRunTime();
+        return;
+      }
+    } catch (_) {
+      startTime = null;
+      ref.read(commonActionProvider.notifier).updateRunTime();
+      rethrow;
     }
     _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!shouldPollTraffic(
+        renderPaused: render?.isPaused == true,
+        showTrayTitle: ref.read(appSettingProvider).showTrayTitle,
+      )) {
+        return;
+      }
       ref.read(commonActionProvider.notifier).updateRunTime();
       ref.read(commonActionProvider.notifier).updateTraffic();
     });
@@ -154,14 +178,31 @@ class SetupAction extends _$SetupAction {
     startTime = await service?.getRunTime();
   }
 
-  Future handleStop() async {
+  void _resetStartState() {
     startTime = null;
     _updateTimer?.cancel();
     _updateTimer = null;
+  }
+
+  void _clearStoppedState() {
+    coreController.resetTraffic();
+    ref.read(trafficsProvider.notifier).clear();
+    ref.read(totalTrafficProvider.notifier).value = const Traffic();
+    ref.read(runTimeProvider.notifier).value = null;
+    ref.read(checkIpNumProvider.notifier).add();
+  }
+
+  Future<void> handleStop() async {
+    _resetStartState();
     await coreController.stopListener();
   }
 
-  Future<void> initStatus() async {
+  Future<void> syncStopped() async {
+    _resetStartState();
+    _clearStoppedState();
+  }
+
+  Future<void> initStatus({bool forceStart = false}) async {
     if (!globalState.needInitStatus) {
       commonPrint.log('init status cancel');
       return;
@@ -170,7 +211,7 @@ class SetupAction extends _$SetupAction {
     if (system.isAndroid) {
       await _updateStartTime();
     }
-    final status = isStart == true
+    final status = forceStart || isStart == true
         ? true
         : ref.read(appSettingProvider).autoRun;
     if (status == true) {
@@ -192,7 +233,6 @@ class SetupAction extends _$SetupAction {
         applyProfileDebounce(force: true, silence: true);
       } else {
         globalState.needInitStatus = false;
-        ref.read(runTimeProvider.notifier).value = 0;
         try {
           await applyProfile(
             force: true,
@@ -206,11 +246,7 @@ class SetupAction extends _$SetupAction {
       }
     } else {
       await handleStop();
-      coreController.resetTraffic();
-      ref.read(trafficsProvider.notifier).clear();
-      ref.read(totalTrafficProvider.notifier).value = const Traffic();
-      ref.read(runTimeProvider.notifier).value = null;
-      ref.read(checkIpNumProvider.notifier).add();
+      _clearStoppedState();
     }
   }
 
@@ -247,13 +283,45 @@ class SetupAction extends _$SetupAction {
   }
 
   void changeMode(Mode mode) {
+    final currentGroupName = ref.read(
+      currentProfileProvider.select((state) => state?.currentGroupName),
+    );
     ref
         .read(patchClashConfigProvider.notifier)
         .update((state) => state.copyWith(mode: mode));
-    if (mode == Mode.global) {
+
+    final groups = ref.read(currentGroupsStateProvider).value;
+    if (mode == Mode.direct) return;
+    if (groups.isEmpty) {
+      if (mode == Mode.global) {
+        ref
+            .read(proxiesActionProvider.notifier)
+            .updateCurrentGroupName(GroupName.GLOBAL.name);
+      }
+      return;
+    }
+
+    final nextGroupName = switch (mode) {
+      Mode.global =>
+        groups
+            .firstWhere(
+              (group) => group.name == GroupName.GLOBAL.name,
+              orElse: () => groups.first,
+            )
+            .name,
+      Mode.rule =>
+        groups
+            .firstWhere(
+              (group) => group.name == currentGroupName,
+              orElse: () => groups.first,
+            )
+            .name,
+      Mode.direct => null,
+    };
+    if (nextGroupName != null) {
       ref
           .read(proxiesActionProvider.notifier)
-          .updateCurrentGroupName(GroupName.GLOBAL.name);
+          .updateCurrentGroupName(nextGroupName);
     }
   }
 
@@ -482,8 +550,29 @@ class BackupAction extends _$BackupAction {
 
 @Riverpod(keepAlive: true)
 class CoreAction extends _$CoreAction {
+  late final _ipForwardingQueue = IpForwardingRequestQueue(_setIpForwarding);
+
   @override
   void build() {}
+
+  Future<bool> _setIpForwarding(bool enabled) async {
+    if (!system.isMacOS ||
+        ref.read(coreStatusProvider) != CoreStatus.connected) {
+      return true;
+    }
+    final result = await coreController.setIpForwarding(enabled);
+    if (!result) {
+      commonPrint.log(
+        'Failed to ${enabled ? 'enable' : 'restore'} macOS IP forwarding',
+        logLevel: LogLevel.warning,
+      );
+    }
+    return result;
+  }
+
+  Future<bool> setIpForwarding(bool enabled) {
+    return _ipForwardingQueue.set(enabled);
+  }
 
   Future<void> initCore() async {
     final isInit = await coreController.isInit;
@@ -534,6 +623,9 @@ class CoreAction extends _$CoreAction {
   Future<void> restartCore([bool start = false]) async {
     final isDisconnected =
         ref.read(coreStatusProvider) == CoreStatus.disconnected;
+    if (!isDisconnected) {
+      await setIpForwarding(false);
+    }
     ref.read(coreStatusProvider.notifier).value = CoreStatus.disconnected;
     await coreController.shutdown(!isDisconnected);
     await connectCore();
@@ -579,6 +671,9 @@ class SystemAction extends _$SystemAction {
       system.exit();
     });
     try {
+      if (system.isMacOS) {
+        await ref.read(coreActionProvider.notifier).setIpForwarding(false);
+      }
       await Future.wait([
         if (needSave) preferences.saveConfig(ref.read(configProvider)),
         if (macOS != null) macOS!.updateDns(true),
@@ -610,9 +705,9 @@ class SystemAction extends _$SystemAction {
   Future<void> updateVisible() async {
     final visible = await window?.isVisible;
     if (visible != null && !visible) {
-      window?.show();
+      await window?.show();
     } else {
-      window?.hide();
+      await window?.hide();
     }
   }
 
@@ -721,6 +816,8 @@ class ThemeAction extends _$ThemeAction {
 
 @Riverpod(keepAlive: true)
 class ProxiesAction extends _$ProxiesAction {
+  int _changeProxyRequestId = 0;
+
   @override
   void build() {}
 
@@ -728,12 +825,33 @@ class ProxiesAction extends _$ProxiesAction {
     debouncer.call(FunctionTag.updateGroups, updateGroups, duration: duration);
   }
 
-  void changeProxyDebounce(String groupName, String proxyName) {
+  void changeProxyDebounce(
+    String groupName,
+    String proxyName, {
+    required String previousProxyName,
+  }) {
+    final requestId = ++_changeProxyRequestId;
+    final profileId = ref.read(currentProfileIdProvider);
     debouncer.call(FunctionTag.changeProxy, (
       String groupName,
       String proxyName,
     ) async {
-      await changeProxy(groupName: groupName, proxyName: proxyName);
+      final changed = await changeProxy(
+        groupName: groupName,
+        proxyName: proxyName,
+      );
+      if (requestId != _changeProxyRequestId) return;
+      if (!changed) {
+        ref
+            .read(profilesActionProvider.notifier)
+            .restoreCurrentSelectedMap(
+              groupName: groupName,
+              expectedProxyName: proxyName,
+              previousProxyName: previousProxyName,
+              profileId: profileId,
+            );
+        return;
+      }
       updateGroupsDebounce();
     }, args: [groupName, proxyName]);
   }
@@ -741,7 +859,10 @@ class ProxiesAction extends _$ProxiesAction {
   Future<void> updateGroups() async {
     try {
       commonPrint.log('updateGroups');
-      ref.read(groupsProvider.notifier).value = await retry(
+      final selectedMap = ref.read(
+        currentProfileProvider.select((state) => state?.selectedMap ?? {}),
+      );
+      final nextGroups = await retry(
         task: () async {
           final sortType = ref.read(
             proxiesStyleSettingProvider.select((state) => state.sortType),
@@ -749,9 +870,6 @@ class ProxiesAction extends _$ProxiesAction {
           final delayMap = ref.read(delayDataSourceProvider);
           final testUrl = ref.read(
             appSettingProvider.select((state) => state.testUrl),
-          );
-          final selectedMap = ref.read(
-            currentProfileProvider.select((state) => state?.selectedMap ?? {}),
           );
           return coreController.getProxiesGroups(
             selectedMap: selectedMap,
@@ -762,6 +880,16 @@ class ProxiesAction extends _$ProxiesAction {
         },
         retryIf: (res) => res.isEmpty,
       );
+      final previousGroups = ref.read(groupsProvider);
+      if (previousGroups.isNotEmpty &&
+          hasComputedProxyChanged(
+            previousGroups: previousGroups,
+            nextGroups: nextGroups,
+            selectedMap: selectedMap,
+          )) {
+        ref.read(checkIpNumProvider.notifier).add();
+      }
+      ref.read(groupsProvider.notifier).value = nextGroups;
     } catch (e) {
       commonPrint.log('updateGroups error: $e');
       ref.read(groupsProvider.notifier).value = [];
@@ -788,19 +916,24 @@ class ProxiesAction extends _$ProxiesAction {
     ref.read(delayDataSourceProvider.notifier).setDelay(delay);
   }
 
-  Future<void> changeProxy({
+  Future<bool> changeProxy({
     required String groupName,
     required String proxyName,
   }) async {
-    await coreController.changeProxy(
+    final message = await coreController.changeProxy(
       ChangeProxyParams(groupName: groupName, proxyName: proxyName),
     );
+    if (message.isNotEmpty) {
+      commonPrint.log('changeProxy error: $message');
+      return false;
+    }
     if (ref.read(appSettingProvider).closeConnections) {
       await coreController.closeConnections();
     } else {
       await coreController.resetConnections();
     }
     ref.read(checkIpNumProvider.notifier).add();
+    return true;
   }
 
   Future<String> updateProvider(
@@ -841,6 +974,21 @@ class ProfilesAction extends _$ProfilesAction {
           .read(profilesProvider.notifier)
           .put(currentProfile.copyWith(selectedMap: selectedMap));
     }
+  }
+
+  void restoreCurrentSelectedMap({
+    required String groupName,
+    required String expectedProxyName,
+    required String previousProxyName,
+    int? profileId,
+  }) {
+    final currentProfile = ref.read(currentProfileProvider);
+    if (currentProfile == null ||
+        (profileId != null && currentProfile.id != profileId) ||
+        currentProfile.selectedMap[groupName] != expectedProxyName) {
+      return;
+    }
+    updateCurrentSelectedMap(groupName, previousProxyName);
   }
 
   Future<void> deleteProfile(int id) async {
@@ -892,13 +1040,14 @@ class ProfilesAction extends _$ProfilesAction {
   Future<void> updateProfile(
     Profile profile, {
     bool showLoading = false,
+    bool useProxy = true,
   }) async {
     try {
       if (showLoading) {
         ref.read(isUpdatingProvider(profile.updatingKey).notifier).value = true;
       }
       ref.read(profilesProvider.notifier).put(profile);
-      final newProfile = await profile.update();
+      final newProfile = await profile.update(useProxy: useProxy);
       ref.read(profilesProvider.notifier).put(newProfile);
       if (profile.id == ref.read(currentProfileIdProvider)) {
         ref

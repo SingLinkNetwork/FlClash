@@ -48,6 +48,13 @@ class VpnService : SystemVpnService(), IBaseService,
         super.onDestroy()
     }
 
+    override fun onRevoke() {
+        GlobalState.log("VPN revoked")
+        Core.stopTun()
+        stopSelf()
+        super.onRevoke()
+    }
+
     private val connectivity by lazy {
         getSystemService<ConnectivityManager>()
     }

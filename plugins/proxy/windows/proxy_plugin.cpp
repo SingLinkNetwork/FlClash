@@ -1,16 +1,27 @@
-#include "proxy_plugin.h"
-
-// This must be included before many other Windows headers.
+// These APIs require Vista-era networking definitions and Winsock types.
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+#ifndef NTDDI_VERSION
+#define NTDDI_VERSION 0x06000000
+#endif
+#include <winsock2.h>
+#include <ws2ipdef.h>
 #include <windows.h>
+
+#include "proxy_plugin.h"
 
 #include <WinInet.h>
 #include <Ras.h>
 #include <RasError.h>
+#include <iphlpapi.h>
+#include <netioapi.h>
 #include <string>
 #include <vector>
 
 #pragma comment(lib, "wininet")
 #pragma comment(lib, "Rasapi32")
+#pragma comment(lib, "iphlpapi")
 
 #include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>
@@ -151,10 +162,126 @@ bool stopProxy()
   return ApplyOptionsToConnections(list) && NotifySettingsChanged();
 }
 
+bool ResetInterfaceRoutes(const NET_LUID& interface_luid)
+{
+  MIB_IPFORWARD_TABLE2* route_table = nullptr;
+  const auto table_error = GetIpForwardTable2(AF_UNSPEC, &route_table);
+  if (table_error != NO_ERROR)
+  {
+    return false;
+  }
+
+  bool success = true;
+  for (ULONG i = 0; i < route_table->NumEntries; ++i)
+  {
+    auto& route = route_table->Table[i];
+    if (route.InterfaceLuid.Value != interface_luid.Value)
+    {
+      continue;
+    }
+    const auto delete_error = DeleteIpForwardEntry2(&route);
+    if (delete_error != NO_ERROR && delete_error != ERROR_NOT_FOUND)
+    {
+      success = false;
+    }
+  }
+
+  FreeMibTable(route_table);
+  return success;
+}
+
+bool ResetInterfaceMetric(const NET_LUID& interface_luid)
+{
+  bool success = true;
+  const ADDRESS_FAMILY families[] = {AF_INET, AF_INET6};
+  for (const auto family : families)
+  {
+    MIB_IPINTERFACE_ROW interface_row = {};
+    InitializeIpInterfaceEntry(&interface_row);
+    interface_row.Family = family;
+    interface_row.InterfaceLuid = interface_luid;
+
+    const auto get_error = GetIpInterfaceEntry(&interface_row);
+    if (get_error == ERROR_FILE_NOT_FOUND || get_error == ERROR_NOT_FOUND)
+    {
+      continue;
+    }
+    if (get_error != NO_ERROR)
+    {
+      success = false;
+      continue;
+    }
+
+    interface_row.UseAutomaticMetric = TRUE;
+    interface_row.Metric = 0;
+    const auto set_error = SetIpInterfaceEntry(&interface_row);
+    if (set_error != NO_ERROR && set_error != ERROR_FILE_NOT_FOUND &&
+        set_error != ERROR_NOT_FOUND)
+    {
+      success = false;
+    }
+  }
+  return success;
+}
+
+bool ResetFlClashTunInterface()
+{
+  try
+  {
+    ULONG addresses_size = 0;
+    auto address_error = GetAdaptersAddresses(
+        AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, nullptr, nullptr, &addresses_size);
+    if (address_error == ERROR_NO_DATA)
+    {
+      return true;
+    }
+    if (address_error != ERROR_BUFFER_OVERFLOW)
+    {
+      return false;
+    }
+
+    std::vector<BYTE> address_buffer(addresses_size);
+    auto* addresses = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(address_buffer.data());
+    address_error = GetAdaptersAddresses(
+        AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, nullptr, addresses, &addresses_size);
+    if (address_error != NO_ERROR)
+    {
+      return false;
+    }
+
+    bool success = true;
+    for (auto* adapter = addresses; adapter != nullptr; adapter = adapter->Next)
+    {
+      if (adapter->FriendlyName == nullptr ||
+          std::wstring(adapter->FriendlyName) != L"FlClash")
+      {
+        continue;
+      }
+      success = ResetInterfaceRoutes(adapter->Luid) && success;
+      success = ResetInterfaceMetric(adapter->Luid) && success;
+    }
+    return success;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
 }  // namespace
 
 namespace proxy
 {
+
+bool resetTunInterface()
+{
+  return ResetFlClashTunInterface();
+}
+
+void stopProxyForSessionEnd()
+{
+  stopProxy();
+}
 
   // static
   void ProxyPlugin::RegisterWithRegistrar(
@@ -187,6 +314,10 @@ namespace proxy
     if (method_call.method_name().compare("StopProxy") == 0)
     {
       result->Success(stopProxy());
+    }
+    else if (method_call.method_name().compare("ResetTunInterface") == 0)
+    {
+      result->Success(resetTunInterface());
     }
     else if (method_call.method_name().compare("StartProxy") == 0)
     {

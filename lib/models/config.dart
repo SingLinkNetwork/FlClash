@@ -73,6 +73,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(false) bool openLogs,
     @Default(true) bool closeConnections,
     @Default(defaultTestUrl) String testUrl,
+    @Default([]) List<String> customTestUrls,
     @Default(true) bool isAnimateToPage,
     @Default(true) bool autoCheckUpdate,
     @Default(false) bool showLabel,
@@ -84,7 +85,9 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(false) bool developerMode,
     @Default(RestoreStrategy.compatible) RestoreStrategy restoreStrategy,
     @Default(true) bool showTrayTitle,
+    @Default(TrayClickAction.showMainWindow) TrayClickAction trayClickAction,
     @Default('') String customUserAgent,
+    @Default(false) bool macOSIpForwarding,
   }) = _AppSettingProps;
 
   factory AppSettingProps.fromJson(Map<String, Object?> json) =>
@@ -99,6 +102,11 @@ abstract class AppSettingProps with _$AppSettingProps {
       return defaultAppSettingProps;
     }
   }
+}
+
+extension AppSettingPropsExt on AppSettingProps {
+  List<String> get allTestUrls =>
+      resolveTestUrls(defaultUrl: testUrl, customUrls: customTestUrls);
 }
 
 @freezed

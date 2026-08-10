@@ -17,6 +17,14 @@ extension IntlExt on Intl {
       Intl.message('action_$messageText');
 }
 
+String _hotKeyScopeLabel(BuildContext context, HotKeyTriggerScope scope) {
+  final appLocalizations = context.appLocalizations;
+  return switch (scope) {
+    HotKeyTriggerScope.global => appLocalizations.hotkeyGlobal,
+    HotKeyTriggerScope.inApp => appLocalizations.hotkeyInApp,
+  };
+}
+
 class HotKeyView extends StatelessWidget {
   const HotKeyView({super.key});
 
@@ -34,7 +42,7 @@ class HotKeyView extends StatelessWidget {
       text += "${modifierLabels.join(" ")}+";
     }
     text += PhysicalKeyboardKey(key).label;
-    return text;
+    return '$text · ${_hotKeyScopeLabel(context, hotKeyAction.scope)}';
   }
 
   @override
@@ -208,8 +216,11 @@ class _HotKeyRecorderState extends ConsumerState<HotKeyRecorder> {
             final modifiers = hotKeyAction.modifiers;
             return SizedBox(
               width: dialogCommonWidth,
-              child: key != null
-                  ? Wrap(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (key != null)
+                    Wrap(
                       spacing: 8,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
@@ -222,10 +233,33 @@ class _HotKeyRecorderState extends ConsumerState<HotKeyRecorder> {
                         KeyboardKeyBox(keyboardKey: PhysicalKeyboardKey(key)),
                       ],
                     )
-                  : Text(
+                  else
+                    Text(
                       appLocalizations.pressKeyboard,
                       style: context.textTheme.titleMedium,
                     ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<HotKeyTriggerScope>(
+                    initialValue: hotKeyAction.scope,
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.hotkeyTriggerCondition,
+                    ),
+                    items: [
+                      for (final scope in HotKeyTriggerScope.values)
+                        DropdownMenuItem(
+                          value: scope,
+                          child: Text(_hotKeyScopeLabel(context, scope)),
+                        ),
+                    ],
+                    onChanged: (scope) {
+                      if (scope == null) return;
+                      hotKeyActionNotifier.value = hotKeyAction.copyWith(
+                        scope: scope,
+                      );
+                    },
+                  ),
+                ],
+              ),
             );
           },
         ),

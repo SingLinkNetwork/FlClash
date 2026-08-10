@@ -72,12 +72,14 @@ void main() {
     test('converts geoXUrl map to raw config map', () {
       const geoXUrl = {
         GeoResource.MMDB: 'https://example.com/mmdb',
+        GeoResource.GEOIP: 'https://example.com/geoip.dat',
         GeoResource.GEOSITE: 'https://example.com/geosite.dat',
       };
 
       expect(geoXUrl.raw, {
         'mmdb': 'https://example.com/mmdb',
-        'geo-site': 'https://example.com/geosite.dat',
+        'geoip': 'https://example.com/geoip.dat',
+        'geosite': 'https://example.com/geosite.dat',
       });
     });
 
@@ -110,6 +112,9 @@ void main() {
       expect(restored.restoreStrategy, RestoreStrategy.compatible);
       expect(restored.customUserAgent, '');
       expect(restored.testUrl, defaultTestUrl);
+      expect(restored.customTestUrls, isEmpty);
+      expect(restored.allTestUrls, [defaultTestUrl]);
+      expect(restored.trayClickAction, TrayClickAction.showMainWindow);
     });
 
     test('custom values survive round-trip', () {
@@ -119,6 +124,11 @@ void main() {
         autoLaunch: true,
         closeConnections: false,
         testUrl: 'https://custom.test',
+        customTestUrls: [
+          'https://github.com',
+          ' https://custom.test ',
+          'not-a-url',
+        ],
         customUserAgent: 'CustomUA/1.0',
       );
       final restored = roundTrip(
@@ -130,7 +140,57 @@ void main() {
       expect(restored.autoLaunch, true);
       expect(restored.closeConnections, false);
       expect(restored.testUrl, 'https://custom.test');
+      expect(restored.customTestUrls, [
+        'https://github.com',
+        ' https://custom.test ',
+        'not-a-url',
+      ]);
+      expect(restored.allTestUrls, [
+        'https://custom.test',
+        'https://github.com',
+      ]);
       expect(restored.customUserAgent, 'CustomUA/1.0');
+    });
+
+    test('persists the macOS tray click action', () {
+      const props = AppSettingProps(
+        trayClickAction: TrayClickAction.showTrayMenu,
+      );
+
+      final restored = roundTrip(
+        () => props.toJson(),
+        AppSettingProps.fromJson,
+      );
+
+      expect(restored.trayClickAction, TrayClickAction.showTrayMenu);
+    });
+
+    test('persists the desktop proxy toggle tray click action', () {
+      const props = AppSettingProps(
+        trayClickAction: TrayClickAction.toggleProxy,
+      );
+
+      final restored = roundTrip(
+        () => props.toJson(),
+        AppSettingProps.fromJson,
+      );
+
+      expect(restored.trayClickAction, TrayClickAction.toggleProxy);
+    });
+
+    test('legacy settings without tray click action keep the main window', () {
+      final props = AppSettingProps.fromJson(const {});
+
+      expect(props.trayClickAction, TrayClickAction.showMainWindow);
+    });
+
+    test('legacy JSON without custom URLs keeps the configured default', () {
+      final props = AppSettingProps.fromJson({
+        'testUrl': 'https://legacy.example',
+      });
+
+      expect(props.customTestUrls, isEmpty);
+      expect(props.allTestUrls, ['https://legacy.example']);
     });
 
     test('safeFromJson returns default on null', () {
@@ -178,6 +238,52 @@ void main() {
       expect(restored.height, 768);
       expect(restored.top, 100);
       expect(restored.left, 200);
+    });
+  });
+
+  group('Tun recvmsgx JSON', () {
+    test('defaults to enabled for the existing core behavior', () {
+      const tun = Tun();
+
+      expect(tun.recvMsgX, isTrue);
+      expect(tun.toJson()['recvmsgx'], isTrue);
+    });
+
+    test('persists an explicitly disabled value', () {
+      const tun = Tun(recvMsgX: false);
+      final restored = Tun.fromJson(tun.toJson());
+
+      expect(restored.recvMsgX, isFalse);
+      expect(restored.toJson()['recvmsgx'], isFalse);
+    });
+
+    test('reads the core recvmsgx key from imported config', () {
+      expect(Tun.fromJson({'recvmsgx': false}).recvMsgX, isFalse);
+    });
+  });
+
+  group('HotKeyAction JSON', () {
+    test('legacy settings default to global triggering', () {
+      final restored = HotKeyAction.fromJson({
+        'action': 'start',
+        'key': 458977,
+        'modifiers': ['control'],
+      });
+
+      expect(restored.scope, HotKeyTriggerScope.global);
+    });
+
+    test('persists in-app triggering scope', () {
+      const action = HotKeyAction(
+        action: HotAction.start,
+        key: 458977,
+        modifiers: {KeyboardModifier.control},
+        scope: HotKeyTriggerScope.inApp,
+      );
+      final restored = HotKeyAction.fromJson(action.toJson());
+
+      expect(restored.scope, HotKeyTriggerScope.inApp);
+      expect(restored.toJson()['scope'], 'inApp');
     });
   });
 

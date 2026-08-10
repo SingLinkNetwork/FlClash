@@ -1056,7 +1056,7 @@ class _SubRuleSelectedView extends ConsumerWidget {
 bool _handleSaveRule(BuildContext context, WidgetRef ref) {
   final rule = ref.read(ruleProvider);
   final appLocalizations = context.appLocalizations;
-  if (rule.realContent?.isNotEmpty != true) {
+  if (!rule.hasValidContent) {
     globalState.showMessage(
       cancelable: false,
       message: TextSpan(

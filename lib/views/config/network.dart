@@ -55,6 +55,30 @@ class TUNItem extends ConsumerWidget {
   }
 }
 
+class MacOSIpForwardingItem extends ConsumerWidget {
+  const MacOSIpForwardingItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final appLocalizations = context.appLocalizations;
+    final enabled = ref.watch(
+      appSettingProvider.select((state) => state.macOSIpForwarding),
+    );
+    return ListItem.switchItem(
+      title: Text(appLocalizations.macOSIpForwarding),
+      subtitle: Text(appLocalizations.macOSIpForwardingDesc),
+      delegate: SwitchDelegate(
+        value: enabled,
+        onChanged: (value) {
+          ref
+              .read(appSettingProvider.notifier)
+              .update((state) => state.copyWith(macOSIpForwarding: value));
+        },
+      ),
+    );
+  }
+}
+
 class AllowBypassItem extends ConsumerWidget {
   const AllowBypassItem({super.key});
 
@@ -204,6 +228,31 @@ class TunStackItem extends ConsumerWidget {
   }
 }
 
+class TunRecvMsgXItem extends ConsumerWidget {
+  const TunRecvMsgXItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final appLocalizations = context.appLocalizations;
+    final recvMsgX = ref.watch(
+      patchClashConfigProvider.select((state) => state.tun.recvMsgX),
+    );
+
+    return ListItem.switchItem(
+      title: Text(appLocalizations.tunRecvMsgX),
+      subtitle: Text(appLocalizations.tunRecvMsgXDesc),
+      delegate: SwitchDelegate(
+        value: recvMsgX,
+        onChanged: (value) {
+          ref
+              .read(patchClashConfigProvider.notifier)
+              .update((state) => state.copyWith.tun(recvMsgX: value));
+        },
+      ),
+    );
+  }
+}
+
 class BypassDomainItem extends ConsumerWidget {
   const BypassDomainItem({super.key});
 
@@ -223,6 +272,7 @@ class BypassDomainItem extends ConsumerWidget {
           items: bypassDomain,
           itemMaxLength: TextInputLimits.domain,
           titleBuilder: (item) => Text(item),
+          allowBatchAdd: true,
         ),
         onChanged: (items) {
           ref
@@ -358,8 +408,10 @@ class NetworkListView extends StatelessWidget {
         title: appLocalizations.options,
         items: [
           if (system.isDesktop) const TUNItem(),
+          if (system.isMacOS) const MacOSIpForwardingItem(),
           if (system.isMacOS) const AutoSetSystemDnsItem(),
           const TunStackItem(),
+          if (system.isMacOS) const TunRecvMsgXItem(),
           if (!system.isDesktop) ...[
             const RouteModeItem(),
             const RouteAddressItem(),

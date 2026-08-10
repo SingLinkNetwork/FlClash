@@ -1,6 +1,7 @@
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/common.dart';
+import 'package:fl_clash/models/config.dart';
 import 'package:fl_clash/models/state.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/views/proxies/list.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'setting.dart';
 import 'tab.dart';
+import 'test_url_selector.dart';
 
 class ProxiesView extends ConsumerStatefulWidget {
   const ProxiesView({super.key});
@@ -138,6 +140,10 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       proxiesStyleSettingProvider.select((state) => state.type),
     );
     final isLoading = ref.watch(loadingProvider(LoadingTag.proxies));
+    final body = switch (proxiesType) {
+      ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
+      ProxiesType.list => const ProxiesListView(),
+    };
     return CommonScaffold(
       key: _scaffoldKey,
       isLoading: isLoading,
@@ -146,10 +152,26 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       actions: _buildActions(context),
       title: context.appLocalizations.proxies,
       searchState: AppBarSearchState(onSearch: _onSearch),
-      body: switch (proxiesType) {
-        ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
-        ProxiesType.list => const ProxiesListView(),
-      },
+      body: Column(
+        children: [
+          Consumer(
+            builder: (_, ref, _) {
+              final urls = ref.watch(
+                appSettingProvider.select((state) => state.allTestUrls),
+              );
+              final selectedUrl = ref.watch(selectedTestUrlProvider);
+              return TestUrlSelector(
+                urls: urls,
+                selectedUrl: urls.contains(selectedUrl) ? selectedUrl : null,
+                onChanged: (value) {
+                  ref.read(selectedTestUrlProvider.notifier).set(value);
+                },
+              );
+            },
+          ),
+          Expanded(child: body),
+        ],
+      ),
     );
   }
 }

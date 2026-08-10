@@ -5,6 +5,11 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 
+bool shouldLogCoreCall(ActionMethod method) {
+  return method != ActionMethod.getTraffic &&
+      method != ActionMethod.getTotalTraffic;
+}
+
 mixin CoreInterface {
   Future<bool> init(InitParams params);
 
@@ -33,6 +38,8 @@ mixin CoreInterface {
   Future<bool> startListener();
 
   Future<bool> stopListener();
+
+  Future<bool> setIpForwarding(bool enabled);
 
   Future<String> getExternalProviders();
 
@@ -93,14 +100,17 @@ abstract class CoreHandlerInterface with CoreInterface {
       );
       return null;
     }
+    final silent = !shouldLogCoreCall(method);
     return await utils.handleWatch(
       onStart: () {
+        if (silent) return;
         commonPrint.log('Invoke ${method.name} ${DateTime.now()} $data');
       },
       function: () async {
         return invoke<T>(method: method, data: data, timeout: timeout);
       },
       onEnd: (data, elapsedMilliseconds) {
+        if (silent) return;
         commonPrint.log('Invoke ${method.name} ${elapsedMilliseconds}ms');
       },
     );
@@ -314,6 +324,15 @@ abstract class CoreHandlerInterface with CoreInterface {
   @override
   Future<bool> stopListener() async {
     return await _invoke<bool>(method: ActionMethod.stopListener) ?? false;
+  }
+
+  @override
+  Future<bool> setIpForwarding(bool enabled) async {
+    return await _invoke<bool>(
+          method: ActionMethod.setIpForwarding,
+          data: enabled,
+        ) ??
+        false;
   }
 
   @override

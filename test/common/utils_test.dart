@@ -58,8 +58,48 @@ void main() {
       expect(utils.getTimeText(3661000), '01:01:01');
     });
 
-    test('caps at 99:59:59', () {
-      expect(utils.getTimeText(100 * 3600 * 1000), '99:59:59');
+    test('keeps counting beyond 99 hours', () {
+      expect(utils.getTimeText(100 * 3600 * 1000), '100:00:00');
+      expect(
+        utils.getTimeText(
+          const Duration(hours: 123, minutes: 45, seconds: 6).inMilliseconds,
+        ),
+        '123:45:06',
+      );
+    });
+  });
+
+  group('getTimeDifference', () {
+    final start = DateTime(2026, 1, 1);
+
+    test('formats elapsed time with minutes within the current hour', () {
+      expect(
+        utils.getTimeDifference(
+          start,
+          now: start.add(const Duration(hours: 1, minutes: 2, seconds: 3)),
+        ),
+        '01:02:03',
+      );
+    });
+
+    test('does not render cumulative minutes as minutes', () {
+      expect(
+        utils.getTimeDifference(
+          start,
+          now: start.add(const Duration(hours: 99, minutes: 59, seconds: 59)),
+        ),
+        '99:59:59',
+      );
+    });
+
+    test('caps elapsed time above 99 hours', () {
+      expect(
+        utils.getTimeDifference(
+          start,
+          now: start.add(const Duration(hours: 100)),
+        ),
+        '99:59:59',
+      );
     });
   });
 

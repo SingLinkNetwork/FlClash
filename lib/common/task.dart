@@ -37,6 +37,17 @@ Future<String> _encodeYaml<T>(T content) async {
   return yaml.encode(content);
 }
 
+Map<String, dynamic> applyCorePatchConfig({
+  required Map<String, dynamic> rawConfig,
+  required PatchClashConfig patchConfig,
+}) {
+  final patchedConfig = Map<String, dynamic>.from(rawConfig);
+  if (!patchedConfig.containsKey('ipv6')) {
+    patchedConfig['ipv6'] = patchConfig.ipv6;
+  }
+  return patchedConfig;
+}
+
 Future<String> encodeMD5Task(String data) async {
   return compute<String, String>(_encodeMD5, data);
 }
@@ -94,7 +105,10 @@ Future<VM2<String, String>> makeRealProfileTask(
 Future<VM2<String, String>> _makeRealProfileTask(
   MakeRealProfileState data,
 ) async {
-  final rawConfig = Map.from(data.rawConfig);
+  final rawConfig = applyCorePatchConfig(
+    rawConfig: Map<String, dynamic>.from(data.rawConfig),
+    patchConfig: data.realPatchConfig,
+  );
   final realPatchConfig = data.realPatchConfig;
   final profilesPath = data.profilesPath;
   final profileId = data.profileId;
@@ -118,7 +132,6 @@ Future<VM2<String, String>> _makeRealProfileTask(
   rawConfig['external-ui-url'] = '';
   rawConfig['tcp-concurrent'] = realPatchConfig.tcpConcurrent;
   rawConfig['unified-delay'] = realPatchConfig.unifiedDelay;
-  rawConfig['ipv6'] = realPatchConfig.ipv6;
   rawConfig['log-level'] = realPatchConfig.logLevel.name;
   rawConfig['port'] = 0;
   rawConfig['socks-port'] = 0;
@@ -140,6 +153,9 @@ Future<VM2<String, String>> _makeRealProfileTask(
   rawConfig['tun']['stack'] = realPatchConfig.tun.stack.name;
   rawConfig['tun']['route-address'] = realPatchConfig.tun.routeAddress;
   rawConfig['tun']['auto-route'] = realPatchConfig.tun.autoRoute;
+  if (Platform.isMacOS) {
+    rawConfig['tun']['recvmsgx'] = realPatchConfig.tun.recvMsgX;
+  }
   rawConfig['geodata-loader'] = realPatchConfig.geodataLoader.name;
   if (rawConfig['sniffer']?['sniff'] != null) {
     for (final value in (rawConfig['sniffer']?['sniff'] as Map).values) {
@@ -329,6 +345,16 @@ Future<String> _encodeLogsTask(List<Log> data) async {
   return logsRawString;
 }
 
+String? normalizeLegacyId(Object? value) {
+  if (value is String) {
+    return value.isEmpty ? null : value;
+  }
+  if (value is num && value.isFinite && value == value.truncate()) {
+    return value.toInt().toString();
+  }
+  return null;
+}
+
 Future<MigrationData> oldToNowTask(Map<String, Object?> data) async {
   final homeDir = await appPath.homeDirPath;
   return compute<VM3<Map<String, Object?>, String, String>, MigrationData>(
@@ -377,13 +403,13 @@ Future<MigrationData> _oldToNowTask(
   final Map<String, int> idMap = {};
   final List<Script> scripts = [];
   for (final rawScript in rawScripts) {
-    final id = rawScript['id'] as String?;
+    final id = normalizeLegacyId(rawScript['id']);
     final content = rawScript['content'] as String?;
     final label = rawScript['label'] as String?;
     if (id == null || content == null || label == null) {
       continue;
     }
-    final newId = idMap.updateCacheValue(rawScript['id'], () => snowflake.id);
+    final newId = idMap.updateCacheValue(id, () => snowflake.id);
     final path = _getScriptPath(targetPath, newId.toString());
     final file = File(path);
     await file.safeWriteAsString(content);
@@ -395,7 +421,11 @@ Future<MigrationData> _oldToNowTask(
   final List<Rule> rules = [];
   final List<ProfileRuleLink> links = [];
   for (final rawRule in rawRules) {
-    final id = idMap.updateCacheValue(rawRule['id'], () => snowflake.id);
+    final oldId = normalizeLegacyId(rawRule['id']);
+    if (oldId == null) {
+      continue;
+    }
+    final id = idMap.updateCacheValue(oldId, () => snowflake.id);
     rawRule['id'] = id;
     final value = rawRule['value'] ?? '';
     rules.add(Rule.parse(value, id: id));
@@ -404,7 +434,7 @@ Future<MigrationData> _oldToNowTask(
   final List rawProfiles = configMap['profiles'] as List<dynamic>? ?? [];
   final List<Profile> profiles = [];
   for (final rawProfile in rawProfiles) {
-    final rawId = rawProfile['id'] as String?;
+    final rawId = normalizeLegacyId(rawProfile['id']);
     if (rawId == null) {
       continue;
     }
@@ -416,7 +446,11 @@ Future<MigrationData> _oldToNowTask(
       if (standardOverwrite != null) {
         final addedRules = standardOverwrite['addedRules'] as List? ?? [];
         for (final addRule in addedRules) {
-          final id = idMap.updateCacheValue(addRule['id'], () => snowflake.id);
+          final oldId = normalizeLegacyId(addRule['id']);
+          if (oldId == null) {
+            continue;
+          }
+          final id = idMap.updateCacheValue(oldId, () => snowflake.id);
           final value = addRule['value'] ?? '';
           rules.add(Rule.parse(value, id: id));
           links.add(
@@ -430,7 +464,10 @@ Future<MigrationData> _oldToNowTask(
         final disabledRuleIds = standardOverwrite['disabledRuleIds'] as List?;
         if (disabledRuleIds != null) {
           for (final disabledRuleId in disabledRuleIds) {
-            final newDisabledRuleId = idMap[disabledRuleId];
+            final oldDisabledRuleId = normalizeLegacyId(disabledRuleId);
+            final newDisabledRuleId = oldDisabledRuleId == null
+                ? null
+                : idMap[oldDisabledRuleId];
             if (newDisabledRuleId != null) {
               links.add(
                 ProfileRuleLink(
@@ -445,7 +482,7 @@ Future<MigrationData> _oldToNowTask(
       }
       final scriptOverwrite = overwrite['scriptOverwrite'] as Map?;
       if (scriptOverwrite != null) {
-        final scriptId = scriptOverwrite['scriptId'] as String?;
+        final scriptId = normalizeLegacyId(scriptOverwrite['scriptId']);
         rawProfile['scriptId'] = scriptId != null ? idMap[scriptId] : null;
       }
       rawProfile['overwriteType'] = overwrite['type'];
@@ -456,7 +493,7 @@ Future<MigrationData> _oldToNowTask(
     await sourceFile.safeCopy(targetFilePath);
     profiles.add(Profile.fromJson(rawProfile));
   }
-  final currentProfileId = configMap['currentProfileId'];
+  final currentProfileId = normalizeLegacyId(configMap['currentProfileId']);
   configMap['currentProfileId'] = currentProfileId != null
       ? idMap[currentProfileId]
       : null;

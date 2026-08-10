@@ -181,10 +181,25 @@ func readFile(path string) ([]byte, error) {
 	return data, err
 }
 
-func updateConfig(params *UpdateParams) {
+func applyAllowLanUpdate(general *config.General, allowLan *bool) {
+	if general == nil || allowLan == nil {
+		return
+	}
+
+	general.AllowLan = *allowLan
+}
+
+func updateConfig(params *UpdateParams) error {
 	runLock.Lock()
 	defer runLock.Unlock()
+	if params == nil {
+		return errors.New("update config params are nil")
+	}
+	if currentConfig == nil || currentConfig.General == nil {
+		return errors.New("core config is not loaded")
+	}
 	general := currentConfig.General
+	applyAllowLanUpdate(general, params.AllowLan)
 	if params.MixedPort != nil {
 		general.MixedPort = *params.MixedPort
 	}
@@ -221,6 +236,9 @@ func updateConfig(params *UpdateParams) {
 		resolver.DisableIPv6 = !general.IPv6
 	}
 	if params.ExternalController != nil {
+		if currentConfig.Controller == nil {
+			currentConfig.Controller = &config.Controller{}
+		}
 		currentConfig.Controller.ExternalController = *params.ExternalController
 		route.ReCreateServer(&route.Config{
 			Addr: currentConfig.Controller.ExternalController,
@@ -229,11 +247,24 @@ func updateConfig(params *UpdateParams) {
 
 	if params.Tun != nil {
 		general.Tun.Enable = params.Tun.Enable
-		general.Tun.AutoRoute = *params.Tun.AutoRoute
-		general.Tun.Device = *params.Tun.Device
-		general.Tun.RouteAddress = *params.Tun.RouteAddress
-		general.Tun.DNSHijack = *params.Tun.DNSHijack
-		general.Tun.Stack = *params.Tun.Stack
+		if params.Tun.AutoRoute != nil {
+			general.Tun.AutoRoute = *params.Tun.AutoRoute
+		}
+		if params.Tun.Device != nil {
+			general.Tun.Device = *params.Tun.Device
+		}
+		if params.Tun.RouteAddress != nil {
+			general.Tun.RouteAddress = *params.Tun.RouteAddress
+		}
+		if params.Tun.DNSHijack != nil {
+			general.Tun.DNSHijack = *params.Tun.DNSHijack
+		}
+		if params.Tun.Stack != nil {
+			general.Tun.Stack = *params.Tun.Stack
+		}
+		if params.Tun.RecvMsgX != nil {
+			general.Tun.RecvMsgX = *params.Tun.RecvMsgX
+		}
 	}
 
 	if params.GeoAutoUpdate != nil {
@@ -244,9 +275,8 @@ func updateConfig(params *UpdateParams) {
 	}
 
 	updateListeners()
-	if updater.GeoAutoUpdate() {
-		updater.RegisterGeoUpdaterWithCancel()
-	}
+	configureGeoUpdater()
+	return nil
 }
 
 func applyConfig(params *SetupParams) error {
@@ -262,9 +292,7 @@ func applyConfig(params *SetupParams) error {
 	hub.ApplyConfig(currentConfig)
 	patchSelectGroup(params.SelectedMap)
 	updateListeners()
-	if updater.GeoAutoUpdate() {
-		updater.RegisterGeoUpdaterWithCancel()
-	}
+	configureGeoUpdater()
 	return err
 }
 

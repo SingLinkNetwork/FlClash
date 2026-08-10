@@ -5,28 +5,79 @@ import 'package:fl_clash/common/common.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
+String? resolvePortableDataRoot({
+  required bool isWindows,
+  required String executableDirectory,
+  required bool appDirectoryWritable,
+}) {
+  if (!isWindows || !appDirectoryWritable) {
+    return null;
+  }
+  return join(executableDirectory, 'data');
+}
+
 class AppPath {
   static AppPath? _instance;
   Completer<Directory> dataDir = Completer();
-  Completer<Directory> downloadDir = Completer();
+  Completer<Directory?> downloadDir = Completer();
   Completer<Directory> tempDir = Completer();
   Completer<Directory> cacheDir = Completer();
   late String appDirPath;
 
   AppPath._internal() {
     appDirPath = join(dirname(Platform.resolvedExecutable));
-    getApplicationSupportDirectory().then((value) {
-      dataDir.complete(value);
-    });
+    _loadDataDirectories();
     getTemporaryDirectory().then((value) {
       tempDir.complete(value);
     });
-    getDownloadsDirectory().then((value) {
-      downloadDir.complete(value);
-    });
-    getApplicationCacheDirectory().then((value) {
-      cacheDir.complete(value);
-    });
+    _loadDownloadDir();
+  }
+
+  Future<void> _loadDataDirectories() async {
+    final portableDataRoot = resolvePortableDataRoot(
+      isWindows: Platform.isWindows,
+      executableDirectory: appDirPath,
+      appDirectoryWritable:
+          Platform.isWindows && await _isDirectoryWritable(appDirPath),
+    );
+    if (portableDataRoot != null) {
+      dataDir.complete(Directory(portableDataRoot));
+      cacheDir.complete(Directory(join(appDirPath, 'cache')));
+      return;
+    }
+
+    dataDir.complete(await getApplicationSupportDirectory());
+    cacheDir.complete(await getApplicationCacheDirectory());
+  }
+
+  Future<bool> _isDirectoryWritable(String directoryPath) async {
+    final probePath = join(
+      directoryPath,
+      '.flclash-write-test-$pid-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    final probe = File(probePath);
+    try {
+      await probe.writeAsString('', flush: true);
+      await probe.delete();
+      return true;
+    } catch (_) {
+      try {
+        if (await probe.exists()) {
+          await probe.delete();
+        }
+      } catch (_) {}
+      return false;
+    }
+  }
+
+  Future<void> _loadDownloadDir() async {
+    try {
+      downloadDir.complete(await getDownloadsDirectory());
+    } catch (_) {
+      // A downloads directory is optional on desktop. File pickers can use
+      // their platform default when the known folder cannot be resolved.
+      downloadDir.complete(null);
+    }
   }
 
   factory AppPath() {
@@ -51,9 +102,8 @@ class AppPath {
     return join(executableDirPath, '$appHelperService$executableExtension');
   }
 
-  Future<String> get downloadDirPath async {
-    final directory = await downloadDir.future;
-    return directory.path;
+  Future<String?> get downloadDirPath {
+    return resolveExistingDirectoryPath(downloadDir.future);
   }
 
   Future<String> get homeDirPath async {
@@ -147,6 +197,26 @@ class AppPath {
   Future<String> get tempPath async {
     final directory = await tempDir.future;
     return directory.path;
+  }
+}
+
+Future<String?> resolveExistingDirectoryPath(
+  Future<Directory?> directoryFuture, {
+  Duration timeout = const Duration(seconds: 2),
+}) async {
+  try {
+    final directory = await directoryFuture.timeout(
+      timeout,
+      onTimeout: () {
+        return null;
+      },
+    );
+    if (directory == null || !await directory.exists()) {
+      return null;
+    }
+    return directory.path;
+  } catch (_) {
+    return null;
   }
 }
 

@@ -198,6 +198,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "basicInfo": MessageLookupByLibrary.simpleMessage("Basic info"),
     "basicStrategy": MessageLookupByLibrary.simpleMessage("Basic strategy"),
+    "batchAdd": MessageLookupByLibrary.simpleMessage("Batch add"),
+    "batchAddHint": MessageLookupByLibrary.simpleMessage(
+      "Paste one domain per line, or separate domains with commas or semicolons.",
+    ),
     "batteryOptimizationDesc": MessageLookupByLibrary.simpleMessage(
       "To ensure background operation, please disable battery optimization for this app. Tap to go to settings.",
     ),
@@ -281,6 +285,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "createProfile": MessageLookupByLibrary.simpleMessage("Create Profile"),
     "creationTime": MessageLookupByLibrary.simpleMessage("Creation time"),
     "custom": MessageLookupByLibrary.simpleMessage("Custom"),
+    "customTestUrls": MessageLookupByLibrary.simpleMessage(
+      "Custom test websites",
+    ),
     "cut": MessageLookupByLibrary.simpleMessage("Cut"),
     "dark": MessageLookupByLibrary.simpleMessage("Dark"),
     "dashboard": MessageLookupByLibrary.simpleMessage("Dashboard"),
@@ -439,11 +446,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "host": MessageLookupByLibrary.simpleMessage("Host"),
     "hostsDesc": MessageLookupByLibrary.simpleMessage("Add Hosts"),
     "hotkeyConflict": MessageLookupByLibrary.simpleMessage("Hotkey conflict"),
+    "hotkeyGlobal": MessageLookupByLibrary.simpleMessage(
+      "Global (works when FlClash is not focused)",
+    ),
+    "hotkeyInApp": MessageLookupByLibrary.simpleMessage(
+      "Only when FlClash is focused",
+    ),
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage(
       "Hotkey Management",
     ),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "Use keyboard to control applications",
+    ),
+    "hotkeyTriggerCondition": MessageLookupByLibrary.simpleMessage(
+      "Trigger condition",
     ),
     "hours": MessageLookupByLibrary.simpleMessage("hours"),
     "hoursAgo": m10,
@@ -546,6 +562,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Used for UWP loopback unlocking",
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Loose"),
+    "macOSIpForwarding": MessageLookupByLibrary.simpleMessage("LAN gateway"),
+    "macOSIpForwardingDesc": MessageLookupByLibrary.simpleMessage(
+      "Forward LAN traffic through this Mac while TUN is running",
+    ),
     "matchSourceIp": MessageLookupByLibrary.simpleMessage("Match source IP"),
     "maxFailedTimes": MessageLookupByLibrary.simpleMessage("Max failed times"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Memory info"),
@@ -974,6 +994,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("Submit"),
     "suspended": MessageLookupByLibrary.simpleMessage("Suspended..."),
     "sync": MessageLookupByLibrary.simpleMessage("Sync"),
+    "syncDirect": MessageLookupByLibrary.simpleMessage("Sync directly"),
+    "syncViaProxy": MessageLookupByLibrary.simpleMessage("Sync via proxy"),
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "systemApp": MessageLookupByLibrary.simpleMessage("System APP"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("System proxy"),
@@ -1009,9 +1031,26 @@ class MessageLookup extends MessageLookupByLibrary {
     "tools": MessageLookupByLibrary.simpleMessage("Tools"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxy Port"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Traffic usage"),
+    "trayClickAction": MessageLookupByLibrary.simpleMessage("Tray icon click"),
+    "trayClickActionDesc": MessageLookupByLibrary.simpleMessage(
+      "Choose what a left click on the tray icon does",
+    ),
+    "trayClickAction_showMainWindow": MessageLookupByLibrary.simpleMessage(
+      "Show main window",
+    ),
+    "trayClickAction_showTrayMenu": MessageLookupByLibrary.simpleMessage(
+      "Show tray menu",
+    ),
+    "trayClickAction_toggleProxy": MessageLookupByLibrary.simpleMessage(
+      "Start/stop proxy",
+    ),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunDesc": MessageLookupByLibrary.simpleMessage(
       "only effective in administrator mode",
+    ),
+    "tunRecvMsgX": MessageLookupByLibrary.simpleMessage("TUN recvmsgx"),
+    "tunRecvMsgXDesc": MessageLookupByLibrary.simpleMessage(
+      "Use macOS recvmsgx for better TUN receive performance; turn it off if it causes instability",
     ),
     "turnOff": MessageLookupByLibrary.simpleMessage("Turn Off"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Turn On"),

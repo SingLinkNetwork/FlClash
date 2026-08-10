@@ -290,6 +290,7 @@ const _$ActionMethodEnumMap = {
   ActionMethod.stopLog: 'stopLog',
   ActionMethod.startListener: 'startListener',
   ActionMethod.stopListener: 'stopListener',
+  ActionMethod.setIpForwarding: 'setIpForwarding',
   ActionMethod.getCountryCode: 'getCountryCode',
   ActionMethod.getMemory: 'getMemory',
   ActionMethod.crash: 'crash',

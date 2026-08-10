@@ -10,14 +10,22 @@ import 'package:rust_api/rust_api.dart';
 import 'application.dart';
 import 'common/common.dart';
 
-Future<void> main() async {
+Future<void> main(List<String> arguments) async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows) {
+    WindowsPasteFix.instance.install();
+  }
   try {
+    configureMacOSSqlite();
     if (system.isDesktop) {
       await RustLib.init();
     }
     final version = await system.version;
-    final container = await globalState.init(version);
+    final container = await globalState.init(
+      version,
+      startProxyFromCommandLine:
+          Platform.isLinux && shouldStartProxyFromArguments(arguments),
+    );
     HttpOverrides.global = FlClashHttpOverrides();
     runApp(
       UncontrolledProviderScope(

@@ -1,0 +1,935 @@
+name: pull-request-validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.44.8'
+
+jobs:
+  dart-format:
+    name: Dart format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify changed Dart files are formatted
+        run: ruby tool/verify_dart_format.rb
+
+  dart-analyze:
+    name: Dart analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+  flutter-tests:
+    name: Flutter tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test --reporter expanded
+
+  go-tests:
+    name: Go tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Test Go core scheduler
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go test .
+
+  go-vet:
+    name: Go vet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Vet Go core scheduler
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go vet .
+
+  core-cli-arguments:
+    name: Core CLI arguments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Verify invalid CLI arguments do not panic
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go test . -run '^TestSocketPathFromArgs$' -count=1
+
+  linux-cli-start:
+    name: Linux CLI startup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test Linux CLI startup arguments
+        run: flutter test test/common/startup_test.dart --reporter expanded
+
+  macos-tun-recvmsgx:
+    name: macOS TUN recvmsgx
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test recvmsgx model persistence
+        run: flutter test test/models/config_test.dart --name 'Tun recvmsgx JSON' --reporter expanded
+
+      - name: Test recvmsgx profile output
+        run: flutter test test/common/task_test.dart --name 'profile output writes recvmsgx only for macOS' --reporter expanded
+
+  macos-hotkey-scope:
+    name: macOS hotkey trigger scope
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test hotkey scope persistence
+        run: flutter test test/models/config_test.dart --name 'HotKeyAction JSON' --reporter expanded
+
+      - name: Test hotkey scope mapping
+        run: flutter test test/enum/enum_test.dart --name 'HotKeyTriggerScopeExt' --reporter expanded
+
+  macos-ip-forwarding:
+    name: macOS LAN gateway forwarding
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test macOS LAN gateway wiring
+        run: >-
+          flutter test
+          test/core/ip_forwarding_action_test.dart
+          test/models/macos_ip_forwarding_test.dart
+          test/providers/ip_forwarding_state_test.dart
+          test/views/config/network_test.dart
+          --reporter expanded
+
+      - name: Test core sysctl state machine
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go test ip_forwarding.go ip_forwarding_test.go -count=1
+
+  custom-test-urls:
+    name: Custom test URL tests
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test custom website configuration and proxy selection
+        run: >-
+          flutter test
+          test/common/test_url_test.dart
+          test/models/config_test.dart
+          test/views/proxies/common_test.dart
+          test/views/proxies/test_url_selector_test.dart
+          --reporter expanded
+
+  windows-core-callback:
+    name: Windows core callback cleanup
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test core callback cleanup
+        run: flutter test test/core/service_test.dart --reporter expanded
+
+  windows-portable-data:
+    name: Windows portable data paths
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test portable data path policy
+        run: flutter test test/common/path_test.dart --reporter expanded
+
+  windows-msix:
+    name: Windows MSIX (${{ matrix.architecture }})
+    needs:
+      - dart-format
+      - dart-analyze
+      - flutter-tests
+      - go-tests
+      - go-vet
+      - static-source
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x64
+            os: windows-2022
+            flutter_architecture: x64
+          - architecture: arm64
+            os: windows-11-arm
+            flutter_architecture: x64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Enable git long paths
+        run: git config --global core.longpaths true
+
+      - name: Setup Flutter
+        id: flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: ${{ matrix.flutter_architecture }}
+          cache: true
+
+      - name: Bootstrap native ARM64 Flutter SDK
+        if: ${{ matrix.architecture == 'arm64' }}
+        shell: pwsh
+        run: |
+          $flutterCachePath = "${{ steps.flutter.outputs['CACHE-PATH'] }}"
+          $flutterRoot = if (Test-Path -LiteralPath "$flutterCachePath\bin\flutter.bat") {
+            $flutterCachePath
+          } elseif (Test-Path -LiteralPath "$flutterCachePath\flutter\bin\flutter.bat") {
+            Join-Path $flutterCachePath 'flutter'
+          } else {
+            ''
+          }
+          Write-Host "PROCESSOR_ARCHITECTURE=$env:PROCESSOR_ARCHITECTURE"
+          Write-Host "Flutter cache path: $flutterCachePath"
+          Write-Host "Flutter root: $flutterRoot"
+          if ([string]::IsNullOrWhiteSpace($flutterRoot) -or -not (Test-Path -LiteralPath $flutterRoot)) {
+            throw "Flutter action did not provide a valid SDK root beneath CACHE-PATH: $flutterCachePath"
+          }
+          Remove-Item -Force "$flutterRoot\bin\cache\engine-dart-sdk.stamp" -ErrorAction SilentlyContinue
+          Remove-Item -Force "$flutterRoot\bin\cache\flutter_tools.snapshot" -ErrorAction SilentlyContinue
+          Remove-Item -Force "$flutterRoot\bin\cache\flutter_tools.stamp" -ErrorAction SilentlyContinue
+          & "$flutterRoot\bin\internal\update_dart_sdk.ps1"
+          $dartVersion = & "$flutterRoot\bin\dart.bat" --version 2>&1 | Out-String
+          Write-Host $dartVersion
+          if ($dartVersion -notmatch 'windows_arm64') {
+            throw "Expected a native ARM64 Dart SDK but got: $dartVersion"
+          }
+          & "$flutterRoot\bin\flutter.bat" precache --windows
+          $engineDirectory = "$flutterRoot\bin\cache\artifacts\engine"
+          if (-not (Test-Path -LiteralPath "$engineDirectory\windows-arm64-release")) {
+            throw 'Expected native windows-arm64-release Flutter engine artifacts'
+          }
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build native MSIX package
+        run: dart setup.dart windows --targets msix -v
+
+      - name: Verify native MSIX package
+        shell: pwsh
+        env:
+          EXPECTED_ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          $packages = @(Get-ChildItem -Path dist -Filter '*.msix' -File)
+          if ($packages.Count -ne 1) {
+            throw "Expected exactly one native MSIX package, found $($packages.Count)"
+          }
+          $expected = Join-Path (Get-Location) "dist\FlClash-$env:EXPECTED_ARCHITECTURE.msix"
+          if (-not (Test-Path -LiteralPath $expected -PathType Leaf)) {
+            throw "Expected package was not generated: $expected"
+          }
+          pwsh -NoProfile -File tool/verify_msix.ps1 `
+            -PackagePath $packages[0].FullName `
+            -ExpectedArchitecture $env:EXPECTED_ARCHITECTURE
+
+      - name: Upload native MSIX package
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix-${{ matrix.architecture }}
+          path: dist/FlClash-${{ matrix.architecture }}.msix
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-msixbundle:
+    name: Windows MSIXBundle
+    needs: windows-msix
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download x64 MSIX package
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-msix-x64
+          path: msix-input/x64
+
+      - name: Download ARM64 MSIX package
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-msix-arm64
+          path: msix-input/arm64
+
+      - name: Bundle x64 and ARM64 packages
+        shell: pwsh
+        run: |
+          $x64 = (Get-ChildItem -Path msix-input/x64 -Filter '*.msix' -File | Select-Object -First 1).FullName
+          $arm64 = (Get-ChildItem -Path msix-input/arm64 -Filter '*.msix' -File | Select-Object -First 1).FullName
+          if (-not $x64 -or -not $arm64) {
+            throw 'Both x64 and ARM64 MSIX packages are required'
+          }
+          pwsh -NoProfile -File tool/bundle_msix.ps1 `
+            -X64Package $x64 `
+            -Arm64Package $arm64 `
+            -OutputPath (Join-Path (Get-Location) 'dist\FlClash.msixbundle')
+
+      - name: Verify MSIXBundle contents
+        shell: pwsh
+        run: pwsh -NoProfile -File tool/verify_msixbundle.ps1 -BundlePath dist/FlClash.msixbundle
+
+      - name: Upload MSIXBundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msixbundle
+          path: dist/FlClash.msixbundle
+          if-no-files-found: error
+          retention-days: 7
+
+  proxy-environment:
+    name: Proxy environment menu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test proxy environment commands and tray menu
+        run: flutter test test/common/proxy_environment_test.dart test/common/tray_test.dart --reporter expanded
+
+  static-source:
+    name: Static ${{ matrix.id }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: lan-proxy-runtime
+            script: tool/verify_lan_proxy_toggle.rb
+          - id: delay-test-concurrency
+            script: tool/verify_delay_test_concurrency.rb
+          - id: android-jni-guard
+            script: tool/verify_android_jni_resolve_guard.rb
+          - id: window-visibility-queue
+            script: tool/verify_window_visibility_queue.rb
+          - id: linux-tray-clipboard
+            script: tool/verify_linux_tray_clipboard.rb
+          - id: windows-paste-workaround
+            script: tool/verify_windows_paste_fix.rb
+          - id: windows-portable-data
+            script: tool/verify_windows_portable_data.rb
+          - id: windows-uninstall-cleanup
+            script: tool/verify_windows_uninstall_cleanup.rb
+          - id: proxy-environment-menu
+            script: tool/verify_proxy_environment_menu.rb
+          - id: windows-msixbundle
+            script: tool/verify_msixbundle_pipeline.rb
+          - id: windows-search-close
+            script: tool/verify_windows_search_close.rb
+          - id: linux-renderer-fallback
+            script: tool/verify_linux_renderer_fallback.rb
+          - id: linux-cjk-font-fallback
+            script: tool/verify_linux_cjk_font_fallback.rb
+          - id: android-background-location
+            script: tool/verify_android_background_location_permission.rb
+          - id: android-tile-background
+            script: tool/verify_android_tile_background_toggle.rb
+          - id: android-vpn-stop-cleanup
+            script: tool/verify_android_proxy_stop.rb
+          - id: android-service-lifecycle
+            script: tool/verify_android_service_lifecycle.rb
+          - id: linux-x11-thread
+            script: tool/verify_linux_x11_thread_init.rb
+          - id: windows-maximize-work-area
+            script: tool/verify_windows_maximize_work_area.rb
+          - id: windows-proxy-shutdown
+            script: tool/verify_windows_proxy_shutdown.rb
+          - id: windows-tun-metric-cleanup
+            script: tool/verify_windows_tun_metric_cleanup.rb
+          - id: desktop-render-visibility
+            script: tool/verify_desktop_render_visibility.rb
+          - id: windows-wifi-ssid
+            script: tool/verify_windows_wifi_ssid_plugin.rb
+          - id: macos-window-lifecycle
+            script: tool/verify_macos_window_lifecycle.rb
+          - id: macos-tray-destroy
+            script: tool/verify_macos_tray_destroy.rb
+          - id: macos-wifi-ssid
+            script: tool/verify_macos_wifi_ssid_plugin.rb
+          - id: linux-cli-start
+            script: tool/verify_linux_cli_start.rb
+          - id: macos-tun-recvmsgx
+            script: tool/verify_macos_tun_recvmsgx.rb
+          - id: hotkey-trigger-scope
+            script: tool/verify_hotkey_scope.rb
+          - id: macos-ip-forwarding
+            script: tool/verify_macos_ip_forwarding.rb
+          - id: macos-tray-click-action
+            script: tool/verify_macos_tray_click_action.rb
+          - id: desktop-tray-proxy-toggle
+            script: tool/verify_desktop_tray_click_action.rb
+          - id: linux-startup-wm-class
+            script: tool/verify_linux_startup_wm_class.rb
+          - id: linux-deb-gzip
+            script: tool/verify_linux_deb_compression_wiring.rb
+          - id: subscription-sync-route
+            script: tool/verify_subscription_sync_route.rb
+          - id: custom-test-urls
+            script: tool/verify_custom_test_urls.rb
+          - id: core-callback-cleanup
+            script: tool/verify_core_callback_cleanup.rb
+          - id: ci-layout
+            script: tool/verify_ci_layout.rb
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run ${{ matrix.id }} verifier
+        run: ruby ${{ matrix.script }}
+
+  linux-packaging:
+    name: Linux packages and desktop entry
+    needs:
+      - dart-format
+      - dart-analyze
+      - flutter-tests
+      - go-tests
+      - go-vet
+      - static-source
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Linux packages
+        run: dart setup.dart linux --targets deb,appimage,rpm -v
+
+      - name: Verify packaged desktop entries
+        run: ruby tool/verify_linux_packages.rb dist
+
+      - name: Verify DEB gzip compression
+        run: ruby tool/verify_linux_deb_compression.rb dist
+
+      - name: Test package verifier
+        run: ruby tool/verify_linux_packages_test.rb
+
+      - name: Test DEB compression verifier
+        run: ruby tool/verify_linux_deb_compression_test.rb
+
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/*.appimage
+            dist/*.AppImage
+          if-no-files-found: error
+
+  build:
+    name: Build ${{ matrix.platform }} on ${{ matrix.os }}
+    needs:
+      - dart-format
+      - dart-analyze
+      - flutter-tests
+      - go-tests
+      - go-vet
+      - core-cli-arguments
+      - linux-cli-start
+      - macos-tun-recvmsgx
+      - macos-hotkey-scope
+      - macos-ip-forwarding
+      - custom-test-urls
+      - windows-core-callback
+      - proxy-environment
+      - windows-msixbundle
+      - static-source
+      - linux-packaging
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            os: ubuntu-latest
+            artifact_path: build/app/outputs/flutter-apk/app-debug.apk
+          - platform: linux
+            os: ubuntu-24.04
+            artifact_path: build/linux/x64/debug/bundle
+          - platform: windows
+            os: windows-2022
+            artifact_path: build/windows/x64/runner/Debug
+          - platform: macos
+            os: macos-15-intel
+            artifact_path: build/macos/Build/Products/Debug/FlClash.app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Enable git long paths
+        if: startsWith(matrix.os, 'windows')
+        run: git config --global core.longpaths true
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            libkeybinder-3.0-dev \
+            ninja-build
+
+      - name: Setup Android CI configuration
+        if: matrix.platform == 'android'
+        run: cp android/app/google-services.ci.json android/app/google-services.json
+
+      - name: Setup Android NDK
+        if: matrix.platform == 'android'
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r28c
+          add-to-path: true
+          link-to-sdk: true
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Android
+        if: matrix.platform == 'android'
+        run: flutter build apk --debug --target-platform android-arm64
+
+      - name: Build Linux
+        if: matrix.platform == 'linux'
+        run: flutter build linux --debug
+
+      - name: Verify Linux QuickJS bundle
+        if: matrix.platform == 'linux'
+        run: ruby tool/verify_linux_quickjs_bundle.rb build/linux/x64/debug/bundle
+
+      - name: Build Windows
+        if: matrix.platform == 'windows'
+        run: flutter build windows --debug
+
+      - name: Verify Windows installer runtime
+        if: matrix.platform == 'windows'
+        run: ruby tool/verify_windows_installer_runtime.rb
+
+      - name: Build Windows installer
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $innoSetup = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $innoSetup)) {
+            choco install innosetup --no-progress --yes
+          }
+          dart setup.dart windows --targets exe
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows installer build failed with exit code $LASTEXITCODE"
+          }
+          $installer = Get-ChildItem -Path dist -Filter '*-setup.exe' -File | Select-Object -First 1
+          if (-not $installer) {
+            throw 'Windows installer artifact was not generated'
+          }
+
+      - name: Verify Windows installer installs Visual C++ runtime
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -Path dist -Filter '*-setup.exe' -File | Select-Object -First 1
+          if (-not $installer) {
+            throw 'Windows installer artifact was not generated'
+          }
+          $runtimeKey = 'HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
+          $installerLog = Join-Path $env:TEMP 'flclash-installer.log'
+          New-Item -Path $runtimeKey -Force | Out-Null
+          New-ItemProperty -Path $runtimeKey -Name Installed -PropertyType DWord -Value 0 -Force | Out-Null
+          try {
+            $process = Start-Process -FilePath $installer.FullName -ArgumentList @(
+              '/VERYSILENT',
+              '/SUPPRESSMSGBOXES',
+              '/NORESTART',
+              '/SP-',
+              "/LOG=$installerLog"
+            ) -Wait -PassThru
+            if ($process.ExitCode -ne 0) {
+              if (Test-Path $installerLog) {
+                Get-Content $installerLog
+              }
+              throw "Windows installer execution failed with exit code $($process.ExitCode)"
+            }
+            $downloaded = Select-String -Path $installerLog -Pattern 'Downloading Microsoft Visual C\+\+ Redistributable'
+            $executed = Select-String -Path $installerLog -Pattern 'Microsoft Visual C\+\+ Redistributable installer returned (0|3010)'
+            if (-not $downloaded -or -not $executed) {
+              Get-Content $installerLog
+              throw 'Windows installer did not execute the Visual C++ runtime bootstrap path successfully'
+            }
+          } finally {
+            New-Item -Path $runtimeKey -Force | Out-Null
+            New-ItemProperty -Path $runtimeKey -Name Installed -PropertyType DWord -Value 1 -Force | Out-Null
+          }
+
+      - name: Verify Windows uninstaller cleans user data
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -Path dist -Filter '*-setup.exe' -File | Select-Object -First 1
+          if (-not $installer) {
+            throw 'Windows installer artifact was not generated'
+          }
+          $installDir = Join-Path $env:RUNNER_TEMP 'FlClash-cleanup-test'
+          $roamingData = Join-Path $env:APPDATA 'com.follow\clash'
+          $localData = Join-Path $env:LOCALAPPDATA 'com.follow\clash'
+          Remove-Item -LiteralPath $installDir, $roamingData, $localData -Recurse -Force -ErrorAction SilentlyContinue
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART',
+            '/SP-',
+            "/DIR=`"$installDir`""
+          ) -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "Windows installer execution failed with exit code $($install.ExitCode)"
+          }
+          $shortcutRoots = @(
+            (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'),
+            (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs')
+          )
+          $shortcut = $shortcutRoots |
+            ForEach-Object { Get-ChildItem -LiteralPath $_ -Filter 'FlClash.lnk' -Recurse -File -ErrorAction SilentlyContinue } |
+            Select-Object -First 1
+          if (-not $shortcut -or -not (Test-Path -LiteralPath $shortcut.FullName)) {
+            throw 'Windows installer did not create a Start Menu shortcut from {autoprograms}'
+          }
+          $portableData = Join-Path $installDir 'data'
+          $portableCache = Join-Path $installDir 'cache'
+          New-Item -ItemType Directory -Force -Path $roamingData, $localData | Out-Null
+          Set-Content -LiteralPath (Join-Path $roamingData 'sentinel.txt') -Value 'test'
+          Set-Content -LiteralPath (Join-Path $localData 'sentinel.txt') -Value 'test'
+          $uninstaller = Join-Path $installDir 'unins000.exe'
+          if (-not (Test-Path -LiteralPath $uninstaller)) {
+            throw "Windows uninstaller not found: $uninstaller"
+          }
+          $preservingUninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART'
+          ) -Wait -PassThru
+          if ($preservingUninstall.ExitCode -ne 0) {
+            throw "Windows preserving uninstaller execution failed with exit code $($preservingUninstall.ExitCode)"
+          }
+          if (Test-Path -LiteralPath $installDir) {
+            throw "Windows uninstaller left the install directory behind: $installDir"
+          }
+          foreach ($path in @($roamingData, $localData)) {
+            if (-not (Test-Path -LiteralPath $path)) {
+              throw "Default Windows uninstall unexpectedly removed user data: $path"
+            }
+          }
+          if (Test-Path -LiteralPath $shortcut.FullName) {
+            throw "Windows uninstaller left Start Menu shortcut behind: $($shortcut.FullName)"
+          }
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART',
+            '/SP-',
+            "/DIR=`"$installDir`""
+          ) -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "Windows reinstall execution failed with exit code $($install.ExitCode)"
+          }
+          $shortcut = $shortcutRoots |
+            ForEach-Object { Get-ChildItem -LiteralPath $_ -Filter 'FlClash.lnk' -Recurse -File -ErrorAction SilentlyContinue } |
+            Select-Object -First 1
+          if (-not $shortcut -or -not (Test-Path -LiteralPath $shortcut.FullName)) {
+            throw 'Windows reinstall did not create a Start Menu shortcut'
+          }
+          New-Item -ItemType Directory -Force -Path $portableData, $portableCache | Out-Null
+          Set-Content -LiteralPath (Join-Path $portableData 'sentinel.txt') -Value 'test'
+          Set-Content -LiteralPath (Join-Path $portableCache 'sentinel.txt') -Value 'test'
+          $uninstaller = Join-Path $installDir 'unins000.exe'
+          if (-not (Test-Path -LiteralPath $uninstaller)) {
+            throw "Windows uninstaller not found after reinstall: $uninstaller"
+          }
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART',
+            '/CLEANUSERDATA'
+          ) -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "Windows uninstaller execution failed with exit code $($uninstall.ExitCode)"
+          }
+          foreach ($path in @($installDir, $roamingData, $localData)) {
+            if (Test-Path -LiteralPath $path) {
+              throw "Windows uninstaller left data behind: $path"
+            }
+          }
+          if (Test-Path -LiteralPath $shortcut.FullName) {
+            throw "Windows uninstaller left Start Menu shortcut behind: $($shortcut.FullName)"
+          }
+
+      - name: Build macOS
+        if: matrix.platform == 'macos'
+        run: flutter build macos --debug
+
+      - name: Verify macOS SQLite bundle and loader
+        if: matrix.platform == 'macos'
+        run: ruby tool/verify_macos_sqlite_bundle.rb build/macos/Build/Products/Debug/FlClash.app lib/common/sqlite.dart x86_64
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-${{ matrix.platform }}-build
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          retention-days: 7
+
+  ci-complete:
+    name: CI complete
+    if: ${{ always() }}
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail when the complete build matrix is not successful
+        if: needs.build.result != 'success'
+        run: exit 1
+      - name: Confirm all required CI jobs passed
+        run: echo 'All required CI jobs passed.'

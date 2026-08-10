@@ -27,4 +27,10 @@ abstract class ProxyPlatform extends PlatformInterface {
   Future<bool?> stopProxy() {
     throw UnimplementedError('stopProxy() has not been implemented.');
   }
+
+  Future<bool?> resetTunInterface() {
+    throw UnimplementedError(
+      'resetTunInterface() has not been implemented.',
+    );
+  }
 }

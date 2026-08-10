@@ -202,12 +202,12 @@ class ProfileItem extends StatelessWidget {
     BaseNavigator.push<String>(context, PreviewProfileView(profile: profile));
   }
 
-  Future updateProfile() async {
+  Future updateProfile({bool useProxy = true}) async {
     if (profile.type == ProfileType.file) return;
     await globalState.loadingRun(() async {
       await globalState.container
           .read(profilesActionProvider.notifier)
-          .updateProfile(profile, showLoading: true);
+          .updateProfile(profile, showLoading: true, useProxy: useProxy);
     }, tag: LoadingTag.profiles);
   }
 
@@ -258,7 +258,7 @@ class ProfileItem extends StatelessWidget {
     final res = await globalState.safeRun<bool>(() async {
       final mFile = await profile.file;
       final value = await picker.saveFile(
-        profile.realLabel,
+        profile.realLabel.yamlFileName,
         mFile.readAsBytesSync(),
       );
       if (value == null) return false;
@@ -322,9 +322,22 @@ class ProfileItem extends StatelessWidget {
                               PopupMenuItemData(
                                 icon: Icons.sync_alt_sharp,
                                 label: appLocalizations.sync,
-                                onPressed: () {
-                                  updateProfile();
-                                },
+                                subItems: [
+                                  PopupMenuItemData(
+                                    icon: Icons.cloud_outlined,
+                                    label: appLocalizations.syncViaProxy,
+                                    onPressed: () {
+                                      updateProfile(useProxy: true);
+                                    },
+                                  ),
+                                  PopupMenuItemData(
+                                    icon: Icons.link,
+                                    label: appLocalizations.syncDirect,
+                                    onPressed: () {
+                                      updateProfile(useProxy: false);
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                             PopupMenuItemData(
