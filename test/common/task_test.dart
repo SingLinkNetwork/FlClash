@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 void main() {
   group('legacy backup identifiers', () {
@@ -19,6 +21,30 @@ void main() {
       expect(normalizeLegacyId(1.5), isNull);
       expect(normalizeLegacyId(true), isNull);
     });
+  });
+
+  test('releases a backup file when extraction fails', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'fl_clash_restore_lock_test_',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final backupFile = File(p.join(directory.path, 'backup.zip'));
+    final restoreDir = Directory(p.join(directory.path, 'restore'));
+    await restoreDir.create();
+    await Directory(p.join(restoreDir.path, configJsonName)).create();
+    final archive = Archive()
+      ..addFile(ArchiveFile.string(configJsonName, '{}'));
+    final zipBytes = ZipEncoder().encodeBytes(archive);
+    await backupFile.writeAsBytes(zipBytes);
+
+    await expectLater(
+      restoreBackupArchive(backupFile.path, restoreDir.path),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    final result = await Process.run('lsof', ['-Fn', '-p', '$pid']);
+    expect(result.exitCode, 0);
+    expect(result.stdout, isNot(contains(backupFile.path)));
   });
 
   test('profile ipv6 value wins over the client fallback', () {

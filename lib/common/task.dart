@@ -641,23 +641,35 @@ Future<MigrationData> restoreTask() async {
   );
 }
 
+Future<void> restoreBackupArchive(
+  String backupFilePath,
+  String restoreDirPath,
+) async {
+  final input = InputFileStream(backupFilePath);
+  try {
+    final archive = ZipDecoder().decodeStream(input);
+    final restoreDir = Directory(restoreDirPath);
+    await restoreDir.create(recursive: true);
+    for (final file in archive.files) {
+      final outPath = join(restoreDirPath, posix.normalize(file.name));
+      final outputStream = OutputFileStream(outPath);
+      try {
+        file.writeContent(outputStream);
+      } finally {
+        await outputStream.close();
+      }
+    }
+  } finally {
+    await input.close();
+  }
+}
+
 Future<MigrationData> _restoreTask(RootIsolateToken token) async {
   BackgroundIsolateBinaryMessenger.ensureInitialized(token);
   final backupFilePath = await appPath.backupFilePath;
   final restoreDirPath = await appPath.restoreDirPath;
   final homeDirPath = await appPath.homeDirPath;
-  final zipDecoder = ZipDecoder();
-  final input = InputFileStream(backupFilePath);
-  final archive = zipDecoder.decodeStream(input);
-  final dir = Directory(restoreDirPath);
-  await dir.create(recursive: true);
-  for (final file in archive.files) {
-    final outPath = join(restoreDirPath, posix.normalize(file.name));
-    final outputStream = OutputFileStream(outPath);
-    file.writeContent(outputStream);
-    await outputStream.close();
-  }
-  await input.close();
+  await restoreBackupArchive(backupFilePath, restoreDirPath);
   final restoreConfigFile = File(join(restoreDirPath, configJsonName));
   if (!await restoreConfigFile.exists()) {
     throw currentAppLocalizations.invalidBackupFile;
