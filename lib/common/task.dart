@@ -127,6 +127,41 @@ Map<String, String> resolveGeoXUrls({
   return resolvedUrls;
 }
 
+List<ProxyGroup> removeStaleCustomGroupProxies({
+  required Map<String, dynamic> rawConfig,
+  required List<ProxyGroup> proxyGroups,
+}) {
+  final availableNames = <String>{
+    'DIRECT',
+    'REJECT',
+    'REJECT-DROP',
+    'PASS',
+    'COMPATIBLE',
+    ...proxyGroups.map((group) => group.name),
+  };
+  final rawProxies = rawConfig['proxies'];
+  if (rawProxies is List) {
+    for (final proxy in rawProxies) {
+      if (proxy is Map && proxy['name'] is String) {
+        availableNames.add(proxy['name'] as String);
+      }
+    }
+  }
+  return proxyGroups.map((group) {
+    final proxies = group.proxies;
+    if (proxies == null) return group;
+    final availableProxies = proxies.where(availableNames.contains).toList();
+    final isPopulatedDynamically =
+        group.use?.isNotEmpty == true ||
+        group.includeAll == true ||
+        group.includeAllProxies == true;
+    if (availableProxies.isEmpty && !isPopulatedDynamically) {
+      return group.copyWith(proxies: const ['DIRECT']);
+    }
+    return group.copyWith(proxies: availableProxies);
+  }).toList();
+}
+
 Future<VM2<String, String>> _makeRealProfileTask(
   MakeRealProfileState data,
 ) async {
@@ -309,7 +344,10 @@ Future<VM2<String, String>> _makeRealProfileTask(
     rules = data.rules.map((item) => item.rawValue).toList();
   }
   if (data.proxyGroups.isNotEmpty) {
-    rawConfig['proxy-groups'] = data.proxyGroups;
+    rawConfig['proxy-groups'] = removeStaleCustomGroupProxies(
+      rawConfig: rawConfig,
+      proxyGroups: data.proxyGroups,
+    );
   }
   rawConfig['rules'] = rules;
   final yaml = await _encodeYaml(Map<String, dynamic>.from(rawConfig));
