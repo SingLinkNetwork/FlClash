@@ -11,8 +11,12 @@ void configureLocalProxyAuthentication(HttpClient client) {
     final mixedPort = globalState.container.read(
       patchClashConfigProvider.select((state) => state.mixedPort),
     );
-    if (!isLocalProxyEndpoint(host, port, mixedPort) ||
-        scheme.toLowerCase() != 'basic') {
+    if (!shouldAuthenticateLocalProxy(
+      host: host,
+      port: port,
+      scheme: scheme,
+      expectedPort: mixedPort,
+    )) {
       return false;
     }
     final credentials = globalState.localProxyCredentials;
@@ -27,8 +31,13 @@ void configureLocalProxyAuthentication(HttpClient client) {
 }
 
 class FlClashHttpOverrides extends HttpOverrides {
+  static bool _isLoopbackHost(String host) {
+    return host == 'localhost' ||
+        InternetAddress.tryParse(host)?.isLoopback == true;
+  }
+
   static String handleFindProxy(Uri url) {
-    if ([localhost].contains(url.host)) {
+    if (_isLoopbackHost(url.host)) {
       return 'DIRECT';
     }
     final ref = globalState.container;
@@ -45,7 +54,6 @@ class FlClashHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     final client = super.createHttpClient(context);
-    client.badCertificateCallback = (_, _, _) => true;
     client.findProxy = handleFindProxy;
     configureLocalProxyAuthentication(client);
     return client;
