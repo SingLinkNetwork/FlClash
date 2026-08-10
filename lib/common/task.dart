@@ -102,6 +102,66 @@ Future<VM2<String, String>> makeRealProfileTask(
   );
 }
 
+Map<String, String> resolveGeoXUrls({
+  required Map<String, dynamic> rawConfig,
+  required PatchClashConfig patchConfig,
+}) {
+  final profileUrls = Map<String, dynamic>.from(rawConfig['geox-url'] ?? {});
+  final patchUrls = patchConfig.geoXUrl.raw;
+  final resolvedUrls = <String, String>{};
+  for (final resource in GeoResource.values) {
+    final key = switch (resource) {
+      GeoResource.MMDB => 'mmdb',
+      GeoResource.ASN => 'asn',
+      GeoResource.GEOIP => 'geoip',
+      GeoResource.GEOSITE => 'geosite',
+    };
+    final patchUrl = patchUrls[key] ?? defaultGeoXUrl[resource]!;
+    final profileUrl = profileUrls[key];
+    resolvedUrls[key] = patchUrl != defaultGeoXUrl[resource]
+        ? patchUrl
+        : profileUrl is String && profileUrl.isNotEmpty
+        ? profileUrl
+        : patchUrl;
+  }
+  return resolvedUrls;
+}
+
+List<ProxyGroup> removeStaleCustomGroupProxies({
+  required Map<String, dynamic> rawConfig,
+  required List<ProxyGroup> proxyGroups,
+}) {
+  final availableNames = <String>{
+    'DIRECT',
+    'REJECT',
+    'REJECT-DROP',
+    'PASS',
+    'COMPATIBLE',
+    ...proxyGroups.map((group) => group.name),
+  };
+  final rawProxies = rawConfig['proxies'];
+  if (rawProxies is List) {
+    for (final proxy in rawProxies) {
+      if (proxy is Map && proxy['name'] is String) {
+        availableNames.add(proxy['name'] as String);
+      }
+    }
+  }
+  return proxyGroups.map((group) {
+    final proxies = group.proxies;
+    if (proxies == null) return group;
+    final availableProxies = proxies.where(availableNames.contains).toList();
+    final isPopulatedDynamically =
+        group.use?.isNotEmpty == true ||
+        group.includeAll == true ||
+        group.includeAllProxies == true;
+    if (availableProxies.isEmpty && !isPopulatedDynamically) {
+      return group.copyWith(proxies: const ['DIRECT']);
+    }
+    return group.copyWith(proxies: availableProxies);
+  }).toList();
+}
+
 Future<VM2<String, String>> _makeRealProfileTask(
   MakeRealProfileState data,
 ) async {
@@ -116,13 +176,17 @@ Future<VM2<String, String>> _makeRealProfileTask(
   final addedRules = data.addedRules;
   final appendSystemDns = data.appendSystemDns;
   final defaultUA = data.defaultUA;
-  String getProvidersFilePathInner(String type, String url) {
+  String getProvidersFilePathInner(
+    String type,
+    String providerName,
+    String url,
+  ) {
     return join(
       profilesPath,
       'providers',
       profileId.toString(),
       type,
-      url.toMd5(),
+      '${providerName.toMd5()}-${url.toMd5()}',
     );
   }
 
@@ -178,6 +242,7 @@ Future<VM2<String, String>> _makeRealProfileTask(
       if (proxyProvider['url'] != null) {
         proxyProvider['path'] = getProvidersFilePathInner(
           'proxies',
+          key.toString(),
           proxyProvider['url'],
         );
       }
@@ -193,13 +258,17 @@ Future<VM2<String, String>> _makeRealProfileTask(
       if (ruleProvider['url'] != null) {
         ruleProvider['path'] = getProvidersFilePathInner(
           'rules',
+          key.toString(),
           ruleProvider['url'],
         );
       }
     }
   }
   rawConfig['profile']['store-selected'] = false;
-  rawConfig['geox-url'] = realPatchConfig.geoXUrl.raw;
+  rawConfig['geox-url'] = resolveGeoXUrls(
+    rawConfig: rawConfig,
+    patchConfig: realPatchConfig,
+  );
   rawConfig['global-ua'] = realPatchConfig.globalUa ?? defaultUA;
   if (rawConfig['hosts'] == null) {
     rawConfig['hosts'] = {};
@@ -213,12 +282,7 @@ Future<VM2<String, String>> _makeRealProfileTask(
   final isEnableDns = rawConfig['dns']['enable'] == true;
   const systemDns = 'system://';
   if (overrideDns || !isEnableDns) {
-    final dns = switch (!isEnableDns) {
-      true => realPatchConfig.dns.copyWith(
-        nameserver: [...realPatchConfig.dns.nameserver, systemDns],
-      ),
-      false => realPatchConfig.dns,
-    };
+    final dns = realPatchConfig.dns;
     rawConfig['dns'] = dns.toJson();
     rawConfig['dns']['nameserver-policy'] = {};
     for (final entry in dns.nameserverPolicy.entries) {
@@ -280,7 +344,10 @@ Future<VM2<String, String>> _makeRealProfileTask(
     rules = data.rules.map((item) => item.rawValue).toList();
   }
   if (data.proxyGroups.isNotEmpty) {
-    rawConfig['proxy-groups'] = data.proxyGroups;
+    rawConfig['proxy-groups'] = removeStaleCustomGroupProxies(
+      rawConfig: rawConfig,
+      proxyGroups: data.proxyGroups,
+    );
   }
   rawConfig['rules'] = rules;
   final yaml = await _encodeYaml(Map<String, dynamic>.from(rawConfig));
@@ -574,23 +641,35 @@ Future<MigrationData> restoreTask() async {
   );
 }
 
+Future<void> restoreBackupArchive(
+  String backupFilePath,
+  String restoreDirPath,
+) async {
+  final input = InputFileStream(backupFilePath);
+  try {
+    final archive = ZipDecoder().decodeStream(input);
+    final restoreDir = Directory(restoreDirPath);
+    await restoreDir.create(recursive: true);
+    for (final file in archive.files) {
+      final outPath = join(restoreDirPath, posix.normalize(file.name));
+      final outputStream = OutputFileStream(outPath);
+      try {
+        file.writeContent(outputStream);
+      } finally {
+        await outputStream.close();
+      }
+    }
+  } finally {
+    await input.close();
+  }
+}
+
 Future<MigrationData> _restoreTask(RootIsolateToken token) async {
   BackgroundIsolateBinaryMessenger.ensureInitialized(token);
   final backupFilePath = await appPath.backupFilePath;
   final restoreDirPath = await appPath.restoreDirPath;
   final homeDirPath = await appPath.homeDirPath;
-  final zipDecoder = ZipDecoder();
-  final input = InputFileStream(backupFilePath);
-  final archive = zipDecoder.decodeStream(input);
-  final dir = Directory(restoreDirPath);
-  await dir.create(recursive: true);
-  for (final file in archive.files) {
-    final outPath = join(restoreDirPath, posix.normalize(file.name));
-    final outputStream = OutputFileStream(outPath);
-    file.writeContent(outputStream);
-    await outputStream.close();
-  }
-  await input.close();
+  await restoreBackupArchive(backupFilePath, restoreDirPath);
   final restoreConfigFile = File(join(restoreDirPath, configJsonName));
   if (!await restoreConfigFile.exists()) {
     throw currentAppLocalizations.invalidBackupFile;

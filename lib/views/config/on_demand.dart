@@ -8,6 +8,7 @@ import 'package:fl_clash/views/profiles/overwrite/custom/widgets.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wifi_ssid/wifi_ssid.dart';
 
 class OnDemandView extends ConsumerStatefulWidget {
@@ -19,10 +20,10 @@ class OnDemandView extends ConsumerStatefulWidget {
 
 class _OnDemandViewState extends ConsumerState<OnDemandView>
     with UniqueKeyStateMixin {
-  void _handlePermanentlyDeniedLocationPermission() {
+  Future<void> _handlePermanentlyDeniedLocationPermission() async {
     if (system.isMacOS) {
       final appLocalizations = context.appLocalizations;
-      globalState.showMessage(
+      await globalState.showMessage(
         title: appLocalizations.locationPermissionRequired,
         cancelable: false,
         message: TextSpan(
@@ -31,7 +32,12 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
         ),
       );
     } else if (system.isAndroid) {
-      app?.openAppSettings();
+      await app?.openAppSettings();
+    } else if (system.isWindows) {
+      await launchUrl(
+        Uri.parse('ms-settings:privacy-location'),
+        mode: LaunchMode.externalApplication,
+      );
     }
   }
 
@@ -42,14 +48,23 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
       return;
     }
     if (permission == WifiSsidPermission.permanentlyDenied) {
-      _handlePermanentlyDeniedLocationPermission();
+      await _handlePermanentlyDeniedLocationPermission();
       return;
     }
     final res = await wifiSsidManager.requestPermission();
     globalState.container.read(locationPermissionsProvider.notifier).value =
         res;
-    if (!mounted && res != WifiSsidPermission.permanentlyDenied) {
+    if (!mounted) {
       return;
+    }
+    switch (getLocationPermissionFollowUp(res)) {
+      case LocationPermissionFollowUp.none:
+        return;
+      case LocationPermissionFollowUp.openSettings:
+        await _handlePermanentlyDeniedLocationPermission();
+        return;
+      case LocationPermissionFollowUp.showDeniedMessage:
+        break;
     }
     final needGo = await globalState.showMessage(
       title: appLocalizations.locationPermissionRequired,
@@ -59,7 +74,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
     if (needGo != true) {
       return;
     }
-    app?.openAppSettings();
+    await _handlePermanentlyDeniedLocationPermission();
   }
 
   void _handleOpenBatteryOptimizationSettings() {
@@ -242,7 +257,11 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
                               ],
                             ),
                     ),
-                  if (system.isAndroid || system.isMacOS)
+                  if (supportsSsidLocationPermissions(
+                    isAndroid: system.isAndroid,
+                    isMacOS: system.isMacOS,
+                    isWindows: system.isWindows,
+                  ))
                     DecorationListItem(
                       minVerticalPadding: 8,
                       title: Text(appLocalizations.locationPermission),

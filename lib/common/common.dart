@@ -19,6 +19,7 @@ export 'javascript.dart';
 export 'keyboard.dart';
 export 'launch.dart';
 export 'link.dart';
+export 'local_proxy.dart';
 export 'linux_clipboard.dart';
 export 'lock.dart';
 export 'measure.dart';

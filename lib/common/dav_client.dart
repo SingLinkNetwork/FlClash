@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:webdav_client/webdav_client.dart';
@@ -10,6 +12,18 @@ class DAVClient {
 
   DAVClient(DAVProps dav) {
     client = newClient(dav.uri, user: dav.user, password: dav.password);
+    // The dependency retries 302 responses itself, preserving WebDAV methods
+    // and bodies, but does not recognize the equivalent permanent redirect.
+    client.c.interceptors.add(
+      InterceptorsWrapper(
+        onResponse: (response, handler) {
+          if (response.statusCode == HttpStatus.movedPermanently) {
+            response.statusCode = HttpStatus.found;
+          }
+          handler.next(response);
+        },
+      ),
+    );
     fileName = dav.fileName;
     client.setHeaders({'accept-charset': 'utf-8', 'Content-Type': 'text/xml'});
     client.setConnectTimeout(8000);

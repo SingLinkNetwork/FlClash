@@ -46,6 +46,7 @@ app.*.map.json
 
 # Documentation (generated/planning artifacts)
 docs/
+/.worktrees/
 
 
 # Android Studio will place build artifacts here

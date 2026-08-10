@@ -174,11 +174,7 @@ class VpnButton extends StatelessWidget {
               return AdaptiveSheetScaffold(
                 body: generateListView(
                   generateSection(
-                    items: [
-                      const VPNItem(),
-                      const VpnSystemProxyItem(),
-                      const TunStackItem(),
-                    ],
+                    items: [const VPNItem(), const TunStackItem()],
                   ),
                 ),
                 title: 'VPN',

@@ -6,6 +6,18 @@ import 'package:fl_clash/common/common.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+Future<void> copyPickedFileToPath(
+  PlatformFile file,
+  String destinationPath,
+) async {
+  final sourcePath = file.path;
+  if (sourcePath != null) {
+    await File(sourcePath).safeCopy(destinationPath);
+    return;
+  }
+  await File(destinationPath).safeWriteAsBytes(await file.readBytes());
+}
+
 class Picker {
   Future<PlatformFile?> pickerFile() async {
     return FilePicker.pickFile(initialDirectory: await appPath.downloadDirPath);

@@ -63,6 +63,8 @@ expected_scripts = %w[
   tool/verify_android_background_location_permission.rb
   tool/verify_android_tile_background_toggle.rb
   tool/verify_android_proxy_stop.rb
+  tool/verify_android_local_proxy_security.rb
+  tool/verify_clash_meta_patch_delivery.rb
   tool/verify_android_service_lifecycle.rb
   tool/verify_linux_x11_thread_init.rb
   tool/verify_windows_maximize_work_area.rb
@@ -111,6 +113,20 @@ expected_build_needs = %w[
 build_needs = Array(jobs.fetch('build').fetch('needs'))
 missing_build_needs = expected_build_needs.reject { |job| build_needs.include?(job) }
 abort "CI build job is missing prerequisites: #{missing_build_needs.join(', ')}" unless missing_build_needs.empty?
+
+go_test_steps = jobs.fetch('go-tests').fetch('steps')
+unless go_test_steps.any? do |step|
+  step['name'] == 'Apply Clash.Meta patches' &&
+    step['run'] == 'dart tool/apply_clash_meta_patches.dart'
+end
+  abort 'go-tests must apply the parent-owned Clash.Meta patch'
+end
+unless go_test_steps.any? do |step|
+  step['working-directory'] == 'core/Clash.Meta' &&
+    step['run'] == "go test ./listener -run '^TestShouldDisableDefaultUDP$' -count=1"
+end
+  abort 'go-tests must execute the Android UDP listener security regression test'
+end
 
 gate = jobs.fetch('ci-complete')
 abort 'CI complete gate must run with always()' unless gate['if'].to_s.strip == '${{ always() }}'

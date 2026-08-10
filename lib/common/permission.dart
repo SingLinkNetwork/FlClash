@@ -8,6 +8,27 @@ import 'package:fl_clash/state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wifi_ssid/wifi_ssid_manager.dart';
 
+enum LocationPermissionFollowUp { none, showDeniedMessage, openSettings }
+
+bool supportsSsidLocationPermissions({
+  required bool isAndroid,
+  required bool isMacOS,
+  required bool isWindows,
+}) {
+  return isAndroid || isMacOS || isWindows;
+}
+
+LocationPermissionFollowUp getLocationPermissionFollowUp(
+  WifiSsidPermission permission,
+) {
+  return switch (permission) {
+    WifiSsidPermission.granted => LocationPermissionFollowUp.none,
+    WifiSsidPermission.denied => LocationPermissionFollowUp.showDeniedMessage,
+    WifiSsidPermission.permanentlyDenied =>
+      LocationPermissionFollowUp.openSettings,
+  };
+}
+
 class Permissions {
   static Permissions? _instance;
 

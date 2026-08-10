@@ -32,6 +32,7 @@ class Request {
           httpClient.userAgent = globalState.ua;
           return FlClashHttpOverrides.handleFindProxy(uri);
         };
+        configureLocalProxyAuthentication(httpClient);
         return httpClient;
       },
     );

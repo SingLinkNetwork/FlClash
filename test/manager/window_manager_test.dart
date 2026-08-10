@@ -1,4 +1,5 @@
 import 'package:fl_clash/manager/window_manager.dart';
+import 'package:fl_clash/common/window.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:flutter/material.dart';
@@ -55,5 +56,16 @@ void main() {
       container.read(windowSettingProvider),
       const WindowProps(width: 1024, height: 768),
     );
+  });
+
+  test('restores an explicitly saved window size on startup', () {
+    expect(
+      shouldRestoreWindowSize(const WindowProps(width: 1024, height: 768)),
+      isTrue,
+    );
+  });
+
+  test('does not restore an absent window size on startup', () {
+    expect(shouldRestoreWindowSize(const WindowProps()), isFalse);
   });
 }
