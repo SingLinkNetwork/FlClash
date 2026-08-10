@@ -641,6 +641,32 @@ Future<MigrationData> restoreTask() async {
   );
 }
 
+String resolveRestoreArchiveEntryPath(String restoreDirPath, String entryName) {
+  final invalidEntry = FileSystemException(
+    'Invalid backup archive entry',
+    entryName,
+  );
+  if (entryName.isEmpty ||
+      posix.isAbsolute(entryName) ||
+      entryName.contains('\\') ||
+      RegExp(r'^[a-zA-Z]:').hasMatch(entryName) ||
+      posix
+          .split(entryName)
+          .any((component) => component == '.' || component == '..')) {
+    throw invalidEntry;
+  }
+
+  final restoreDirAbsolutePath = absolute(restoreDirPath);
+  final outputPath = absolute(join(restoreDirAbsolutePath, entryName));
+  final restoreDirPrefix = restoreDirAbsolutePath.endsWith(separator)
+      ? restoreDirAbsolutePath
+      : '$restoreDirAbsolutePath$separator';
+  if (!outputPath.startsWith(restoreDirPrefix)) {
+    throw invalidEntry;
+  }
+  return outputPath;
+}
+
 Future<void> restoreBackupArchive(
   String backupFilePath,
   String restoreDirPath,
@@ -648,13 +674,19 @@ Future<void> restoreBackupArchive(
   final input = InputFileStream(backupFilePath);
   try {
     final archive = ZipDecoder().decodeStream(input);
+    final outputPaths = [
+      for (final file in archive.files)
+        (
+          file: file,
+          path: resolveRestoreArchiveEntryPath(restoreDirPath, file.name),
+        ),
+    ];
     final restoreDir = Directory(restoreDirPath);
     await restoreDir.create(recursive: true);
-    for (final file in archive.files) {
-      final outPath = join(restoreDirPath, posix.normalize(file.name));
-      final outputStream = OutputFileStream(outPath);
+    for (final output in outputPaths) {
+      final outputStream = OutputFileStream(output.path);
       try {
-        file.writeContent(outputStream);
+        output.file.writeContent(outputStream);
       } finally {
         await outputStream.close();
       }
