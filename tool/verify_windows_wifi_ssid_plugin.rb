@@ -23,6 +23,11 @@ unless source.include?('GetProcAddress')
   errors << 'Windows Wi-Fi SSID source must resolve WLAN functions dynamically'
 end
 
+unless source.include?('kPermissionDenied') &&
+       source.include?('void WifiSsidPlugin::CheckPermission')
+  errors << 'Windows Wi-Fi SSID source must report denied location access'
+end
+
 %w[
   WlanOpenHandle
   WlanEnumInterfaces
