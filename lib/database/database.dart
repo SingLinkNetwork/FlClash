@@ -33,7 +33,7 @@ class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
@@ -51,6 +51,9 @@ class Database extends _$Database {
           await m.createTable(iconRecords);
           await _resetOrders();
           await _migrateRules(m);
+        }
+        if (from < 3) {
+          await _repairLegacyProfileLabels();
         }
       },
       beforeOpen: (details) async {
@@ -112,6 +115,12 @@ class Database extends _$Database {
 
   Future<void> _resetOrders() async {
     await rulesDao.resetOrders();
+  }
+
+  Future<void> _repairLegacyProfileLabels() {
+    return customStatement(
+      "UPDATE profiles SET label = '' WHERE label IS NULL",
+    );
   }
 
   Future<void> restore(
