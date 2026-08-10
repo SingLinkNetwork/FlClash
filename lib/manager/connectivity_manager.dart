@@ -39,6 +39,16 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager> {
       read: () => readWifiSsidIfAllowed(
         isAllowed: () async {
           final permission = await WifiSsidManager.instance.checkPermission();
+          if (supportsSsidLocationPermissions(
+            isAndroid: system.isAndroid,
+            isMacOS: system.isMacOS,
+            isWindows: system.isWindows,
+          )) {
+            globalState.container
+                    .read(locationPermissionsProvider.notifier)
+                    .value =
+                permission;
+          }
           return permission == WifiSsidPermission.granted;
         },
         read: WifiSsidManager.instance.getSsid,

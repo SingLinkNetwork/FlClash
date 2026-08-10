@@ -82,6 +82,7 @@ std::unique_ptr<
     channel = nullptr;
 
 constexpr int kPermissionGranted = 0;
+constexpr int kPermissionDenied = 1;
 
 }  // namespace
 
@@ -113,10 +114,67 @@ void WifiSsidPlugin::HandleMethodCall(
     GetSsid(std::move(result));
   } else if (method_call.method_name().compare("checkPermission") == 0 ||
              method_call.method_name().compare("requestPermission") == 0) {
-    result->Success(flutter::EncodableValue(kPermissionGranted));
+    CheckPermission(std::move(result));
   } else {
     result->NotImplemented();
   }
+}
+
+void WifiSsidPlugin::CheckPermission(
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+  WlanApi wlan_api;
+  if (!wlan_api.IsAvailable()) {
+    result->Success(flutter::EncodableValue(kPermissionGranted));
+    return;
+  }
+
+  HANDLE client_handle = nullptr;
+  DWORD current_version = 0;
+  DWORD result_code = wlan_api.open_handle(
+      2, nullptr, &current_version, &client_handle);
+  if (result_code == ERROR_ACCESS_DENIED) {
+    result->Success(flutter::EncodableValue(kPermissionDenied));
+    return;
+  }
+  if (result_code != ERROR_SUCCESS) {
+    result->Success(flutter::EncodableValue(kPermissionGranted));
+    return;
+  }
+
+  PWLAN_INTERFACE_INFO_LIST interfaces = nullptr;
+  result_code = wlan_api.enum_interfaces(client_handle, nullptr, &interfaces);
+  if (result_code == ERROR_ACCESS_DENIED) {
+    wlan_api.close_handle(client_handle, nullptr);
+    result->Success(flutter::EncodableValue(kPermissionDenied));
+    return;
+  }
+  if (result_code != ERROR_SUCCESS || interfaces == nullptr) {
+    wlan_api.close_handle(client_handle, nullptr);
+    result->Success(flutter::EncodableValue(kPermissionGranted));
+    return;
+  }
+
+  for (DWORD index = 0; index < interfaces->dwNumberOfItems; index++) {
+    PWLAN_CONNECTION_ATTRIBUTES connection = nullptr;
+    DWORD data_size = sizeof(WLAN_CONNECTION_ATTRIBUTES);
+    result_code = wlan_api.query_interface(
+        client_handle, &interfaces->InterfaceInfo[index].InterfaceGuid,
+        wlan_intf_opcode_current_connection, nullptr, &data_size,
+        reinterpret_cast<PVOID*>(&connection), nullptr);
+    if (connection != nullptr) {
+      wlan_api.free_memory(connection);
+    }
+    if (result_code == ERROR_ACCESS_DENIED) {
+      wlan_api.free_memory(interfaces);
+      wlan_api.close_handle(client_handle, nullptr);
+      result->Success(flutter::EncodableValue(kPermissionDenied));
+      return;
+    }
+  }
+
+  wlan_api.free_memory(interfaces);
+  wlan_api.close_handle(client_handle, nullptr);
+  result->Success(flutter::EncodableValue(kPermissionGranted));
 }
 
 void WifiSsidPlugin::GetSsid(
