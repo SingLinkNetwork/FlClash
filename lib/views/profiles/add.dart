@@ -38,7 +38,6 @@ class AddProfileView extends StatelessWidget {
   }
 
   Future<void> _toAdd() async {
-    final appLocalizations = context.appLocalizations;
     final result = await globalState.showCommonDialog<URLImportResult>(
       child: const URLFormDialog(),
     );
