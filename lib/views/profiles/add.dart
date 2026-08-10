@@ -95,9 +95,9 @@ class _URLFormDialogState extends State<URLFormDialog> {
 
   Future<void> _handleAddProfileFormURL() async {
     if (_formKey.currentState?.validate() == false) return;
-    Navigator.of(context).pop(
-      URLImportResult(url: _urlController.value.text, useProxy: _useProxy),
-    );
+    Navigator.of(
+      context,
+    ).pop(URLImportResult(url: _urlController.value.text, useProxy: _useProxy));
   }
 
   @override

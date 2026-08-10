@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_clash/l10n/l10n.dart';
+import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/views/profiles/add.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -45,6 +46,9 @@ Future<Completer<URLImportResult?>> _openImportDialog(
   final completer = Completer<URLImportResult?>();
   await tester.pumpWidget(
     ProviderScope(
+      overrides: [
+        viewSizeProvider.overrideWithBuild((_, _) => const Size(1200, 1000)),
+      ],
       child: MaterialApp(
         localizationsDelegates: const [
           AppLocalizations.delegate,
