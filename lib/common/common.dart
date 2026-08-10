@@ -5,6 +5,7 @@ export 'constant.dart';
 export 'context.dart';
 export 'converter.dart';
 export 'datetime.dart';
+export 'exit_cleanup.dart';
 export 'file.dart';
 export 'font.dart';
 export 'fixed.dart';
