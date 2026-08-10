@@ -673,22 +673,31 @@ class SystemAction extends _$SystemAction {
   }
 
   Future<void> handleExit([bool needSave = false]) async {
-    Future.delayed(const Duration(seconds: 3), () {
-      system.exit();
-    });
     try {
-      if (system.isMacOS) {
-        await ref.read(coreActionProvider.notifier).setIpForwarding(false);
-      }
-      await Future.wait([
-        if (needSave) preferences.saveConfig(ref.read(configProvider)),
-        if (macOS != null) macOS!.updateDns(true),
-        if (proxy != null) proxy!.stopProxy(),
-        if (tray != null) tray!.destroy(),
-      ]);
-      await window?.close();
-      await coreController.destroy();
-      commonPrint.log('exit');
+      await runExitCleanupWithWatchdog(
+        timeout: const Duration(seconds: 10),
+        onTimeout: () {
+          commonPrint.log(
+            'Exit cleanup timed out after 10 seconds; forcing application exit.',
+            logLevel: LogLevel.warning,
+          );
+          system.exit();
+        },
+        cleanup: () async {
+          if (system.isMacOS) {
+            await ref.read(coreActionProvider.notifier).setIpForwarding(false);
+          }
+          await Future.wait([
+            if (needSave) preferences.saveConfig(ref.read(configProvider)),
+            if (macOS != null) macOS!.updateDns(true),
+            if (proxy != null) proxy!.stopProxy(),
+            if (tray != null) tray!.destroy(),
+          ]);
+          await window?.close();
+          await coreController.destroy();
+          commonPrint.log('exit');
+        },
+      );
     } finally {
       system.exit();
     }
