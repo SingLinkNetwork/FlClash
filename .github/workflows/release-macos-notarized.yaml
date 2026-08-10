@@ -1,0 +1,167 @@
+name: notarized macOS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v* tag to build and sign
+        required: true
+        type: string
+      publish:
+        description: Publish the verified DMG to the selected GitHub Release
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.44.4'
+
+jobs:
+  notarize:
+    name: Build, notarize, and verify macOS DMG
+    runs-on: macos-15-intel
+    permissions:
+      contents: write
+    env:
+      APPLE_DEVELOPER_ID_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_P12_BASE64 }}
+      APPLE_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+      APPLE_DEVELOPER_ID_APPLICATION: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}
+      APPLE_NOTARY_KEY_P8_BASE64: ${{ secrets.APPLE_NOTARY_KEY_P8_BASE64 }}
+      APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+      APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+    steps:
+      - name: Validate tag and release secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          case '${{ inputs.tag }}' in
+            v[0-9]*) ;;
+            *) echo '::error::tag must be an existing version tag beginning with v'; exit 1 ;;
+          esac
+          for name in \
+            APPLE_DEVELOPER_ID_P12_BASE64 \
+            APPLE_DEVELOPER_ID_P12_PASSWORD \
+            APPLE_DEVELOPER_ID_APPLICATION \
+            APPLE_NOTARY_KEY_P8_BASE64 \
+            APPLE_NOTARY_KEY_ID \
+            APPLE_NOTARY_ISSUER_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error title=Missing release secret::${name} must be configured as a GitHub Actions secret"
+              exit 1
+            fi
+          done
+
+      - name: Checkout selected release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Setup Xcode
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo xcode-select -s /Applications/Xcode_26.3.app || sudo xcode-select -s /Applications/Xcode_26.2.app
+          xcodebuild -version
+
+      - name: Build release app and initial DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart setup.dart macos --env stable -v
+          test -d build/macos/Build/Products/Release/FlClash.app
+
+      - name: Import Developer ID identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain_password=$(uuidgen)
+          echo "$APPLE_DEVELOPER_ID_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/developer-id.p12"
+          security create-keychain -p "$keychain_password" "$RUNNER_TEMP/flclash-release.keychain-db"
+          security set-keychain-settings -lut 21600 "$RUNNER_TEMP/flclash-release.keychain-db"
+          security unlock-keychain -p "$keychain_password" "$RUNNER_TEMP/flclash-release.keychain-db"
+          security import "$RUNNER_TEMP/developer-id.p12" -k "$RUNNER_TEMP/flclash-release.keychain-db" -P "$APPLE_DEVELOPER_ID_P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$RUNNER_TEMP/flclash-release.keychain-db"
+          security list-keychain -d user -s "$RUNNER_TEMP/flclash-release.keychain-db" login.keychain-db
+
+      - name: Sign release app and rebuild DMG
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_path="$GITHUB_WORKSPACE/build/macos/Build/Products/Release/FlClash.app"
+          version=$(awk '/^version:/ { split($2, parts, "+"); print parts[1]; exit }' pubspec.yaml)
+          dmg_path="$RUNNER_TEMP/FlClash-${version}-macos-amd64.dmg"
+          staging_dir=$(mktemp -d)
+          codesign --force --deep --options runtime --timestamp --sign "$APPLE_DEVELOPER_ID_APPLICATION" "$app_path"
+          codesign --verify --deep --strict --verbose=4 "$app_path"
+          cp -R "$app_path" "$staging_dir/FlClash.app"
+          (
+            cd "$staging_dir"
+            appdmg "$GITHUB_WORKSPACE/macos/packaging/dmg/make_config.yaml" "$dmg_path"
+          )
+          rm -rf "$staging_dir"
+          test -f "$dmg_path"
+          echo "dmg_path=$dmg_path" >> "$GITHUB_OUTPUT"
+
+      - name: Notarize and staple final DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$APPLE_NOTARY_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
+          xcrun notarytool submit '${{ steps.package.outputs.dmg_path }}' \
+            --key "$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8" \
+            --key-id "$APPLE_NOTARY_KEY_ID" \
+            --issuer "$APPLE_NOTARY_ISSUER_ID" \
+            --wait
+          xcrun stapler staple '${{ steps.package.outputs.dmg_path }}'
+          xcrun stapler validate '${{ steps.package.outputs.dmg_path }}'
+
+      - name: Verify mounted DMG with Gatekeeper
+        shell: bash
+        run: |
+          set -euo pipefail
+          mount_dir=$(mktemp -d)
+          trap 'hdiutil detach "$mount_dir" -quiet || true; rmdir "$mount_dir" || true' EXIT
+          hdiutil attach -nobrowse -readonly -mountpoint "$mount_dir" '${{ steps.package.outputs.dmg_path }}'
+          mounted_app="$mount_dir/FlClash.app"
+          test -d "$mounted_app"
+          codesign --verify --deep --strict --verbose=4 "$mounted_app"
+          spctl --assess --type execute --verbose=4 "$mounted_app"
+          xcrun stapler validate '${{ steps.package.outputs.dmg_path }}'
+
+      - name: Upload verified notarized DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: notarized-macos-dmg-${{ inputs.tag }}
+          path: ${{ steps.package.outputs.dmg_path }}
+          if-no-files-found: error
+
+      - name: Publish verified DMG
+        if: ${{ inputs.publish == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view '${{ inputs.tag }}' --repo "$GITHUB_REPOSITORY" >/dev/null || \
+            gh release create '${{ inputs.tag }}' --repo "$GITHUB_REPOSITORY" --title '${{ inputs.tag }}' --generate-notes
+          gh release upload '${{ inputs.tag }}' '${{ steps.package.outputs.dmg_path }}' --repo "$GITHUB_REPOSITORY" --clobber
+
+      - name: Remove temporary signing material
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          security delete-keychain "$RUNNER_TEMP/flclash-release.keychain-db" || true
+          rm -f "$RUNNER_TEMP/developer-id.p12" "$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"

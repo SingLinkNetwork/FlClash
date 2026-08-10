@@ -589,6 +589,8 @@ jobs:
             script: tool/verify_custom_test_urls.rb
           - id: core-callback-cleanup
             script: tool/verify_core_callback_cleanup.rb
+          - id: macos-release-signing
+            script: tool/verify_macos_release_signing_workflow.rb
           - id: ci-layout
             script: tool/verify_ci_layout.rb
 
