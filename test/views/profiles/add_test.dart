@@ -57,12 +57,11 @@ Future<Completer<URLImportResult?>> _openImportDialog(
           builder: (context) {
             return ElevatedButton(
               onPressed: () async {
-                completer.complete(
-                  await showDialog<URLImportResult>(
-                    context: context,
-                    builder: (_) => const URLFormDialog(),
-                  ),
-                ),
+                final result = await showDialog<URLImportResult>(
+                  context: context,
+                  builder: (_) => const URLFormDialog(),
+                );
+                completer.complete(result);
               },
               child: const Text('Open'),
             );
