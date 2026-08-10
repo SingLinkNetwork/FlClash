@@ -102,6 +102,31 @@ Future<VM2<String, String>> makeRealProfileTask(
   );
 }
 
+Map<String, String> resolveGeoXUrls({
+  required Map<String, dynamic> rawConfig,
+  required PatchClashConfig patchConfig,
+}) {
+  final profileUrls = Map<String, dynamic>.from(rawConfig['geox-url'] ?? {});
+  final patchUrls = patchConfig.geoXUrl.raw;
+  final resolvedUrls = <String, String>{};
+  for (final resource in GeoResource.values) {
+    final key = switch (resource) {
+      GeoResource.MMDB => 'mmdb',
+      GeoResource.ASN => 'asn',
+      GeoResource.GEOIP => 'geoip',
+      GeoResource.GEOSITE => 'geosite',
+    };
+    final patchUrl = patchUrls[key] ?? defaultGeoXUrl[resource]!;
+    final profileUrl = profileUrls[key];
+    resolvedUrls[key] = patchUrl != defaultGeoXUrl[resource]
+        ? patchUrl
+        : profileUrl is String && profileUrl.isNotEmpty
+        ? profileUrl
+        : patchUrl;
+  }
+  return resolvedUrls;
+}
+
 Future<VM2<String, String>> _makeRealProfileTask(
   MakeRealProfileState data,
 ) async {
@@ -199,7 +224,10 @@ Future<VM2<String, String>> _makeRealProfileTask(
     }
   }
   rawConfig['profile']['store-selected'] = false;
-  rawConfig['geox-url'] = realPatchConfig.geoXUrl.raw;
+  rawConfig['geox-url'] = resolveGeoXUrls(
+    rawConfig: rawConfig,
+    patchConfig: realPatchConfig,
+  );
   rawConfig['global-ua'] = realPatchConfig.globalUa ?? defaultUA;
   if (rawConfig['hosts'] == null) {
     rawConfig['hosts'] = {};

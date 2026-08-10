@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fl_clash/common/task.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -70,5 +71,75 @@ void main() {
     } else {
       expect(profile.a, isNot(contains('recvmsgx: false')));
     }
+  });
+
+  test(
+    'profile GEO URLs survive when the app has no custom GEO URL override',
+    () async {
+      const profileGeoIpUrl = 'https://profile.example/geoip.dat';
+      const profileGeoSiteUrl = 'https://profile.example/geosite.dat';
+      final profile = await makeRealProfileTask(
+        const MakeRealProfileState(
+          profilesPath: '/tmp/flclash-geo-url-test',
+          profileId: 12,
+          rawConfig: {
+            'geox-url': {
+              'geoip': profileGeoIpUrl,
+              'geosite': profileGeoSiteUrl,
+            },
+          },
+          realPatchConfig: PatchClashConfig(),
+          overrideDns: false,
+          appendSystemDns: false,
+          proxyGroups: [],
+          rules: [],
+          addedRules: [],
+          defaultUA: 'FlClash-Test',
+        ),
+      );
+
+      expect(profile.a, contains('geoip: "$profileGeoIpUrl"'));
+      expect(profile.a, contains('geosite: "$profileGeoSiteUrl"'));
+    },
+  );
+
+  test('custom app GEO URL overrides the profile GEO URL', () {
+    const appGeoIpUrl = 'https://app.example/geoip.dat';
+    final urls = resolveGeoXUrls(
+      rawConfig: {
+        'geox-url': {'geoip': 'https://profile.example/geoip.dat'},
+      },
+      patchConfig: const PatchClashConfig(
+        geoXUrl: {GeoResource.GEOIP: appGeoIpUrl},
+      ),
+    );
+
+    expect(urls['geoip'], appGeoIpUrl);
+  });
+
+  test(
+    'partial app GEO settings retain defaults for unspecified resources',
+    () {
+      const appGeoIpUrl = 'https://app.example/geoip.dat';
+      final urls = resolveGeoXUrls(
+        rawConfig: const {},
+        patchConfig: const PatchClashConfig(
+          geoXUrl: {GeoResource.GEOIP: appGeoIpUrl},
+        ),
+      );
+
+      expect(urls['geoip'], appGeoIpUrl);
+      expect(urls['geosite'], defaultGeoXUrl[GeoResource.GEOSITE]);
+    },
+  );
+
+  test('default GEO URLs are retained when neither source customizes them', () {
+    final urls = resolveGeoXUrls(
+      rawConfig: const {},
+      patchConfig: const PatchClashConfig(),
+    );
+
+    expect(urls['geoip'], defaultGeoXUrl[GeoResource.GEOIP]);
+    expect(urls['geosite'], defaultGeoXUrl[GeoResource.GEOSITE]);
   });
 }
