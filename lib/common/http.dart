@@ -27,8 +27,13 @@ void configureLocalProxyAuthentication(HttpClient client) {
 }
 
 class FlClashHttpOverrides extends HttpOverrides {
+  static bool _isLoopbackHost(String host) {
+    return host == 'localhost' ||
+        InternetAddress.tryParse(host)?.isLoopback == true;
+  }
+
   static String handleFindProxy(Uri url) {
-    if ([localhost].contains(url.host)) {
+    if (_isLoopbackHost(url.host)) {
       return 'DIRECT';
     }
     final ref = globalState.container;
