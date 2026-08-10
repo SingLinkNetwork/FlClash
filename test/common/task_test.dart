@@ -93,6 +93,59 @@ void main() {
     },
   );
 
+  test(
+    'custom proxy groups discard nodes removed by a subscription refresh',
+    () async {
+      final profile = await makeRealProfileTask(
+        const MakeRealProfileState(
+          profilesPath: '/tmp/flclash-custom-groups-test',
+          profileId: 16,
+          rawConfig: {
+            'proxies': [
+              {'name': 'current-node', 'type': 'ss'},
+            ],
+          },
+          realPatchConfig: PatchClashConfig(),
+          overrideDns: false,
+          appendSystemDns: false,
+          proxyGroups: [
+            ProxyGroup(
+              id: 1,
+              name: 'nested-group',
+              type: GroupType.Selector,
+              proxies: ['current-node'],
+            ),
+            ProxyGroup(
+              id: 2,
+              name: 'main-group',
+              type: GroupType.Selector,
+              proxies: ['current-node', 'renamed-old-node', 'nested-group'],
+            ),
+            ProxyGroup(
+              id: 3,
+              name: 'all-stale-group',
+              type: GroupType.Selector,
+              proxies: ['renamed-old-node'],
+            ),
+          ],
+          rules: [],
+          addedRules: [],
+          defaultUA: 'FlClash-Test',
+        ),
+      );
+
+      expect(profile.a, contains('current-node'));
+      expect(profile.a, contains('nested-group'));
+      expect(profile.a, isNot(contains('renamed-old-node')));
+      expect(
+        profile.a,
+        contains(
+          'name: "all-stale-group"\n    type: "select"\n    proxies:\n      - "DIRECT"',
+        ),
+      );
+    },
+  );
+
   test('profile ipv6 false also wins over the client fallback', () {
     final result = applyCorePatchConfig(
       rawConfig: {'ipv6': false},
