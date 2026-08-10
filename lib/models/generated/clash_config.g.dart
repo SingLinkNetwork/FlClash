@@ -256,6 +256,9 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
           ?.map((e) => e as String)
           .toList() ??
       const ['https://doh.pub/dns-query', 'https://dns.alidns.com/dns-query'],
+  directNameserver: (json['direct-nameserver'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
   fallback:
       (json['fallback'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const ['tls://8.8.4.4', 'tls://1.1.1.1'],
@@ -285,6 +288,7 @@ Map<String, dynamic> _$DnsToJson(_Dns instance) => <String, dynamic>{
   'fake-ip-filter': instance.fakeIpFilter,
   'nameserver-policy': instance.nameserverPolicy,
   'nameserver': instance.nameserver,
+  'direct-nameserver': ?instance.directNameserver,
   'fallback': instance.fallback,
   'proxy-server-nameserver': instance.proxyServerNameserver,
   'fallback-filter': instance.fallbackFilter,
